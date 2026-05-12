@@ -1,65 +1,326 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState, useEffect, useCallback } from 'react'
+import { AddItemModal } from '@/components/AddItemModal'
+import { WatchlistSection } from '@/components/WatchlistSection'
+import type { ItemWithMeta, ItemList, Category, Listing } from '@/lib/types'
+
+export default function DashboardPage() {
+  const [items, setItems] = useState<ItemWithMeta[]>([])
+  const [lists, setLists] = useState<ItemList[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [view, setView] = useState<'lists' | 'categories'>('lists')
+  const [newListInput, setNewListInput] = useState('')
+  const [showNewList, setShowNewList] = useState(false)
+  const [newCatInput, setNewCatInput] = useState('')
+  const [showNewCat, setShowNewCat] = useState(false)
+
+  const fetchAll = useCallback(async () => {
+    const [itemsRes, listsRes, catsRes] = await Promise.all([
+      fetch('/api/items'),
+      fetch('/api/lists'),
+      fetch('/api/categories'),
+    ])
+    const [itemsData, listsData, catsData] = await Promise.all([
+      itemsRes.json(),
+      listsRes.json(),
+      catsRes.json(),
+    ])
+
+    const baseItems: ItemWithMeta[] = Array.isArray(itemsData) ? itemsData : []
+
+    const withListings = await Promise.all(
+      baseItems.map(async (item) => {
+        const r = await fetch(`/api/items/${item.id}/listings`)
+        const { listings } = await r.json()
+        const priced = (listings as Listing[]).filter((l) => l.price != null)
+        const lowest = priced.sort((a, b) => a.price! - b.price!)[0] ?? null
+        return { ...item, lowestListing: lowest }
+      })
+    )
+
+    setItems(withListings)
+    setLists(Array.isArray(listsData) ? listsData : [])
+    setCategories(Array.isArray(catsData) ? catsData : [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchAll() }, [fetchAll])
+
+  async function deleteItem(id: string) {
+    await fetch(`/api/items/${id}`, { method: 'DELETE' })
+    setItems((prev) => prev.filter((i) => i.id !== id))
+  }
+
+  async function handleDrop(itemId: string, targetId: string, type: 'list' | 'category') {
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return
+
+    const listIds = item.lists.map((l) => l.id)
+    const categoryIds = item.categories.map((c) => c.id)
+
+    if (type === 'list') {
+      if (listIds.includes(targetId)) return
+      const newListIds = [...listIds, targetId]
+      await fetch(`/api/items/${itemId}/associations`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listIds: newListIds, categoryIds }),
+      })
+      const list = lists.find((l) => l.id === targetId)
+      if (list) setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, lists: [...i.lists, list] } : i))
+    } else {
+      if (categoryIds.includes(targetId)) return
+      const newCategoryIds = [...categoryIds, targetId]
+      await fetch(`/api/items/${itemId}/associations`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listIds, categoryIds: newCategoryIds }),
+      })
+      const cat = categories.find((c) => c.id === targetId)
+      if (cat) setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, categories: [...i.categories, cat] } : i))
+    }
+  }
+
+  async function deleteList(id: string) {
+    await fetch(`/api/lists/${id}`, { method: 'DELETE' })
+    setLists((prev) => prev.filter((l) => l.id !== id))
+    setItems((prev) => prev.map((i) => ({ ...i, lists: i.lists.filter((l) => l.id !== id) })))
+  }
+
+  async function renameList(id: string, name: string) {
+    await fetch(`/api/lists/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    setLists((prev) => prev.map((l) => l.id === id ? { ...l, name } : l))
+    setItems((prev) => prev.map((i) => ({ ...i, lists: i.lists.map((l) => l.id === id ? { ...l, name } : l) })))
+  }
+
+  async function deleteCategory(id: string) {
+    await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+    setCategories((prev) => prev.filter((c) => c.id !== id))
+    setItems((prev) => prev.map((i) => ({ ...i, categories: i.categories.filter((c) => c.id !== id) })))
+  }
+
+  async function renameCategory(id: string, name: string) {
+    await fetch(`/api/categories/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    setCategories((prev) => prev.map((c) => c.id === id ? { ...c, name } : c))
+    setItems((prev) => prev.map((i) => ({ ...i, categories: i.categories.map((c) => c.id === id ? { ...c, name } : c) })))
+  }
+
+  async function addList() {
+    if (!newListInput.trim()) return
+    const res = await fetch('/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newListInput.trim(), color: 'zinc' }),
+    })
+    const list = await res.json()
+    setLists((prev) => [...prev, list])
+    setNewListInput('')
+    setShowNewList(false)
+  }
+
+  async function addCategory() {
+    if (!newCatInput.trim()) return
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newCatInput.trim(), color: 'zinc' }),
+    })
+    const cat = await res.json()
+    setCategories((prev) => [...prev, cat])
+    setNewCatInput('')
+    setShowNewCat(false)
+  }
+
+  const unassignedItems = items.filter((i) => i.lists.length === 0)
+  const uncategorizedItems = items.filter((i) => i.categories.length === 0)
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-10 rounded-xl bg-zinc-200 animate-pulse" />
+        <div className="h-32 rounded-2xl bg-zinc-200 animate-pulse" />
+        <div className="h-32 rounded-2xl bg-zinc-200 animate-pulse" />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <h1 className="text-xl font-semibold flex-1">Watchlist</h1>
+
+        <div className="flex rounded-xl border border-zinc-200 p-0.5 text-sm">
+          <button
+            onClick={() => setView('lists')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'lists' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            Lists
+          </button>
+          <button
+            onClick={() => setView('categories')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'categories' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+          >
+            Categories
+          </button>
+        </div>
+
+        <button
+          onClick={() => setModalOpen(true)}
+          className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition-colors"
+        >
+          + Add item
+        </button>
+      </div>
+
+      {items.length === 0 && (
+        <div className="py-16 text-center">
+          <p className="text-sm text-zinc-400">Your watchlist is empty.</p>
+          <button
+            onClick={() => setModalOpen(true)}
+            className="mt-3 text-sm text-zinc-500 underline underline-offset-2 hover:text-zinc-900 transition-colors"
+          >
+            Add your first item
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {view === 'lists' ? (
+          <>
+            <WatchlistSection
+              title="All items"
+              items={unassignedItems}
+              onDrop={() => {}}
+              onDeleteItem={deleteItem}
+              onEditItem={fetchAll}
+              isDefault
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {lists.map((list) => (
+              <WatchlistSection
+                key={list.id}
+                title={list.name}
+                color={list.color}
+                items={items.filter((i) => i.lists.some((l) => l.id === list.id))}
+                onDrop={(itemId) => handleDrop(itemId, list.id, 'list')}
+                onDeleteItem={deleteItem}
+                onDelete={() => deleteList(list.id)}
+                onRename={(name) => renameList(list.id, name)}
+                onEditItem={fetchAll}
+                sectionId={list.id}
+                sectionType="list"
+              />
+            ))}
+
+            {showNewList ? (
+              <form
+                onSubmit={(e) => { e.preventDefault(); addList() }}
+                className="flex gap-2"
+              >
+                <input
+                  autoFocus
+                  type="text"
+                  value={newListInput}
+                  onChange={(e) => setNewListInput(e.target.value)}
+                  onBlur={() => { if (!newListInput.trim()) setShowNewList(false) }}
+                  placeholder="List name"
+                  className="flex-1 rounded-xl border border-zinc-300 px-4 py-2.5 text-sm outline-none focus:border-zinc-500"
+                />
+                <button type="submit" disabled={!newListInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm disabled:opacity-40">
+                  Create
+                </button>
+                <button type="button" onClick={() => setShowNewList(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-500">
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setShowNewList(true)}
+                className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1"
+              >
+                + New list
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <WatchlistSection
+              title="Uncategorized"
+              items={uncategorizedItems}
+              onDrop={() => {}}
+              onDeleteItem={deleteItem}
+              onEditItem={fetchAll}
+              isDefault
+            />
+            {categories.map((cat) => (
+              <WatchlistSection
+                key={cat.id}
+                title={cat.name}
+                color={cat.color}
+                items={items.filter((i) => i.categories.some((c) => c.id === cat.id))}
+                onDrop={(itemId) => handleDrop(itemId, cat.id, 'category')}
+                onDeleteItem={deleteItem}
+                onDelete={() => deleteCategory(cat.id)}
+                onRename={(name) => renameCategory(cat.id, name)}
+                onEditItem={fetchAll}
+                sectionId={cat.id}
+                sectionType="category"
+              />
+            ))}
+
+            {showNewCat ? (
+              <form
+                onSubmit={(e) => { e.preventDefault(); addCategory() }}
+                className="flex gap-2"
+              >
+                <input
+                  autoFocus
+                  type="text"
+                  value={newCatInput}
+                  onChange={(e) => setNewCatInput(e.target.value)}
+                  onBlur={() => { if (!newCatInput.trim()) setShowNewCat(false) }}
+                  placeholder="Category name"
+                  className="flex-1 rounded-xl border border-zinc-300 px-4 py-2.5 text-sm outline-none focus:border-zinc-500"
+                />
+                <button type="submit" disabled={!newCatInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm disabled:opacity-40">
+                  Create
+                </button>
+                <button type="button" onClick={() => setShowNewCat(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-500">
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setShowNewCat(true)}
+                className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1"
+              >
+                + New category
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {modalOpen && (
+        <AddItemModal
+          categories={categories}
+          lists={lists}
+          onClose={() => setModalOpen(false)}
+          onCreated={fetchAll}
+          onNewCategory={(cat) => setCategories((prev) => [...prev, cat])}
+          onNewList={(list) => setLists((prev) => [...prev, list])}
+        />
+      )}
     </div>
-  );
+  )
 }

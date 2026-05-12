@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-12T00:00:00Z",
+  "title": "Design System: Second Hand Deals",
+  "extensions": {
+    "colorMeta": {
+      "bare-canvas":       { "role": "neutral",   "displayName": "Bare Canvas",       "canonical": "oklch(98% 0.002 0)",   "tonalRamp": ["#18181b","#27272a","#3f3f46","#52525b","#71717a","#a1a1aa","#d4d4d8","#f4f4f5","#fafafa"] },
+      "surface":           { "role": "neutral",   "displayName": "Surface",           "canonical": "oklch(100% 0 0)",      "tonalRamp": ["#18181b","#27272a","#3f3f46","#71717a","#a1a1aa","#d4d4d8","#e4e4e7","#f4f4f5","#ffffff"] },
+      "surface-subtle":    { "role": "neutral",   "displayName": "Surface Subtle",    "canonical": "oklch(96% 0.002 0)",   "tonalRamp": ["#18181b","#3f3f46","#71717a","#a1a1aa","#d4d4d8","#e4e4e7","#f4f4f5","#fafafa","#ffffff"] },
+      "border-default":    { "role": "neutral",   "displayName": "Border Default",    "canonical": "oklch(90% 0.003 0)",   "tonalRamp": ["#18181b","#27272a","#52525b","#71717a","#a1a1aa","#d4d4d8","#e4e4e7","#f4f4f5","#fafafa"] },
+      "border-strong":     { "role": "neutral",   "displayName": "Border Strong",     "canonical": "oklch(84% 0.004 0)",   "tonalRamp": ["#18181b","#3f3f46","#71717a","#a1a1aa","#d4d4d8","#e4e4e7","#f4f4f5","#fafafa","#ffffff"] },
+      "text-faint":        { "role": "neutral",   "displayName": "Text Faint",        "canonical": "oklch(64% 0.005 0)",   "tonalRamp": ["#18181b","#27272a","#3f3f46","#52525b","#71717a","#a1a1aa","#d4d4d8","#e4e4e7","#f4f4f5"] },
+      "text-muted":        { "role": "neutral",   "displayName": "Text Muted",        "canonical": "oklch(47% 0.006 0)",   "tonalRamp": ["#18181b","#27272a","#3f3f46","#52525b","#71717a","#a1a1aa","#d4d4d8","#e4e4e7","#fafafa"] },
+      "text-secondary":    { "role": "neutral",   "displayName": "Text Secondary",    "canonical": "oklch(38% 0.006 0)",   "tonalRamp": ["#18181b","#27272a","#3f3f46","#52525b","#71717a","#a1a1aa","#d4d4d8","#e4e4e7","#fafafa"] },
+      "ink":               { "role": "primary",   "displayName": "Ink",               "canonical": "oklch(14% 0.004 0)",   "tonalRamp": ["#09090b","#18181b","#27272a","#3f3f46","#52525b","#71717a","#a1a1aa","#d4d4d8","#fafafa"] },
+      "amber-star":        { "role": "secondary", "displayName": "Amber Star",        "canonical": "oklch(77% 0.18 75)",   "tonalRamp": ["#78350f","#92400e","#b45309","#d97706","#f59e0b","#fbbf24","#fcd34d","#fde68a","#fffbeb"] },
+      "amber-star-border": { "role": "secondary", "displayName": "Amber Star Border", "canonical": "oklch(84% 0.16 75)",   "tonalRamp": ["#92400e","#b45309","#d97706","#f59e0b","#fbbf24","#fcd34d","#fde68a","#fef3c7","#fffbeb"] },
+      "green-confirm":     { "role": "tertiary",  "displayName": "Green Confirm",     "canonical": "oklch(72% 0.19 142)",  "tonalRamp": ["#14532d","#166534","#15803d","#16a34a","#22c55e","#4ade80","#86efac","#bbf7d0","#f0fdf4"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Page titles. One per screen." },
+      "title":    { "displayName": "Title",    "purpose": "Section headers, modal titles." },
+      "body":     { "displayName": "Body",     "purpose": "Listing titles, descriptions, nav links. Max 65-75ch." },
+      "label":    { "displayName": "Label",    "purpose": "Badges, chips, date stamps, sort controls." }
+    },
+    "shadows": [
+      { "name": "modal-lift",    "value": "0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08)", "purpose": "Modal overlay only. Signals full z-elevation detachment from the page." },
+      { "name": "listing-hover", "value": "0 1px 4px rgba(0,0,0,0.06)",                                "purpose": "Listing row on hover only. Confirms interactivity; not a resting-state shadow." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default state transitions (color, border, opacity)." },
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Progress bar fill and element entrance animations." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main CTA: Add item, Save, Confirm. Always ink background, white text.",
+      "html": "<button class=\"ds-btn-primary\">Add item</button>",
+      "css": ".ds-btn-primary { background: #18181b; color: #ffffff; padding: 8px 20px; font-family: Geist, Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 500; border: none; border-radius: 12px; cursor: pointer; transition: background 0.15s cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background: #3f3f46; } .ds-btn-primary:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ghost action: Cancel, Refresh, secondary nav. Border-only, no fill at rest.",
+      "html": "<button class=\"ds-btn-secondary\">Refresh</button>",
+      "css": ".ds-btn-secondary { background: #ffffff; color: #52525b; padding: 8px 16px; font-family: Geist, Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 400; border: 1px solid #e4e4e7; border-radius: 12px; cursor: pointer; transition: background 0.15s, border-color 0.15s; } .ds-btn-secondary:hover { background: #fafafa; border-color: #d4d4d8; } .ds-btn-secondary:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }"
+    },
+    {
+      "name": "Listing Row",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The core browsing unit. Image left, title + price top-right, site badge + date bottom-right. Starred variant adds amber border and ring.",
+      "html": "<a class=\"ds-listing-row\" href=\"#\">\n  <div class=\"ds-listing-image\"><img src=\"https://placehold.co/80x80/f4f4f5/a1a1aa?text=img\" alt=\"Item\" width=\"80\" height=\"80\" /></div>\n  <div class=\"ds-listing-body\">\n    <div class=\"ds-listing-top\">\n      <p class=\"ds-listing-title\">Fjällräven Kånken, Forest Green, 16L</p>\n      <p class=\"ds-listing-price\">450 kr</p>\n    </div>\n    <div class=\"ds-listing-meta\">\n      <span class=\"ds-badge ds-badge-tradera\">Tradera</span>\n      <span class=\"ds-listing-date\">2026-05-10</span>\n    </div>\n  </div>\n</a>",
+      "css": ".ds-listing-row { display: flex; gap: 16px; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 12px; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; } .ds-listing-row:hover { border-color: #a1a1aa; box-shadow: 0 1px 4px rgba(0,0,0,0.06); } .ds-listing-image { width: 80px; height: 80px; border-radius: 8px; background: #f4f4f5; overflow: hidden; flex-shrink: 0; } .ds-listing-image img { width: 100%; height: 100%; object-fit: cover; } .ds-listing-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; } .ds-listing-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; } .ds-listing-title { font-family: Geist, Arial, sans-serif; font-size: 14px; font-weight: 500; color: #18181b; line-height: 1.4; margin: 0; } .ds-listing-price { font-family: Geist, Arial, sans-serif; font-size: 16px; font-weight: 600; color: #18181b; white-space: nowrap; flex-shrink: 0; margin: 0; } .ds-listing-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; } .ds-listing-date { font-family: Geist, Arial, sans-serif; font-size: 12px; color: #a1a1aa; } .ds-badge { display: inline-block; border-radius: 9999px; font-family: Geist, Arial, sans-serif; font-size: 12px; font-weight: 500; padding: 2px 8px; } .ds-badge-tradera { background: #dbeafe; color: #1d4ed8; } .ds-badge-blocket { background: #ffedd5; color: #c2410c; } .ds-badge-vinted { background: #ccfbf1; color: #0f766e; } .ds-badge-sellpy { background: #f3e8ff; color: #7e22ce; }"
+    },
+    {
+      "name": "Listing Row (Starred)",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Starred variant: amber border + ring. The only surface in the system with a color accent at rest.",
+      "html": "<a class=\"ds-listing-row ds-listing-starred\" href=\"#\">\n  <div class=\"ds-listing-image\"><img src=\"https://placehold.co/80x80/f4f4f5/a1a1aa?text=img\" alt=\"Item\" width=\"80\" height=\"80\" /></div>\n  <div class=\"ds-listing-body\">\n    <div class=\"ds-listing-top\">\n      <p class=\"ds-listing-title\">Fjällräven Totepack No.1</p>\n      <div style=\"display:flex;align-items:center;gap:8px;flex-shrink:0\">\n        <p class=\"ds-listing-price\">380 kr</p>\n        <button class=\"ds-star-btn ds-star-btn--on\" aria-label=\"Unstar\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"#fbbf24\" stroke=\"#fbbf24\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z\" /></svg></button>\n      </div>\n    </div>\n    <div class=\"ds-listing-meta\">\n      <span class=\"ds-badge ds-badge-sellpy\">Sellpy</span>\n      <span class=\"ds-listing-date\">2026-05-11</span>\n    </div>\n  </div>\n</a>",
+      "css": ".ds-listing-starred { border-color: #fcd34d; box-shadow: 0 0 0 1px #fde68a; } .ds-star-btn { background: none; border: none; padding: 2px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; transition: background 0.1s; } .ds-star-btn:hover { background: #f4f4f5; } .ds-star-btn--off svg { fill: none; stroke: #d4d4d8; } .ds-star-btn--off:hover svg { stroke: #a1a1aa; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Search, brand, item name fields. White surface, default border, focus shifts border color.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Item name\" />",
+      "css": ".ds-input { width: 100%; background: #ffffff; border: 1px solid #d4d4d8; border-radius: 12px; padding: 8px 12px; font-family: Geist, Arial, Helvetica, sans-serif; font-size: 14px; color: #18181b; outline: none; transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: #a1a1aa; } .ds-input:focus { border-color: #71717a; box-shadow: 0 0 0 3px rgba(24,24,27,0.06); }"
+    },
+    {
+      "name": "Watchlist Item Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Draggable item in the watchlist. Shows brand + name, category pills, list pills, and lowest price.",
+      "html": "<div class=\"ds-item-card\">\n  <div class=\"ds-item-card-header\">\n    <p class=\"ds-item-card-name\"><span class=\"ds-item-card-brand\">Fjällräven </span>Kånken</p>\n    <span class=\"ds-item-card-price\">320 kr</span>\n  </div>\n  <div class=\"ds-item-card-tags\">\n    <span class=\"ds-tag ds-tag-blue\">Bags</span>\n    <span class=\"ds-tag-list ds-tag-list-zinc\">Wishlist</span>\n  </div>\n</div>",
+      "css": ".ds-item-card { background: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 16px; cursor: grab; transition: border-color 0.15s, box-shadow 0.15s; } .ds-item-card:hover { border-color: #a1a1aa; box-shadow: 0 1px 4px rgba(0,0,0,0.06); } .ds-item-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; } .ds-item-card-name { font-family: Geist, Arial, sans-serif; font-size: 14px; font-weight: 500; color: #18181b; margin: 0; } .ds-item-card-brand { color: #a1a1aa; font-weight: 400; } .ds-item-card-price { font-family: Geist, Arial, sans-serif; font-size: 14px; font-weight: 600; color: #18181b; white-space: nowrap; } .ds-item-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; } .ds-tag { display: inline-block; border-radius: 9999px; font-size: 12px; font-weight: 500; padding: 3px 10px; } .ds-tag-blue { background: #dbeafe; color: #1d4ed8; } .ds-tag-list { display: inline-block; border-radius: 9999px; font-size: 12px; font-weight: 500; padding: 3px 10px; border: 1.5px solid; } .ds-tag-list-zinc { border-color: #a1a1aa; color: #52525b; }"
+    },
+    {
+      "name": "Site Toggle Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Settings page site card. Enabled: dark border, full opacity. Disabled: light border, 60% opacity. Toggle in top-right.",
+      "html": "<div class=\"ds-site-card ds-site-card--on\">\n  <div class=\"ds-site-card-avatar ds-site-avatar-blocket\">B</div>\n  <div class=\"ds-site-card-body\">\n    <div class=\"ds-site-card-row\">\n      <p class=\"ds-site-card-name\">Blocket</p>\n      <div class=\"ds-toggle ds-toggle--on\"><span class=\"ds-toggle-thumb\"></span></div>\n    </div>\n    <p class=\"ds-site-card-url\">blocket.se</p>\n    <p class=\"ds-site-card-desc\">Sweden's largest classifieds marketplace.</p>\n    <span class=\"ds-tag ds-tag-zinc\">Classifieds</span>\n  </div>\n</div>",
+      "css": ".ds-site-card { display: flex; gap: 12px; border-radius: 12px; border: 1px solid; padding: 16px; cursor: pointer; transition: opacity 0.2s, border-color 0.2s; user-select: none; } .ds-site-card--on { border-color: #18181b; background: #ffffff; } .ds-site-card--off { border-color: #e4e4e7; background: #fafafa; opacity: 0.6; } .ds-site-card-avatar { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; } .ds-site-avatar-blocket { background: #ffedd5; color: #c2410c; } .ds-site-card-body { flex: 1; min-width: 0; } .ds-site-card-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .ds-site-card-name { font-family: Geist, Arial, sans-serif; font-size: 14px; font-weight: 500; color: #18181b; margin: 0; } .ds-site-card-url { font-family: Geist, Arial, sans-serif; font-size: 12px; color: #a1a1aa; margin: 2px 0 0; } .ds-site-card-desc { font-family: Geist, Arial, sans-serif; font-size: 12px; color: #52525b; margin: 8px 0 6px; line-height: 1.5; } .ds-toggle { width: 36px; height: 20px; border-radius: 9999px; display: flex; align-items: center; transition: background 0.2s; flex-shrink: 0; } .ds-toggle--on { background: #18181b; padding-left: 18px; } .ds-toggle--off { background: #e4e4e7; padding-left: 2px; } .ds-toggle-thumb { display: block; width: 14px; height: 14px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); } .ds-tag-zinc { background: #f4f4f5; color: #3f3f46; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Friendly Edit",
+    "overview": "Second Hand Deals is a curated deal tracker, not a comparison engine. The interface should feel like a trusted friend who has done the searching for you and laid the results out on a clean table. Every screen is an invitation to browse, not a wall of data to parse. Restraint earns the warmth; warmth earns the trust.\n\nThe palette is intentionally lean: bare canvas, ink, and borders do almost all the structural work. Color appears as signal (amber for favorites, green for success, site-tinted badges for provenance) rather than decoration. This sparseness is what lets items feel curated rather than dumped.\n\nThe visual language owes a debt to Are.na: considered spacing, clean typographic hierarchy, surfaces that recede so content can breathe. But unlike Are.na's cool neutrality, this system has a smile.",
+    "keyCharacteristics": [
+      "Near-flat surfaces separated by borders, never shadows at rest",
+      "Geist Sans at two weights (400, 600) for nearly all hierarchy",
+      "Ink (near-black) as the single primary action color",
+      "Amber as the one personal accent: appears only on starred/favorited items",
+      "Site provenance communicated through soft tinted badge pills, not icons",
+      "Rounded corners throughout: inputs and buttons at 12px, pills at full"
+    ],
+    "rules": [
+      { "name": "The One-Accent Rule",     "body": "Amber is the only personal color in the system. It marks what the user has decided matters. Never use amber for anything except the starred/favorite state.", "section": "colors" },
+      { "name": "The Site Badge Rule",     "body": "Platform provenance is the only place where categorical color appears. These badge tints are functional labels, not brand elements. They must always appear at low saturation (100-level tint).", "section": "colors" },
+      { "name": "The Two-Weight Rule",     "body": "Only regular (400) and semibold (600) are used. Medium (500) appears only on label-scale text. No bold (700), no light (300). Hierarchy is achieved through size ratios, not weight proliferation.", "section": "typography" },
+      { "name": "The Flat-by-Default Rule","body": "No surface carries a shadow at rest. The only exception is the modal overlay. Everything else: borders only.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use border-zinc-200 as the default dividing line. Borders do all structural separation work.",
+      "Do reserve amber entirely for the starred/favorite state. Its scarcity is what makes it meaningful.",
+      "Do use site-tinted badges at the 100-level tint only. Higher saturation badges would compete with content.",
+      "Do keep modals as a last resort. Most interactions should happen inline.",
+      "Do use rounded-xl (12px) for interactive surfaces. rounded-full for pills only.",
+      "Do allow white cards to float on bare-canvas using border-zinc-200, not shadow.",
+      "Do communicate status through typography weight and color shifts, not icons alone."
+    ],
+    "donts": [
+      "Don't use a sidebar nav, metric cards, or gradient banners. This is not a SaaS dashboard.",
+      "Don't make this look or feel like Blocket, Tradera, or eBay.",
+      "Don't use dark mode with neon accents, terminal aesthetics, or glassmorphism.",
+      "Don't use hero sections, gradient text, or animations for their own sake.",
+      "Don't use border-left or border-right as a colored accent stripe on any card, callout, or alert.",
+      "Don't use background-clip: text gradient text. Use a solid color.",
+      "Don't add a second accent color. One ink, one amber. Adding a second accent dissolves the amber's meaning.",
+      "Don't use identical card grids with icon + heading + text repeated endlessly.",
+      "Don't nest cards. A card inside a card is always a layout problem in disguise."
+    ]
+  }
+}
