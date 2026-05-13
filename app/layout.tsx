@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/" className="text-lg font-semibold tracking-tight text-zinc-900 hover:text-zinc-600 transition-colors">
               Second Hand Deals
             </Link>
-            <span className="hidden md:block text-sm text-zinc-400">Swedish secondhand, one place</span>
+            <span className="hidden md:block text-sm text-zinc-400">Find the best second-hand deals</span>
             {user ? (
               <NavUser email={user.email ?? ''} />
             ) : (
