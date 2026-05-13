@@ -11,6 +11,8 @@ export interface ItemList {
   id: string
   name: string
   color: string
+  visibility: 'private' | 'public' | 'collaborative'
+  user_id: string
   created_at: string
 }
 
@@ -57,3 +59,20 @@ export interface ScrapedListing {
   imageUrl: string | null
 }
 
+export type ListRole = 'owner' | 'admin' | 'editor' | 'viewer'
+
+export interface ListMember {
+  user_id: string
+  email: string
+  display_name: string | null
+  role: ListRole
+  joined_at: string
+}
+
+export interface ListInvite {
+  id: string
+  list_id: string
+  token: string
+  role: Omit<ListRole, 'owner'>
+  created_at: string
+}

@@ -8,25 +8,29 @@ import type { ItemWithMeta, ItemList, Category, Listing } from '@/lib/types'
 export default function DashboardPage() {
   const [items, setItems] = useState<ItemWithMeta[]>([])
   const [lists, setLists] = useState<ItemList[]>([])
+  const [sharedLists, setSharedLists] = useState<(ItemList & { userRole: string })[]>([])
+  const [followedLists, setFollowedLists] = useState<ItemList[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
-  const [view, setView] = useState<'lists' | 'categories'>('lists')
+  const [view, setView] = useState<'lists' | 'categories' | 'following'>('lists')
   const [newListInput, setNewListInput] = useState('')
   const [showNewList, setShowNewList] = useState(false)
   const [newCatInput, setNewCatInput] = useState('')
   const [showNewCat, setShowNewCat] = useState(false)
 
   const fetchAll = useCallback(async () => {
-    const [itemsRes, listsRes, catsRes] = await Promise.all([
+    const [itemsRes, listsRes, catsRes, followingRes] = await Promise.all([
       fetch('/api/items'),
       fetch('/api/lists'),
       fetch('/api/categories'),
+      fetch('/api/lists/following'),
     ])
-    const [itemsData, listsData, catsData] = await Promise.all([
+    const [itemsData, listsData, catsData, followingData] = await Promise.all([
       itemsRes.json(),
       listsRes.json(),
       catsRes.json(),
+      followingRes.json(),
     ])
 
     const baseItems: ItemWithMeta[] = Array.isArray(itemsData) ? itemsData : []
@@ -42,7 +46,9 @@ export default function DashboardPage() {
     )
 
     setItems(withListings)
-    setLists(Array.isArray(listsData) ? listsData : [])
+    setLists(Array.isArray(listsData?.own) ? listsData.own : [])
+    setSharedLists(Array.isArray(listsData?.shared) ? listsData.shared : [])
+    setFollowedLists(Array.isArray(followingData) ? followingData : [])
     setCategories(Array.isArray(catsData) ? catsData : [])
     setLoading(false)
   }, [])
@@ -69,7 +75,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ listIds: newListIds, categoryIds }),
       })
-      const list = lists.find((l) => l.id === targetId)
+      const list = lists.find((l) => l.id === targetId) ?? sharedLists.find((l) => l.id === targetId)
       if (list) setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, lists: [...i.lists, list] } : i))
     } else {
       if (categoryIds.includes(targetId)) return
@@ -98,6 +104,15 @@ export default function DashboardPage() {
     })
     setLists((prev) => prev.map((l) => l.id === id ? { ...l, name } : l))
     setItems((prev) => prev.map((i) => ({ ...i, lists: i.lists.map((l) => l.id === id ? { ...l, name } : l) })))
+  }
+
+  function handleListUpdated(updated: ItemList) {
+    setLists((prev) => prev.map((l) => l.id === updated.id ? updated : l))
+  }
+
+  async function unfollowList(id: string) {
+    await fetch(`/api/lists/${id}/follow`, { method: 'DELETE' })
+    setFollowedLists((prev) => prev.filter((l) => l.id !== id))
   }
 
   async function deleteCategory(id: string) {
@@ -173,6 +188,12 @@ export default function DashboardPage() {
           >
             Categories
           </button>
+          <button
+            onClick={() => setView('following')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'following' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+          >
+            Following
+          </button>
         </div>
 
         <button
@@ -183,7 +204,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {items.length === 0 && (
+      {items.length === 0 && view !== 'following' && (
         <div className="py-16 text-center">
           <p className="text-sm text-zinc-400">Your watchlist is empty.</p>
           <button
@@ -196,7 +217,7 @@ export default function DashboardPage() {
       )}
 
       <div className="space-y-6">
-        {view === 'lists' ? (
+        {view === 'lists' && (
           <>
             <WatchlistSection
               title="All items"
@@ -217,16 +238,40 @@ export default function DashboardPage() {
                 onDelete={() => deleteList(list.id)}
                 onRename={(name) => renameList(list.id, name)}
                 onEditItem={fetchAll}
+                onListUpdated={handleListUpdated}
                 sectionId={list.id}
                 sectionType="list"
+                list={list}
+                userRole="owner"
               />
             ))}
 
+            {sharedLists.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs font-medium uppercase tracking-wide text-zinc-300">Shared with me</span>
+                  <div className="flex-1 h-px bg-zinc-100" />
+                </div>
+                {sharedLists.map((list) => (
+                  <WatchlistSection
+                    key={list.id}
+                    title={list.name}
+                    color={list.color}
+                    items={items.filter((i) => i.lists.some((l) => l.id === list.id))}
+                    onDrop={(itemId) => handleDrop(itemId, list.id, 'list')}
+                    onDeleteItem={deleteItem}
+                    onEditItem={fetchAll}
+                    sectionId={list.id}
+                    sectionType="list"
+                    list={list}
+                    userRole={list.userRole as any}
+                  />
+                ))}
+              </>
+            )}
+
             {showNewList ? (
-              <form
-                onSubmit={(e) => { e.preventDefault(); addList() }}
-                className="flex gap-2"
-              >
+              <form onSubmit={(e) => { e.preventDefault(); addList() }} className="flex gap-2">
                 <input
                   autoFocus
                   type="text"
@@ -244,15 +289,14 @@ export default function DashboardPage() {
                 </button>
               </form>
             ) : (
-              <button
-                onClick={() => setShowNewList(true)}
-                className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1"
-              >
+              <button onClick={() => setShowNewList(true)} className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1">
                 + New list
               </button>
             )}
           </>
-        ) : (
+        )}
+
+        {view === 'categories' && (
           <>
             <WatchlistSection
               title="Uncategorized"
@@ -279,10 +323,7 @@ export default function DashboardPage() {
             ))}
 
             {showNewCat ? (
-              <form
-                onSubmit={(e) => { e.preventDefault(); addCategory() }}
-                className="flex gap-2"
-              >
+              <form onSubmit={(e) => { e.preventDefault(); addCategory() }} className="flex gap-2">
                 <input
                   autoFocus
                   type="text"
@@ -300,13 +341,37 @@ export default function DashboardPage() {
                 </button>
               </form>
             ) : (
-              <button
-                onClick={() => setShowNewCat(true)}
-                className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1"
-              >
+              <button onClick={() => setShowNewCat(true)} className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1">
                 + New category
               </button>
             )}
+          </>
+        )}
+
+        {view === 'following' && (
+          <>
+            {followedLists.length === 0 && (
+              <div className="py-16 text-center">
+                <p className="text-sm text-zinc-400">You're not following any lists yet.</p>
+                <p className="mt-1 text-xs text-zinc-300">When someone shares a public list with you, it will appear here.</p>
+              </div>
+            )}
+            {followedLists.map((list) => (
+              <WatchlistSection
+                key={list.id}
+                title={list.name}
+                color={list.color}
+                items={[]}
+                onDrop={() => {}}
+                onDeleteItem={() => {}}
+                onEditItem={() => {}}
+                onDelete={() => unfollowList(list.id)}
+                sectionId={list.id}
+                sectionType="list"
+                list={list}
+                userRole="follower"
+              />
+            ))}
           </>
         )}
       </div>

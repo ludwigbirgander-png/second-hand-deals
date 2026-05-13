@@ -13,12 +13,14 @@ interface Props {
   onEdit: () => void
   sectionId?: string
   sectionType?: 'list' | 'category'
+  readOnly?: boolean
 }
 
-export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sectionType }: Props) {
+export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sectionType, readOnly }: Props) {
   const [showEdit, setShowEdit] = useState(false)
 
   function handleDragStart(e: React.DragEvent) {
+    if (readOnly) return
     e.dataTransfer.setData('itemId', item.id)
     e.dataTransfer.effectAllowed = 'copy'
   }
@@ -26,7 +28,7 @@ export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sec
   return (
     <>
       <div
-        draggable
+        draggable={!readOnly}
         onDragStart={handleDragStart}
         className="group flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-zinc-50 transition-colors cursor-grab active:cursor-grabbing select-none"
       >
@@ -98,27 +100,31 @@ export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sec
           <span className="text-sm text-zinc-300 shrink-0">—</span>
         )}
 
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowEdit(true) }}
-          className="shrink-0 text-zinc-300 hover:text-zinc-600 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all p-1 rounded"
-          title="Edit"
-          aria-label={`Edit ${item.name}`}
-        >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z" />
-          </svg>
-        </button>
+        {!readOnly && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowEdit(true) }}
+              className="shrink-0 text-zinc-300 hover:text-zinc-600 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all p-1 rounded"
+              title="Edit"
+              aria-label={`Edit ${item.name}`}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z" />
+              </svg>
+            </button>
 
-        <button
-          onClick={() => onDelete(item.id)}
-          className="shrink-0 text-zinc-300 hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all p-1 rounded"
-          title="Remove"
-          aria-label={`Remove ${item.name}`}
-        >
-          <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
-            <path d="M4 4l8 8M12 4l-8 8" />
-          </svg>
-        </button>
+            <button
+              onClick={() => onDelete(item.id)}
+              className="shrink-0 text-zinc-300 hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all p-1 rounded"
+              title="Remove"
+              aria-label={`Remove ${item.name}`}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
 
       {showEdit && (
