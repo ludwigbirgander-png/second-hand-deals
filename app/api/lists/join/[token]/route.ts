@@ -1,16 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
-  const supabase = await createClient()
   const { token } = await params
 
-  // Use service role to read invite (bypasses RLS so unauthenticated preview works)
-  const { data: invite, error } = await supabase
+  // Use service role so anyone with the link can preview before signing in
+  const { data: invite, error } = await db()
     .from('list_invites')
-    .select('list_id, role, lists(name, user_id)')
+    .select('list_id, role, lists(name)')
     .eq('token', token)
     .single()
 
@@ -33,7 +33,8 @@ export async function POST(
 
   const { token } = await params
 
-  const { data: invite, error: inviteError } = await supabase
+  // Service role so the joining user can read the invite regardless of RLS
+  const { data: invite, error: inviteError } = await db()
     .from('list_invites')
     .select('list_id, role')
     .eq('token', token)
@@ -43,8 +44,7 @@ export async function POST(
     return Response.json({ error: 'Invalid or expired invite' }, { status: 404 })
   }
 
-  // Check not already a member or owner
-  const { data: list } = await supabase
+  const { data: list } = await db()
     .from('lists')
     .select('user_id')
     .eq('id', invite.list_id)
@@ -54,7 +54,8 @@ export async function POST(
     return Response.json({ error: 'You own this list' }, { status: 400 })
   }
 
-  const { error } = await supabase
+  // Insert via service role — RLS INSERT policy blocks non-owners/non-admins
+  const { error } = await db()
     .from('list_members')
     .upsert(
       { list_id: invite.list_id, user_id: user.id, role: invite.role },
@@ -63,12 +64,11 @@ export async function POST(
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  // Also make sure list is set to collaborative
-  await supabase
+  // Ensure list is collaborative (update via service role since joiner isn't owner)
+  await db()
     .from('lists')
     .update({ visibility: 'collaborative' })
     .eq('id', invite.list_id)
-    .eq('user_id', list?.user_id ?? '')
 
   return Response.json({ ok: true, list_id: invite.list_id })
 }

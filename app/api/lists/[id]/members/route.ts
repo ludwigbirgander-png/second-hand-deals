@@ -12,7 +12,19 @@ export async function GET(
 
   const { id } = await params
 
-  const { data, error } = await supabase
+  // Verify caller is the owner or a member before exposing the full list
+  const { data: list } = await supabase.from('lists').select('user_id').eq('id', id).single()
+  if (!list) return Response.json({ error: 'Not found' }, { status: 404 })
+
+  const isOwner = list.user_id === user.id
+  if (!isOwner) {
+    const { data: membership } = await supabase
+      .from('list_members').select('role').eq('list_id', id).eq('user_id', user.id).single()
+    if (!membership) return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Use service role so RLS doesn't filter to only the caller's own row
+  const { data, error } = await db()
     .from('list_members')
     .select('user_id, role, joined_at')
     .eq('list_id', id)
