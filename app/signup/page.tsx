@@ -31,7 +31,7 @@ export default function SignupPage() {
     setLoading(false)
 
     // If email confirmation is disabled in Supabase dashboard, redirect directly
-    setTimeout(() => router.push('/'), 1500)
+    setTimeout(() => { window.location.replace('/') }, 1500)
   }
 
   if (done) {
