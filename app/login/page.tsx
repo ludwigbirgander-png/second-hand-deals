@@ -2,11 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { loginAction } from '@/app/actions'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -17,20 +15,16 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const formData = new FormData()
+    formData.set('email', email)
+    formData.set('password', password)
 
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
-
-      window.location.replace('/')
-    } catch (err: any) {
-      setError(err?.message ?? 'Something went wrong. Please try again.')
+    const result = await loginAction(formData)
+    if (result?.error) {
+      setError(result.error)
       setLoading(false)
+    } else {
+      window.location.replace('/')
     }
   }
 
