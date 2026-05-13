@@ -130,13 +130,14 @@ export async function POST(
   if (inviteError) return Response.json({ error: inviteError.message }, { status: 500 })
 
   // Send email
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://second-hand-deals.vercel.app'
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '') || 'https://second-hand-deals.vercel.app'
   const joinUrl = `${appUrl}/lists/join/${invite.token}`
   const resendKey = process.env.RESEND_API_KEY
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
   if (resendKey) {
     const resend = new Resend(resendKey)
     await resend.emails.send({
-      from: 'Compy <noreply@resend.dev>',
+      from: `Compy <${fromEmail}>`,
       to: email.trim(),
       subject: `You've been invited to a list on Compy`,
       html: `
