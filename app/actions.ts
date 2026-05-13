@@ -19,5 +19,8 @@ export async function signupAction(formData: FormData) {
     password: formData.get('password') as string,
   })
   if (error) return { error: error.message }
+  if (data.user) {
+    await supabase.from('profiles').upsert({ id: data.user.id }, { onConflict: 'id' })
+  }
   return { ok: true, sessionCreated: !!data.session }
 }
