@@ -8,8 +8,8 @@ import './globals.css'
 const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Second Hand Deals',
-  description: 'Track the best second-hand deals across Swedish marketplaces',
+  title: 'Compy',
+  description: 'Find the best second-hand deals across Swedish marketplaces',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -22,15 +22,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <header className="bg-white border-b border-zinc-200">
           <div className="max-w-4xl mx-auto px-4 py-5 flex items-center gap-3">
             <Link href="/" className="text-lg font-semibold tracking-tight text-zinc-900 hover:text-zinc-600 transition-colors">
-              Second Hand Deals
+              Compy
             </Link>
-            <span className="hidden md:block text-sm text-zinc-400">Find the best second-hand deals</span>
-            {user ? (
-              <NavUser email={user.email ?? ''} />
-            ) : (
-              <Link href="/profile" className="ml-auto text-sm text-zinc-400 hover:text-zinc-600 transition-colors">
-                Settings
-              </Link>
+            {user && (
+              <>
+                <span className="hidden md:block text-sm text-zinc-400">Find the best second-hand deals</span>
+                <NavUser email={user.email ?? ''} />
+              </>
             )}
           </div>
         </header>
