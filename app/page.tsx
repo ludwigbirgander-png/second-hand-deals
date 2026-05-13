@@ -37,11 +37,16 @@ export default function DashboardPage() {
 
     const withListings = await Promise.all(
       baseItems.map(async (item) => {
-        const r = await fetch(`/api/items/${item.id}/listings`)
-        const { listings } = await r.json()
-        const priced = (listings as Listing[]).filter((l) => l.price != null)
-        const lowest = priced.sort((a, b) => a.price! - b.price!)[0] ?? null
-        return { ...item, lowestListing: lowest }
+        try {
+          const r = await fetch(`/api/items/${item.id}/listings`)
+          const json = await r.json()
+          const listings: Listing[] = Array.isArray(json.listings) ? json.listings : []
+          const priced = listings.filter((l) => l.price != null)
+          const lowest = priced.sort((a, b) => a.price! - b.price!)[0] ?? null
+          return { ...item, lowestListing: lowest }
+        } catch {
+          return { ...item, lowestListing: null }
+        }
       })
     )
 
