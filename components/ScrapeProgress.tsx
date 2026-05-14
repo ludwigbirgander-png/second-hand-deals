@@ -65,12 +65,12 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
 
   return (
     <div className="space-y-4">
-      {label && <p className="text-sm text-zinc-400">{label}</p>}
+      {label && <p className="text-sm text-zinc-400 dark:text-zinc-500">{label}</p>}
 
       {/* Progress bar */}
-      <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
+      <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
         <div
-          className="h-full rounded-full bg-zinc-900 transition-all duration-500"
+          className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100 transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -88,16 +88,16 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 ) : status === 'scraping' ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-zinc-300 border-t-zinc-700 animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-zinc-300 dark:border-zinc-600 border-t-zinc-700 dark:border-t-zinc-300 animate-spin" />
                 ) : (
-                  <div className="w-3 h-3 rounded-full bg-zinc-200" />
+                  <div className="w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700" />
                 )}
               </div>
-              <span className={`flex-1 text-sm ${status === 'scraping' ? 'font-medium text-zinc-900' : status === 'done' ? 'text-zinc-700' : 'text-zinc-400'}`}>
+              <span className={`flex-1 text-sm ${status === 'scraping' ? 'font-medium text-zinc-900 dark:text-zinc-50' : status === 'done' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500'}`}>
                 {site}
               </span>
               {status === 'done' && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${count > 0 ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-400'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${count > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500'}`}>
                   {count > 0 ? `${count} found` : 'none'}
                 </span>
               )}
@@ -107,9 +107,9 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
       </div>
 
       {totalFound !== null && (
-        <p className="text-sm text-zinc-500 pt-1">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 pt-1">
           {totalFound > 0
-            ? <><strong className="text-zinc-900">{totalFound}</strong> new listings found</>
+            ? <><strong className="text-zinc-900 dark:text-zinc-100">{totalFound}</strong> new listings found</>
             : 'No new listings found'}
         </p>
       )}

@@ -130,23 +130,23 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-zinc-100">
-          <h2 className="text-sm font-semibold text-zinc-900">List settings — {list.name}</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 transition-colors">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">List settings — {list.name}</h2>
+          <button onClick={onClose} className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
             <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
               <path d="M4 4l8 8M12 4l-8 8" />
             </svg>
           </button>
         </div>
 
-        <div className="flex border-b border-zinc-100 px-6">
+        <div className="flex border-b border-zinc-100 dark:border-zinc-800 px-6">
           {(['visibility', 'members', 'share'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`py-3 mr-4 text-xs font-medium border-b-2 transition-colors capitalize ${
-                tab === t ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-400 hover:text-zinc-600'
+                tab === t ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'
               }`}
             >
               {t}
@@ -157,14 +157,14 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
         <div className="px-6 py-5 space-y-4">
           {tab === 'visibility' && (
             <>
-              <p className="text-xs text-zinc-500">Control who can see and join this list.</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Control who can see and join this list.</p>
               <div className="space-y-2">
                 {[
                   { value: 'private', label: 'Private', desc: 'Only you can see this list' },
                   { value: 'public', label: 'Public', desc: 'Anyone can view and follow this list' },
                   { value: 'collaborative', label: 'Collaborative', desc: 'Invited members can add and edit items' },
                 ].map((opt) => (
-                  <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${visibility === opt.value ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200 hover:border-zinc-300'}`}>
+                  <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${visibility === opt.value ? 'border-zinc-900 dark:border-zinc-300 bg-zinc-50 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'}`}>
                     <input
                       type="radio"
                       name="visibility"
@@ -174,8 +174,8 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-sm font-medium text-zinc-900">{opt.label}</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">{opt.desc}</p>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{opt.label}</p>
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">{opt.desc}</p>
                     </div>
                   </label>
                 ))}
@@ -183,7 +183,7 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
               <button
                 onClick={saveVisibility}
                 disabled={saving || visibility === list.visibility}
-                className="w-full rounded-xl bg-zinc-900 text-white py-2.5 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+                className="w-full rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 py-2.5 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-40 transition-colors"
               >
                 {saving ? 'Saving…' : 'Save'}
               </button>
@@ -198,12 +198,12 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="email@example.com"
-                  className="flex-1 rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+                  className="flex-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                 />
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as any)}
-                  className="rounded-xl border border-zinc-200 px-2 py-2 text-sm outline-none focus:border-zinc-400 bg-white"
+                  className="rounded-xl border border-zinc-200 dark:border-zinc-700 px-2 py-2 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 bg-white dark:bg-zinc-800"
                 >
                   <option value="admin">Admin</option>
                   <option value="editor">Editor</option>
@@ -212,7 +212,7 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
                 <button
                   type="submit"
                   disabled={inviting || !inviteEmail.trim()}
-                  className="px-3 py-2 rounded-xl bg-zinc-900 text-white text-sm disabled:opacity-40"
+                  className="px-3 py-2 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm disabled:opacity-40"
                 >
                   Invite
                 </button>
@@ -222,23 +222,23 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
               )}
 
               {membersLoading ? (
-                <p className="text-xs text-zinc-400">Loading…</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Loading…</p>
               ) : (
                 <div className="space-y-1">
                   {members.map((m) => (
-                    <div key={m.user_id} className="flex items-center gap-2 py-2 border-b border-zinc-100 last:border-0">
+                    <div key={m.user_id} className="flex items-center gap-2 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-zinc-900 truncate">{m.display_name || m.email}</p>
-                        {m.display_name && <p className="text-xs text-zinc-400 truncate">{m.email}</p>}
+                        <p className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{m.display_name || m.email}</p>
+                        {m.display_name && <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">{m.email}</p>}
                       </div>
                       {m.role === 'owner' ? (
-                        <span className="text-xs text-zinc-400 shrink-0">Owner</span>
+                        <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">Owner</span>
                       ) : (
                         <>
                           <select
                             value={m.role}
                             onChange={(e) => changeRole(m.user_id, e.target.value as ListRole)}
-                            className="text-xs border border-zinc-200 rounded-lg px-2 py-1 bg-white outline-none"
+                            className="text-xs border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1 bg-white dark:bg-zinc-800 outline-none"
                           >
                             <option value="admin">Admin</option>
                             <option value="editor">Editor</option>
@@ -246,7 +246,7 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
                           </select>
                           <button
                             onClick={() => removeMember(m.user_id)}
-                            className="text-zinc-300 hover:text-red-400 transition-colors p-1 shrink-0"
+                            className="text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors p-1 shrink-0"
                           >
                             <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
                               <path d="M4 4l8 8M12 4l-8 8" />
@@ -267,38 +267,38 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
                 <select
                   value={shareRole}
                   onChange={(e) => setShareRole(e.target.value as any)}
-                  className="rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400 bg-white"
+                  className="rounded-xl border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-500 bg-white dark:bg-zinc-800"
                 >
                   <option value="editor">Editor link</option>
                   <option value="viewer">Viewer link</option>
                 </select>
                 <button
                   onClick={createShareLink}
-                  className="flex-1 px-3 py-2 rounded-xl bg-zinc-900 text-white text-sm hover:bg-zinc-700 transition-colors"
+                  className="flex-1 px-3 py-2 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors"
                 >
                   Generate link
                 </button>
               </div>
 
               {shareTokens.length === 0 ? (
-                <p className="text-xs text-zinc-400">No share links yet.</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">No share links yet.</p>
               ) : (
                 <div className="space-y-2">
                   {shareTokens.map((t) => (
-                    <div key={t.token} className="flex items-center gap-2 p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                    <div key={t.token} className="flex items-center gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-zinc-500 truncate">{appUrl}/lists/join/{t.token}</p>
-                        <p className="text-xs text-zinc-400 mt-0.5 capitalize">{t.role} access</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{appUrl}/lists/join/{t.token}</p>
+                        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 capitalize">{t.role} access</p>
                       </div>
                       <button
                         onClick={() => copyLink(t.token)}
-                        className="shrink-0 text-xs px-2 py-1 rounded-lg border border-zinc-200 hover:bg-zinc-100 transition-colors"
+                        className="shrink-0 text-xs px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
                       >
                         {copied === t.token ? 'Copied!' : 'Copy'}
                       </button>
                       <button
                         onClick={() => revokeToken(t.token)}
-                        className="shrink-0 text-zinc-300 hover:text-red-400 transition-colors p-1"
+                        className="shrink-0 text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors p-1"
                       >
                         <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
                           <path d="M4 4l8 8M12 4l-8 8" />

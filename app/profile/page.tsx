@@ -80,7 +80,7 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-sm text-zinc-400 mt-1">Manage which sites to search for deals</p>
+        <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">Manage which sites to search for deals</p>
       </div>
 
       <div className="flex items-center gap-3">
@@ -91,16 +91,16 @@ export default function ProfilePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search sites…"
-            className="w-full pl-8 pr-4 py-2 text-sm rounded-xl border border-zinc-200 outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-200 bg-white"
+            className="w-full pl-8 pr-4 py-2 text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-200 dark:focus:ring-zinc-700 bg-white dark:bg-zinc-800"
           />
         </div>
-        <span className="text-sm text-zinc-400 shrink-0">
+        <span className="text-sm text-zinc-400 dark:text-zinc-500 shrink-0">
           {activeCount} of {sites.length} active
         </span>
       </div>
 
       {filtered.length === 0 && search && (
-        <p className="text-sm text-zinc-400 py-8 text-center">No sites match &ldquo;{search}&rdquo;</p>
+        <p className="text-sm text-zinc-400 dark:text-zinc-500 py-8 text-center">No sites match &ldquo;{search}&rdquo;</p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -115,8 +115,8 @@ export default function ProfilePage() {
               onClick={() => toggle(site.id)}
               className={`relative cursor-pointer rounded-xl border p-4 transition-all select-none ${
                 site.enabled
-                  ? 'border-zinc-900 bg-white shadow-sm'
-                  : 'border-zinc-200 bg-zinc-50 opacity-60'
+                  ? 'border-zinc-900 dark:border-zinc-300 bg-white dark:bg-zinc-800 shadow-sm'
+                  : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 opacity-60'
               }`}
             >
               {/* Save feedback dot */}
@@ -135,11 +135,11 @@ export default function ProfilePage() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-zinc-900 text-sm">{site.site_name}</p>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">{site.site_name}</p>
                     {/* Toggle */}
                     <div
                       className={`relative shrink-0 inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        site.enabled ? 'bg-zinc-900' : 'bg-zinc-200'
+                        site.enabled ? 'bg-zinc-900 dark:bg-zinc-100' : 'bg-zinc-200 dark:bg-zinc-700'
                       }`}
                     >
                       <span
@@ -150,16 +150,16 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-zinc-400 mt-0.5 truncate">{site.base_url.replace('https://', '')}</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 truncate">{site.base_url.replace('https://', '')}</p>
 
                   {meta.description && (
-                    <p className="text-xs text-zinc-500 mt-2 leading-relaxed line-clamp-2">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed line-clamp-2">
                       {meta.description}
                     </p>
                   )}
 
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded">
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
                       {meta.category}
                     </span>
                     {site.unreliable && (
@@ -176,7 +176,7 @@ export default function ProfilePage() {
       </div>
 
       {sites.some((s) => s.unreliable) && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-sm text-amber-800">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-5 py-4 text-sm text-amber-800 dark:text-amber-300">
           <p><strong>Facebook Marketplace:</strong> Requires a logged-in browser session — results will always be empty.</p>
         </div>
       )}

@@ -39,8 +39,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 rounded-lg bg-zinc-200 animate-pulse" />
-        <div className="h-48 rounded-xl bg-zinc-200 animate-pulse" />
+        <div className="h-8 w-48 rounded-lg bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+        <div className="h-48 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
       </div>
     )
   }
@@ -48,8 +48,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   if (!item) {
     return (
       <div className="text-center py-16">
-        <p className="text-zinc-400">Item not found</p>
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-700 underline mt-2 block">← Back</Link>
+        <p className="text-zinc-400 dark:text-zinc-500">Item not found</p>
+        <Link href="/" className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 underline mt-2 block">← Back</Link>
       </div>
     )
   }
@@ -57,14 +57,14 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/" className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">← Watchlist</Link>
+        <Link href="/" className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">← Watchlist</Link>
         <h1 className="text-2xl font-semibold flex-1">
-          {item.brand && <span className="text-zinc-400 font-normal">{item.brand} </span>}
+          {item.brand && <span className="text-zinc-400 dark:text-zinc-500 font-normal">{item.brand} </span>}
           {item.name}
         </h1>
         <button
           onClick={() => setShowEdit(true)}
-          className="px-4 py-2 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:bg-zinc-100 transition-colors"
+          className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
         >
           Edit
         </button>
@@ -86,8 +86,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       )}
 
       {refreshing ? (
-        <div className="bg-white rounded-2xl border border-zinc-200 p-6">
-          <h2 className="text-sm font-semibold text-zinc-700 mb-4">Searching for listings…</h2>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
+          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-4">Searching for listings…</h2>
           <ScrapeProgress
             itemId={id}
             onComplete={async () => {
@@ -99,11 +99,11 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       ) : (
         <div>
           <div className="flex items-baseline gap-3 mb-3">
-            <h2 className="text-sm font-medium text-zinc-500">
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
               {listings.length} listing{listings.length !== 1 ? 's' : ''} found
             </h2>
             {(item.min_price != null || item.max_price != null) && (
-              <span className="text-xs text-zinc-400 tabular-nums">
+              <span className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">
                 {item.min_price != null ? `${item.min_price.toLocaleString('sv-SE')} kr` : 'Any'}
                 {' — '}
                 {item.max_price != null ? `${item.max_price.toLocaleString('sv-SE')} kr` : 'no max'}

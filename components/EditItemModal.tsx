@@ -165,10 +165,10 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold">Edit item</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 text-2xl leading-none">&times;</button>
+          <button onClick={onClose} className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 text-2xl leading-none">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -179,7 +179,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
               placeholder="Brand (optional)"
-              className="w-36 rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-200"
+              className="w-36 rounded-xl border border-zinc-300 dark:border-zinc-600 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400 focus:ring-1 focus:ring-zinc-200 dark:focus:ring-zinc-700"
             />
             <input
               type="text"
@@ -187,13 +187,13 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
               onChange={(e) => setName(e.target.value)}
               placeholder="Item name *"
               required
-              className="flex-1 rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-200"
+              className="flex-1 rounded-xl border border-zinc-300 dark:border-zinc-600 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400 focus:ring-1 focus:ring-zinc-200 dark:focus:ring-zinc-700"
             />
           </div>
 
           {/* Price range */}
           <div>
-            <p className="text-xs font-medium text-zinc-500 mb-3">Price range</p>
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-3">Price range</p>
             <div className="flex items-center gap-3">
               <div className="relative w-20 shrink-0">
                 <input
@@ -204,15 +204,15 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   onBlur={() => commitMin(minText)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitMin(minText) } }}
                   placeholder="Any"
-                  className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-center tabular-nums outline-none focus:border-zinc-400 pr-6"
+                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1.5 text-xs text-center tabular-nums outline-none focus:border-zinc-400 dark:focus:border-zinc-500 pr-6"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 pointer-events-none">kr</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 dark:text-zinc-500 pointer-events-none">kr</span>
               </div>
 
               <div className="relative flex-1 h-5 flex items-center">
-                <div className="absolute inset-x-0 h-1.5 rounded-full bg-zinc-200 pointer-events-none">
+                <div className="absolute inset-x-0 h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 pointer-events-none">
                   <div
-                    className="absolute h-full rounded-full bg-zinc-900"
+                    className="absolute h-full rounded-full bg-zinc-900 dark:bg-zinc-100"
                     style={{ left: `${leftPct}%`, right: `${100 - rightPct}%` }}
                   />
                 </div>
@@ -237,18 +237,18 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   onBlur={() => commitMax(maxText)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitMax(maxText) } }}
                   placeholder="No max"
-                  className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-center tabular-nums outline-none focus:border-zinc-400 pr-6"
+                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1.5 text-xs text-center tabular-nums outline-none focus:border-zinc-400 dark:focus:border-zinc-500 pr-6"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 pointer-events-none">kr</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 dark:text-zinc-500 pointer-events-none">kr</span>
               </div>
             </div>
           </div>
 
           {/* Categories */}
           <div>
-            <p className="text-xs font-medium text-zinc-500 mb-2">Categories</p>
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Categories</p>
             {loadingOptions ? (
-              <div className="h-6 w-32 rounded-full bg-zinc-100 animate-pulse" />
+              <div className="h-6 w-32 rounded-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {allCategories.map((cat) => {
@@ -264,7 +264,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   )
                 })}
                 {allCategories.length === 0 && (
-                  <p className="text-xs text-zinc-400">No categories yet</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">No categories yet</p>
                 )}
               </div>
             )}
@@ -274,7 +274,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
           <div>
             <p className="text-xs font-medium text-zinc-500 mb-2">Lists</p>
             {loadingOptions ? (
-              <div className="h-6 w-32 rounded-full bg-zinc-100 animate-pulse" />
+              <div className="h-6 w-32 rounded-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {allLists.map((list) => {
@@ -290,23 +290,23 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   )
                 })}
                 {allLists.length === 0 && (
-                  <p className="text-xs text-zinc-400">No lists yet</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">No lists yet</p>
                 )}
               </div>
             )}
           </div>
 
           {saveError && (
-            <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{saveError}</p>
+            <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{saveError}</p>
           )}
 
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:bg-zinc-50">
+              className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
               Cancel
             </button>
             <button type="submit" disabled={saving || !name.trim()}
-              className="px-5 py-2 rounded-xl bg-zinc-900 text-white text-sm font-medium disabled:opacity-40 hover:bg-zinc-700">
+              className="px-5 py-2 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm font-medium disabled:opacity-40 hover:bg-zinc-700 dark:hover:bg-zinc-200">
               {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>

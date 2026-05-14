@@ -80,28 +80,28 @@ export function WatchlistSection({
                 if (e.key === 'Enter') commitRename()
                 if (e.key === 'Escape') { setEditName(title); setEditing(false) }
               }}
-              className="text-xs font-medium uppercase tracking-wide outline-none bg-transparent border-b border-zinc-400"
+              className="text-xs font-medium uppercase tracking-wide outline-none bg-transparent border-b border-zinc-400 dark:border-zinc-500"
             />
           ) : (
             <h2
-              className={`text-xs font-medium uppercase tracking-wide text-zinc-400 ${canManage ? 'cursor-pointer hover:text-zinc-600 transition-colors' : ''}`}
+              className={`text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500 ${canManage ? 'cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors' : ''}`}
               onDoubleClick={() => canManage && setEditing(true)}
             >
               {title}
             </h2>
           )}
 
-          <span className="text-xs text-zinc-300 tabular-nums">{items.length}</span>
+          <span className="text-xs text-zinc-300 dark:text-zinc-600 tabular-nums">{items.length}</span>
 
           {userRole === 'follower' && (
-            <span className="text-xs text-zinc-300 italic">following</span>
+            <span className="text-xs text-zinc-300 dark:text-zinc-600 italic">following</span>
           )}
 
           {canManage && !editing && (
             <>
               <button
                 onClick={() => { setEditName(title); setEditing(true) }}
-                className="text-zinc-300 hover:text-zinc-500 transition-colors p-0.5 rounded"
+                className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors p-0.5 rounded"
                 title="Rename"
                 aria-label={`Rename ${title}`}
               >
@@ -112,7 +112,7 @@ export function WatchlistSection({
               {onDelete && (
                 <button
                   onClick={onDelete}
-                  className="text-zinc-300 hover:text-red-400 transition-colors p-0.5 rounded"
+                  className="text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors p-0.5 rounded"
                   title="Delete"
                   aria-label={`Delete ${title}`}
                 >
@@ -127,7 +127,7 @@ export function WatchlistSection({
           {canSettings && !editing && (
             <button
               onClick={() => setShowSettings(true)}
-              className="text-zinc-300 hover:text-zinc-500 transition-colors p-0.5 rounded"
+              className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors p-0.5 rounded"
               title="List settings"
               aria-label={`Settings for ${title}`}
             >
@@ -138,19 +138,19 @@ export function WatchlistSection({
             </button>
           )}
 
-          <div className="flex-1 h-px bg-zinc-100 ml-1" />
+          <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800 ml-1" />
         </div>
 
         {items.length === 0 ? (
           <div
             className={`rounded-lg border border-dashed py-5 text-center text-sm transition-colors ${
-              dragOver ? 'border-zinc-400 text-zinc-500' : 'border-zinc-200 text-zinc-400'
+              dragOver ? 'border-zinc-400 dark:border-zinc-500 text-zinc-500 dark:text-zinc-400' : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'
             }`}
           >
             {isDefault ? 'No items here yet' : isReadOnly ? 'No items in this list' : 'Drop items here to add them'}
           </div>
         ) : (
-          <div className={`divide-y divide-zinc-100 rounded-lg transition-all ${dragOver ? 'ring-2 ring-zinc-200 ring-offset-1' : ''}`}>
+          <div className={`divide-y divide-zinc-100 dark:divide-zinc-800 rounded-lg transition-all ${dragOver ? 'ring-2 ring-zinc-200 dark:ring-zinc-700 ring-offset-1' : ''}`}>
             {items.map((item) => (
               <ItemCard
                 key={item.id}

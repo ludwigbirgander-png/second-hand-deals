@@ -168,9 +168,9 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-10 rounded-xl bg-zinc-200 animate-pulse" />
-        <div className="h-32 rounded-2xl bg-zinc-200 animate-pulse" />
-        <div className="h-32 rounded-2xl bg-zinc-200 animate-pulse" />
+        <div className="h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+        <div className="h-32 rounded-2xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+        <div className="h-32 rounded-2xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
       </div>
     )
   }
@@ -180,22 +180,22 @@ export default function DashboardPage() {
       <div className="flex items-center gap-3">
         <h1 className="text-xl font-semibold flex-1">Watchlist</h1>
 
-        <div className="flex rounded-xl border border-zinc-200 p-0.5 text-sm">
+        <div className="flex rounded-xl border border-zinc-200 dark:border-zinc-700 p-0.5 text-sm">
           <button
             onClick={() => setView('lists')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'lists' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'lists' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           >
             Lists
           </button>
           <button
             onClick={() => setView('categories')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'categories' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'categories' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           >
             Categories
           </button>
           <button
             onClick={() => setView('following')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'following' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-700'}`}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'following' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           >
             Following
           </button>
@@ -203,7 +203,7 @@ export default function DashboardPage() {
 
         <button
           onClick={() => setModalOpen(true)}
-          className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition-colors"
+          className="px-4 py-2 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors"
         >
           + Add item
         </button>
@@ -211,10 +211,10 @@ export default function DashboardPage() {
 
       {items.length === 0 && view !== 'following' && (
         <div className="py-16 text-center">
-          <p className="text-sm text-zinc-400">Your watchlist is empty.</p>
+          <p className="text-sm text-zinc-400 dark:text-zinc-500">Your watchlist is empty.</p>
           <button
             onClick={() => setModalOpen(true)}
-            className="mt-3 text-sm text-zinc-500 underline underline-offset-2 hover:text-zinc-900 transition-colors"
+            className="mt-3 text-sm text-zinc-500 dark:text-zinc-400 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
           >
             Add your first item
           </button>
@@ -254,8 +254,8 @@ export default function DashboardPage() {
             {sharedLists.length > 0 && (
               <>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs font-medium uppercase tracking-wide text-zinc-300">Shared with me</span>
-                  <div className="flex-1 h-px bg-zinc-100" />
+                  <span className="text-xs font-medium uppercase tracking-wide text-zinc-300 dark:text-zinc-600">Shared with me</span>
+                  <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
                 </div>
                 {sharedLists.map((list) => (
                   <WatchlistSection
@@ -284,17 +284,17 @@ export default function DashboardPage() {
                   onChange={(e) => setNewListInput(e.target.value)}
                   onBlur={() => { if (!newListInput.trim()) setShowNewList(false) }}
                   placeholder="List name"
-                  className="flex-1 rounded-xl border border-zinc-300 px-4 py-2.5 text-sm outline-none focus:border-zinc-500"
+                  className="flex-1 rounded-xl border border-zinc-300 dark:border-zinc-600 px-4 py-2.5 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400 bg-transparent"
                 />
-                <button type="submit" disabled={!newListInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm disabled:opacity-40">
+                <button type="submit" disabled={!newListInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm disabled:opacity-40">
                   Create
                 </button>
-                <button type="button" onClick={() => setShowNewList(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-500">
+                <button type="button" onClick={() => setShowNewList(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-500 dark:text-zinc-400">
                   Cancel
                 </button>
               </form>
             ) : (
-              <button onClick={() => setShowNewList(true)} className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1">
+              <button onClick={() => setShowNewList(true)} className="text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
                 + New list
               </button>
             )}
@@ -336,17 +336,17 @@ export default function DashboardPage() {
                   onChange={(e) => setNewCatInput(e.target.value)}
                   onBlur={() => { if (!newCatInput.trim()) setShowNewCat(false) }}
                   placeholder="Category name"
-                  className="flex-1 rounded-xl border border-zinc-300 px-4 py-2.5 text-sm outline-none focus:border-zinc-500"
+                  className="flex-1 rounded-xl border border-zinc-300 dark:border-zinc-600 px-4 py-2.5 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400 bg-transparent"
                 />
-                <button type="submit" disabled={!newCatInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm disabled:opacity-40">
+                <button type="submit" disabled={!newCatInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm disabled:opacity-40">
                   Create
                 </button>
-                <button type="button" onClick={() => setShowNewCat(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-500">
+                <button type="button" onClick={() => setShowNewCat(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-500 dark:text-zinc-400">
                   Cancel
                 </button>
               </form>
             ) : (
-              <button onClick={() => setShowNewCat(true)} className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors py-1">
+              <button onClick={() => setShowNewCat(true)} className="text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
                 + New category
               </button>
             )}
@@ -357,8 +357,8 @@ export default function DashboardPage() {
           <>
             {followedLists.length === 0 && (
               <div className="py-16 text-center">
-                <p className="text-sm text-zinc-400">You're not following any lists yet.</p>
-                <p className="mt-1 text-xs text-zinc-300">When someone shares a public list with you, it will appear here.</p>
+                <p className="text-sm text-zinc-400 dark:text-zinc-500">You're not following any lists yet.</p>
+                <p className="mt-1 text-xs text-zinc-300 dark:text-zinc-600">When someone shares a public list with you, it will appear here.</p>
               </div>
             )}
             {followedLists.map((list) => (
