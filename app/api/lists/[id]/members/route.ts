@@ -56,13 +56,6 @@ export async function GET(
     }
   }
 
-  // Also include the owner
-  const { data: list } = await supabase
-    .from('lists')
-    .select('user_id')
-    .eq('id', id)
-    .single()
-
   const members = (data ?? []).map((m: any) => ({
     user_id: m.user_id,
     email: emails[m.user_id] ?? '',
