@@ -23,7 +23,18 @@ export async function GET() {
     }
   })
 
-  return Response.json(transformed)
+  const { data: counts } = await supabase.rpc('new_listings_count', { p_user_id: user.id })
+  const countMap: Record<string, number> = {}
+  for (const row of counts ?? []) {
+    countMap[row.item_id] = Number(row.new_count)
+  }
+
+  const enriched = transformed.map((item: any) => ({
+    ...item,
+    new_listings_count: countMap[item.id] ?? 0,
+  }))
+
+  return Response.json(enriched)
 }
 
 export async function POST(request: Request) {

@@ -30,7 +30,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+    fetch(`/api/items/${id}/viewed`, { method: 'POST' })
+  }, [fetchData, id])
 
   function refresh() {
     setRefreshing(true)

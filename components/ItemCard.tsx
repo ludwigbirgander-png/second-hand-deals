@@ -43,11 +43,18 @@ export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sec
           </svg>
         </div>
 
-        <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-800 shrink-0 overflow-hidden">
-          {lowestListing?.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={lowestListing.image_url} alt={item.name} className="w-full h-full object-cover" />
-          ) : null}
+        <div className="relative w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-800 shrink-0 overflow-visible">
+          <div className="w-9 h-9 rounded-md overflow-hidden">
+            {lowestListing?.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={lowestListing.image_url} alt={item.name} className="w-full h-full object-cover" />
+            ) : null}
+          </div>
+          {(item.new_listings_count ?? 0) > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-blue-500 text-white text-[10px] font-semibold leading-4 text-center tabular-nums">
+              {item.new_listings_count}
+            </span>
+          )}
         </div>
 
         <div className="flex-1 min-w-0">
