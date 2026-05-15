@@ -69,6 +69,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
     item.lists.map((l) => l.id)
   )
 
+  const [notify, setNotify] = useState(item.notify !== false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [loadingOptions, setLoadingOptions] = useState(true)
@@ -139,6 +140,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
           brand: brand.trim() || null,
           min_price: minPrice > 0 ? minPrice : null,
           max_price: maxPrice < PRICE_MAX ? maxPrice : null,
+          notify,
         }),
       })
       const json = await res.json()
@@ -294,6 +296,21 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Email notifications */}
+          <div className="flex items-center justify-between py-0.5">
+            <div>
+              <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Email notifications</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">Get a daily digest when new listings appear</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNotify((v) => !v)}
+              className={`relative shrink-0 inline-flex h-5 w-9 items-center rounded-full transition-colors ${notify ? 'bg-zinc-900 dark:bg-zinc-100' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${notify ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </button>
           </div>
 
           {saveError && (

@@ -79,6 +79,7 @@ export function AddItemModal({ categories: initialCategories, lists: initialList
   const [newListName, setNewListName] = useState('')
   const [newListColor, setNewListColor] = useState('zinc')
 
+  const [notify, setNotify] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [scrapingItemId, setScrapingItemId] = useState<string | null>(null)
@@ -137,6 +138,7 @@ export function AddItemModal({ categories: initialCategories, lists: initialList
           noScrape: true,
           min_price: minPrice > 0 ? minPrice : null,
           max_price: maxPrice < PRICE_MAX ? maxPrice : null,
+          notify,
         }),
       })
       const item = await res.json()
@@ -378,6 +380,21 @@ export function AddItemModal({ categories: initialCategories, lists: initialList
                     <button type="button" onClick={createList} className="text-xs px-2.5 py-1.5 rounded-lg bg-zinc-900 text-white shrink-0">Add</button>
                   </div>
                 )}
+              </div>
+
+              {/* Email notifications */}
+              <div className="flex items-center justify-between py-0.5">
+                <div>
+                  <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Email notifications</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">Get a daily digest when new listings appear</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNotify((v) => !v)}
+                  className={`relative shrink-0 inline-flex h-5 w-9 items-center rounded-full transition-colors ${notify ? 'bg-zinc-900 dark:bg-zinc-100' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${notify ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
               </div>
 
               {saveError && (

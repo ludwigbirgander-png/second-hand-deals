@@ -17,7 +17,7 @@ async function main() {
 
   const { data: items, error: itemsError } = await db
     .from('items')
-    .select('id, user_id, name, brand')
+    .select('id, user_id, name, brand, notify')
 
   if (itemsError) {
     console.error('Failed to fetch items:', itemsError.message)
@@ -79,6 +79,8 @@ async function main() {
     }
 
     console.log(`  +${fresh.length} new listings`)
+
+    if (item.notify === false) continue
 
     if (!newListingsByUser[item.user_id]) newListingsByUser[item.user_id] = []
     for (const l of fresh) {

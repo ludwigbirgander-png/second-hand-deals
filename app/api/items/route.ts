@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, brand, noScrape, min_price, max_price } = await request.json()
+  const { name, brand, noScrape, min_price, max_price, notify } = await request.json()
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
   }
@@ -54,6 +54,7 @@ export async function POST(request: Request) {
       brand: brand?.trim() || null,
       min_price: min_price ?? null,
       max_price: max_price ?? null,
+      notify: notify !== false,
       user_id: user.id,
     })
     .select()

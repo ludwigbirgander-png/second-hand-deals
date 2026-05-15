@@ -4,6 +4,7 @@ export interface Item {
   brand: string | null
   min_price: number | null
   max_price: number | null
+  notify: boolean
   created_at: string
 }
 

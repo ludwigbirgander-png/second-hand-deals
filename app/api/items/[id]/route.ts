@@ -9,7 +9,7 @@ export async function PATCH(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { name, brand, min_price, max_price } = await request.json()
+  const { name, brand, min_price, max_price, notify } = await request.json()
 
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
@@ -22,6 +22,7 @@ export async function PATCH(
       brand: brand?.trim() || null,
       min_price: min_price ?? null,
       max_price: max_price ?? null,
+      ...(notify !== undefined && { notify }),
     })
     .eq('id', id)
     .select()
