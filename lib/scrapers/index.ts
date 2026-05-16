@@ -13,7 +13,7 @@ export const SCRAPERS: Record<string, (q: string) => Promise<ScrapedListing[]>> 
   'Facebook Marketplace': scrapeFacebook,
 }
 
-const ENRICHERS: Record<string, (url: string) => Promise<Partial<ScrapedListing>>> = {
+export const ENRICHERS: Record<string, (url: string) => Promise<Partial<ScrapedListing>>> = {
   Blocket: enrichBlocket,
   Tradera: enrichTradera,
 }
@@ -50,7 +50,7 @@ export async function scrapeItem(
   return results
 }
 
-async function enrichBatch(
+export async function enrichBatch(
   listings: ScrapedListing[],
   enrichFn: (url: string) => Promise<Partial<ScrapedListing>>,
   concurrency = 3,

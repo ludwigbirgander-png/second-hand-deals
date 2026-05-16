@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
-import { SCRAPERS, isRelevant, buildQuery } from '@/lib/scrapers'
+import { SCRAPERS, ENRICHERS, enrichBatch, isRelevant, buildQuery } from '@/lib/scrapers'
 
 export const maxDuration = 60
 
@@ -61,8 +61,11 @@ export async function GET(
           const raw = await scraper(query)
           const relevant = raw.filter((l) => isRelevant(l.title, query))
 
-          const seen = new Map<string, typeof relevant[0]>()
-          for (const l of relevant) seen.set(l.url, l)
+          const enrichFn = ENRICHERS[site]
+          const enriched = enrichFn ? await enrichBatch(relevant, enrichFn) : relevant
+
+          const seen = new Map<string, typeof enriched[0]>()
+          for (const l of enriched) seen.set(l.url, l)
           const fresh = Array.from(seen.values()).filter((l) => !existingUrls.has(l.url))
 
           if (fresh.length > 0) {
@@ -75,6 +78,11 @@ export async function GET(
                 currency: l.currency,
                 url: l.url,
                 image_url: l.imageUrl,
+                condition: l.condition ?? null,
+                size: l.size ?? null,
+                shipping_cost: l.shippingCost ?? null,
+                auction_ends_at: l.auctionEndsAt ?? null,
+                location: l.location ?? null,
               })),
               { onConflict: 'item_id,url', ignoreDuplicates: true }
             )
