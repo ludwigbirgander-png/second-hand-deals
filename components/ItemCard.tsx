@@ -25,113 +25,110 @@ export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sec
     e.dataTransfer.effectAllowed = 'copy'
   }
 
+  const visibleCats = item.categories.filter(
+    (cat) => !(sectionType === 'category' && cat.id === sectionId)
+  )
+  const visibleLists = item.lists.filter(
+    (list) => !(sectionType === 'list' && list.id === sectionId)
+  )
+
   return (
     <>
       <div
         draggable={!readOnly}
         onDragStart={handleDragStart}
-        className="group flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors cursor-grab active:cursor-grabbing select-none"
+        className="group relative rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 -ml-1">
-          <svg className="w-3 h-4 text-zinc-300" viewBox="0 0 6 14" fill="currentColor">
-            <circle cx="1.5" cy="2" r="1" />
-            <circle cx="4.5" cy="2" r="1" />
-            <circle cx="1.5" cy="7" r="1" />
-            <circle cx="4.5" cy="7" r="1" />
-            <circle cx="1.5" cy="12" r="1" />
-            <circle cx="4.5" cy="12" r="1" />
-          </svg>
-        </div>
+        {/* Image area */}
+        <div className="relative aspect-square bg-zinc-100 dark:bg-zinc-800">
+          {lowestListing?.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={lowestListing.image_url}
+              alt={item.name}
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-2xl font-semibold text-zinc-300 dark:text-zinc-600 select-none">
+                {(item.brand || item.name).charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
 
-        <div className="relative w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-800 shrink-0 overflow-visible">
-          <div className="w-9 h-9 rounded-md overflow-hidden">
-            {lowestListing?.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={lowestListing.image_url} alt={item.name} className="w-full h-full object-cover" />
-            ) : null}
-          </div>
           {(item.new_listings_count ?? 0) > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-blue-500 text-white text-[10px] font-semibold leading-4 text-center tabular-nums">
+            <span className="absolute top-2 left-2 min-w-[20px] h-5 px-1.5 rounded-full bg-blue-500 text-white text-[10px] font-semibold leading-5 text-center tabular-nums">
               {item.new_listings_count}
             </span>
           )}
+
+          {!readOnly && (
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowEdit(true) }}
+                className="w-7 h-7 rounded-lg bg-white/90 dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center shadow-sm transition-colors"
+                title="Edit"
+                aria-label={`Edit ${item.name}`}
+              >
+                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(item.id) }}
+                className="w-7 h-7 rounded-lg bg-white/90 dark:bg-zinc-800/90 text-zinc-400 hover:text-red-400 hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center shadow-sm transition-colors"
+                title="Remove"
+                aria-label={`Remove ${item.name}`}
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+                  <path d="M4 4l8 8M12 4l-8 8" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <Link
-            href={`/items/${item.id}`}
-            className="text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:underline truncate block"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {item.brand ? (
-              <><span className="text-zinc-400 dark:text-zinc-500 font-normal">{item.brand} </span>{item.name}</>
-            ) : item.name}
-          </Link>
+        {/* Info section */}
+        <Link href={`/items/${item.id}`} className="block p-3" draggable={false}>
+          {item.brand && (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">{item.brand}</p>
+          )}
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate leading-snug">
+            {item.name}
+          </p>
 
-          {(() => {
-            const visibleCats = item.categories.filter(
-              (cat) => !(sectionType === 'category' && cat.id === sectionId)
-            )
-            const visibleLists = item.lists.filter(
-              (list) => !(sectionType === 'list' && list.id === sectionId)
-            )
-            if (visibleCats.length === 0 && visibleLists.length === 0) return null
-            return (
-              <div className="flex flex-wrap gap-1 mt-0.5">
-                {visibleCats.map((cat) => {
-                  const c = COLOR_MAP[cat.color] ?? COLOR_MAP.zinc
-                  return (
-                    <span key={cat.id} className={`text-xs px-1.5 py-px rounded-full font-medium ${c.bg} ${c.text}`}>
-                      {cat.name}
-                    </span>
-                  )
-                })}
-                {visibleLists.map((list) => {
-                  const c = COLOR_MAP[list.color] ?? COLOR_MAP.zinc
-                  return (
-                    <span key={list.id} className={`text-xs px-1.5 py-px rounded-full font-medium border ${c.text} border-current bg-white dark:bg-transparent`}>
-                      {list.name}
-                    </span>
-                  )
-                })}
-              </div>
-            )
-          })()}
-        </div>
+          {(visibleCats.length > 0 || visibleLists.length > 0) && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {visibleCats.map((cat) => {
+                const c = COLOR_MAP[cat.color] ?? COLOR_MAP.zinc
+                return (
+                  <span key={cat.id} className={`text-xs px-1.5 py-px rounded-full font-medium ${c.bg} ${c.text}`}>
+                    {cat.name}
+                  </span>
+                )
+              })}
+              {visibleLists.map((list) => {
+                const c = COLOR_MAP[list.color] ?? COLOR_MAP.zinc
+                return (
+                  <span key={list.id} className={`text-xs px-1.5 py-px rounded-full font-medium border ${c.text} border-current bg-white dark:bg-transparent`}>
+                    {list.name}
+                  </span>
+                )
+              })}
+            </div>
+          )}
 
-        {lowestListing ? (
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums shrink-0">
-            {lowestListing.price} {lowestListing.currency}
-          </span>
-        ) : (
-          <span className="text-sm text-zinc-300 dark:text-zinc-600 shrink-0">—</span>
-        )}
-
-        {!readOnly && (
-          <>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowEdit(true) }}
-              className="shrink-0 text-zinc-300 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all p-1 rounded"
-              title="Edit"
-              aria-label={`Edit ${item.name}`}
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z" />
-              </svg>
-            </button>
-
-            <button
-              onClick={() => onDelete(item.id)}
-              className="shrink-0 text-zinc-300 dark:text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all p-1 rounded"
-              title="Remove"
-              aria-label={`Remove ${item.name}`}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
-                <path d="M4 4l8 8M12 4l-8 8" />
-              </svg>
-            </button>
-          </>
-        )}
+          <div className="mt-2">
+            {lowestListing ? (
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
+                {lowestListing.price} {lowestListing.currency}
+              </span>
+            ) : (
+              <span className="text-sm text-zinc-300 dark:text-zinc-600">—</span>
+            )}
+          </div>
+        </Link>
       </div>
 
       {showEdit && (
