@@ -43,6 +43,11 @@ export interface Listing {
   image_url: string | null
   found_at: string
   starred: boolean
+  condition: string | null
+  size: string | null
+  shipping_cost: number | null
+  auction_ends_at: string | null
+  location: string | null
 }
 
 export interface SiteConfig {
@@ -60,6 +65,11 @@ export interface ScrapedListing {
   currency: string
   url: string
   imageUrl: string | null
+  condition?: string | null
+  size?: string | null
+  shippingCost?: number | null
+  auctionEndsAt?: string | null
+  location?: string | null
 }
 
 export type ListRole = 'owner' | 'admin' | 'editor' | 'viewer'

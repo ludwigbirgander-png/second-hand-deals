@@ -48,20 +48,20 @@ async function main() {
 
     let scraped: Awaited<ReturnType<typeof scrapeItem>> = []
     try {
-      scraped = await scrapeItem(query, siteNames)
+      scraped = await scrapeItem(query, siteNames, { enrich: true })
     } catch (err) {
       console.error(`  Scrape failed for ${item.id}:`, err)
       continue
     }
 
-    const fresh = scraped.filter((l) => !existingUrls.has(l.url))
-    if (fresh.length === 0) {
-      console.log(`  No new listings.`)
+    if (scraped.length === 0) {
+      console.log(`  No relevant listings.`)
       continue
     }
 
-    const { error: insertError } = await db.from('listings').upsert(
-      fresh.map((l) => ({
+    // Upsert all enriched results — new ones get inserted, existing ones get enriched fields updated
+    const { error: upsertError } = await db.from('listings').upsert(
+      scraped.map((l) => ({
         item_id: item.id,
         site: l.site,
         title: l.title,
@@ -69,18 +69,24 @@ async function main() {
         currency: l.currency,
         url: l.url,
         image_url: l.imageUrl,
+        condition: l.condition ?? null,
+        size: l.size ?? null,
+        shipping_cost: l.shippingCost ?? null,
+        auction_ends_at: l.auctionEndsAt ?? null,
+        location: l.location ?? null,
       })),
-      { onConflict: 'item_id,url', ignoreDuplicates: true }
+      { onConflict: 'item_id,url' }
     )
 
-    if (insertError) {
-      console.error(`  Insert failed:`, insertError.message)
+    if (upsertError) {
+      console.error(`  Upsert failed:`, upsertError.message)
       continue
     }
 
-    console.log(`  +${fresh.length} new listings`)
+    const fresh = scraped.filter((l) => !existingUrls.has(l.url))
+    console.log(`  ${scraped.length} relevant (${fresh.length} new)`)
 
-    if (item.notify === false) continue
+    if (fresh.length === 0 || item.notify === false) continue
 
     if (!newListingsByUser[item.user_id]) newListingsByUser[item.user_id] = []
     for (const l of fresh) {

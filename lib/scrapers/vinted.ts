@@ -28,12 +28,23 @@ export async function scrapeVinted(query: string): Promise<ScrapedListing[]> {
     const priceText = $(el).text().trim()
     const price = parsePrice(priceText)
     const url = $(`[data-testid="product-item-id-${itemId}--overlay-link"]`).attr('href') || ''
+
+    // Full title is typically "Brand Name, Size, Condition" — split on comma
     const fullTitle = $(`[data-testid="product-item-id-${itemId}--overlay-link"]`).attr('title') || ''
-    const title = fullTitle.split(',')[0].trim()
+    const parts = fullTitle.split(',').map((s) => s.trim()).filter(Boolean)
+    const title = parts[0] ?? ''
+
+    // Second comma-separated segment is typically the size
+    const size = parts[1] ?? null
+
     const imageUrl = $(`[data-testid="product-item-id-${itemId}--image--img"]`).attr('src') || null
 
+    // Condition badge — Vinted shows it on the card
+    const conditionEl = $(`[data-testid="product-item-id-${itemId}--description-title"]`)
+    const condition = conditionEl.length ? conditionEl.text().trim() || null : null
+
     if (title && url) {
-      listings.push({ site: 'Vinted', title, price, currency: 'SEK', url, imageUrl })
+      listings.push({ site: 'Vinted', title, price, currency: 'SEK', url, imageUrl, size, condition })
     }
   })
 
@@ -42,7 +53,7 @@ export async function scrapeVinted(query: string): Promise<ScrapedListing[]> {
 
 function parsePrice(text: string): number | null {
   // "50,00 kr", "1 057,50 kr" — comma is decimal, space/NBSP is thousands
-  const cleaned = text.replace(/kr/i, '').replace(/[\s ]/g, '').replace(',', '.')
+  const cleaned = text.replace(/kr/i, '').replace(/[\s ]/g, '').replace(',', '.')
   const n = parseFloat(cleaned)
   return isNaN(n) ? null : Math.round(n)
 }

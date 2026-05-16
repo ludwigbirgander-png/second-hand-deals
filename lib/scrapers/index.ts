@@ -1,5 +1,5 @@
-import { scrapeBlocket } from './blocket'
-import { scrapeTradera } from './tradera'
+import { scrapeBlocket, enrich as enrichBlocket } from './blocket'
+import { scrapeTradera, enrich as enrichTradera } from './tradera'
 import { scrapeSellpy } from './sellpy'
 import { scrapeVinted } from './vinted'
 import { scrapeFacebook } from './facebook'
@@ -13,9 +13,15 @@ export const SCRAPERS: Record<string, (q: string) => Promise<ScrapedListing[]>> 
   'Facebook Marketplace': scrapeFacebook,
 }
 
+const ENRICHERS: Record<string, (url: string) => Promise<Partial<ScrapedListing>>> = {
+  Blocket: enrichBlocket,
+  Tradera: enrichTradera,
+}
+
 export async function scrapeItem(
   query: string,
-  sites: string[]
+  sites: string[],
+  options?: { enrich?: boolean }
 ): Promise<ScrapedListing[]> {
   const results: ScrapedListing[] = []
 
@@ -25,7 +31,16 @@ export async function scrapeItem(
     try {
       const listings = await fn(query)
       const filtered = listings.filter((l) => isRelevant(l.title, query))
-      results.push(...filtered)
+
+      let enriched = filtered
+      if (options?.enrich) {
+        const enrichFn = ENRICHERS[site]
+        if (enrichFn) {
+          enriched = await enrichBatch(filtered, enrichFn)
+        }
+      }
+
+      results.push(...enriched)
     } catch {
       // site unavailable — skip silently
     }
@@ -33,6 +48,36 @@ export async function scrapeItem(
   }
 
   return results
+}
+
+async function enrichBatch(
+  listings: ScrapedListing[],
+  enrichFn: (url: string) => Promise<Partial<ScrapedListing>>,
+  concurrency = 3,
+  batchDelay = 500
+): Promise<ScrapedListing[]> {
+  const result = listings.map((l) => ({ ...l }))
+
+  for (let i = 0; i < listings.length; i += concurrency) {
+    const batch = listings.slice(i, i + concurrency)
+    const enrichments = await Promise.all(
+      batch.map(async (l) => {
+        try {
+          return await enrichFn(l.url)
+        } catch {
+          return {}
+        }
+      })
+    )
+    for (let j = 0; j < batch.length; j++) {
+      Object.assign(result[i + j], enrichments[j])
+    }
+    if (i + concurrency < listings.length) {
+      await delay(batchDelay)
+    }
+  }
+
+  return result
 }
 
 export function buildQuery(brand: string | null, name: string): string {
