@@ -46,7 +46,7 @@ export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sec
             <img
               src={lowestListing.image_url}
               alt={item.name}
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
               draggable={false}
             />
           ) : (

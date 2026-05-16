@@ -185,7 +185,7 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
                     <img
                       src={l.image_url}
                       alt={l.title}
-                      className="w-full h-full object-cover cursor-zoom-in"
+                      className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
                       onClick={(e) => openLightbox(e, l.image_url!, l.title)}
                     />
                   ) : null}
