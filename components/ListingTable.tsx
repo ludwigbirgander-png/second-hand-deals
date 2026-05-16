@@ -163,7 +163,7 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {shown.map((l) => {
             const isStarred = starredIds.has(l.id)
             return (

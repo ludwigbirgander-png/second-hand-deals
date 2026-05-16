@@ -150,7 +150,7 @@ export function WatchlistSection({
             {isDefault ? 'No items here yet' : isReadOnly ? 'No items in this list' : 'Drop items here to add them'}
           </div>
         ) : (
-          <div className={`grid grid-cols-2 sm:grid-cols-3 gap-3 transition-all ${dragOver ? 'ring-2 ring-zinc-200 dark:ring-zinc-700 ring-offset-2 rounded-xl p-1' : ''}`}>
+          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 transition-all ${dragOver ? 'ring-2 ring-zinc-200 dark:ring-zinc-700 ring-offset-2 rounded-xl p-1' : ''}`}>
             {items.map((item) => (
               <ItemCard
                 key={item.id}
