@@ -33,7 +33,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </Link>
               {user && (
                 <>
-                  <span className="hidden md:block text-sm text-zinc-400 dark:text-zinc-500">Find the best second-hand deals</span>
+                  <div className="flex-1" />
+                  <Link href="/watchlist" className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+                    Watchlist
+                  </Link>
                   <NavUser email={user.email ?? ''} />
                 </>
               )}
