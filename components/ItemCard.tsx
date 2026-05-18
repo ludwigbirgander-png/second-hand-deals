@@ -40,7 +40,7 @@ export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sec
         className="group relative rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
         {/* Image area */}
-        <div className="relative aspect-square bg-zinc-100 dark:bg-zinc-800">
+        <Link href={`/items/${item.id}`} className="relative block aspect-square bg-zinc-100 dark:bg-zinc-800" draggable={false}>
           {lowestListing?.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -87,7 +87,7 @@ export function ItemCard({ item, lowestListing, onDelete, onEdit, sectionId, sec
               </button>
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Info section */}
         <Link href={`/items/${item.id}`} className="block p-3" draggable={false}>
