@@ -9,7 +9,7 @@ import './globals.css'
 const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Compy',
+  title: 'Kompi',
   description: 'Find the best second-hand deals across Swedish marketplaces',
 }
 
@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
             <div className="max-w-4xl mx-auto px-4 py-5 flex items-center gap-3">
               <Link href="/" className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-                Compy
+                Kompi
               </Link>
               {user && (
                 <>

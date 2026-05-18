@@ -153,7 +153,7 @@ async function main() {
         .join('')
 
       await resend.emails.send({
-        from: `Compy <${fromEmail}>`,
+        from: `Kompi <${fromEmail}>`,
         to: email,
         subject: `${listings.length} new listing${listings.length !== 1 ? 's' : ''} on your watchlist`,
         html: `
@@ -162,7 +162,7 @@ async function main() {
             <p style="margin:0 0 24px;color:#71717a;font-size:13px">New listings found across your watchlist</p>
             ${rows}
             <p style="margin:32px 0 0;font-size:12px;color:#a1a1aa">
-              <a href="${appUrl}" style="color:#2563eb">Open Compy</a> to see all listings
+              <a href="${appUrl}" style="color:#2563eb">Open Kompi</a> to see all listings
             </p>
           </div>
         `,

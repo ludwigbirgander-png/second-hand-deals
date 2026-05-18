@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Sign in</h1>
-          <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">Compy</p>
+          <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">Kompi</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
