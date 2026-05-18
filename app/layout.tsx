@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
 import Link from 'next/link'
-import { NavUser } from '@/components/NavUser'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { createClient } from '@/lib/supabase/server'
 import './globals.css'
@@ -37,7 +36,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Link href="/watchlist" className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
                     Watchlist
                   </Link>
-                  <NavUser email={user.email ?? ''} />
+                  <Link href="/profile" className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+                    Settings
+                  </Link>
                 </>
               )}
             </div>
