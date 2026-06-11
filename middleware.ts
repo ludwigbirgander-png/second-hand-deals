@@ -29,8 +29,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/auth') ||
-    pathname.startsWith('/lists/join') ||  // join page is public (auth happens on the page)
-    pathname === '/api/scrape'  // cron job uses its own CRON_SECRET auth
+    pathname.startsWith('/lists/join')  // join page is public (auth happens on the page)
   ) {
     return supabaseResponse
   }

@@ -18,10 +18,12 @@ export async function PATCH(
     .from('categories')
     .update(updates)
     .eq('id', id)
+    .eq('user_id', user.id)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(data)
 }
 
@@ -34,7 +36,11 @@ export async function DELETE(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { error } = await supabase.from('categories').delete().eq('id', id)
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }

@@ -1,17 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSitesForUser } from '@/lib/sites'
 
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabase
-    .from('site_configs')
-    .select('*')
-    .order('site_name')
-
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data)
+  const sites = await getSitesForUser(user.id)
+  return Response.json(sites)
 }
 
 export async function PUT(request: Request) {
@@ -24,12 +20,24 @@ export async function PUT(request: Request) {
     return Response.json({ error: 'sites must be an array' }, { status: 400 })
   }
 
-  for (const { id, enabled } of sites) {
-    await supabase
-      .from('site_configs')
-      .update({ enabled })
-      .eq('id', id)
+  // Per-user preference rows — never mutates the shared site_configs table
+  const rows = sites
+    .filter((s: { id?: string; enabled?: boolean }) => s.id && typeof s.enabled === 'boolean')
+    .map((s: { id: string; enabled: boolean }) => ({
+      user_id: user.id,
+      site_config_id: s.id,
+      enabled: s.enabled,
+      updated_at: new Date().toISOString(),
+    }))
+
+  if (rows.length === 0) {
+    return Response.json({ error: 'No valid site entries' }, { status: 400 })
   }
 
+  const { error } = await supabase
+    .from('user_site_prefs')
+    .upsert(rows, { onConflict: 'user_id,site_config_id' })
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }

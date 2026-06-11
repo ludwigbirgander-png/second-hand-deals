@@ -1,6 +1,4 @@
-import { db } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
-import { scrapeItem, buildQuery } from '@/lib/scrapers'
 
 export async function GET() {
   const supabase = await createClient()
@@ -42,7 +40,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, brand, noScrape, min_price, max_price, notify } = await request.json()
+  const { name, brand, min_price, max_price, notify } = await request.json()
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
   }
@@ -62,31 +60,7 @@ export async function POST(request: Request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  if (!noScrape) triggerScrape(item.id, buildQuery(item.brand, item.name))
-
+  // Scraping is triggered explicitly by the client via /api/scrape/[itemId]/stream —
+  // fire-and-forget work here doesn't survive serverless response completion.
   return Response.json(item, { status: 201 })
-}
-
-async function triggerScrape(itemId: string, itemName: string) {
-  const { data: sites } = await db()
-    .from('site_configs')
-    .select('site_name')
-    .eq('enabled', true)
-
-  const siteNames = (sites ?? []).map((s: { site_name: string }) => s.site_name)
-  const listings = await scrapeItem(itemName, siteNames)
-
-  if (listings.length === 0) return
-
-  await db().from('listings').insert(
-    listings.map((l) => ({
-      item_id: itemId,
-      site: l.site,
-      title: l.title,
-      price: l.price,
-      currency: l.currency,
-      url: l.url,
-      image_url: l.imageUrl,
-    }))
-  )
 }

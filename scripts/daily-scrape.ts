@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { scrapeItem, buildQuery } from '../lib/scrapers/index.js'
+import { escapeHtml, safeHref } from '../lib/escapeHtml.js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '')
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
@@ -24,20 +25,32 @@ async function main() {
     process.exit(1)
   }
 
-  const { data: sites } = await db
-    .from('site_configs')
-    .select('site_name')
-    .eq('enabled', true)
+  // Per-user effective sites: site_configs.enabled is the global default,
+  // user_site_prefs rows override it per user.
+  const [{ data: configs }, { data: prefs }] = await Promise.all([
+    db.from('site_configs').select('id, site_name, enabled'),
+    db.from('user_site_prefs').select('user_id, site_config_id, enabled'),
+  ])
 
-  const siteNames: string[] = (sites ?? []).map((s: { site_name: string }) => s.site_name)
-  console.log(`Enabled sites: ${siteNames.join(', ')}`)
+  const prefMap = new Map<string, boolean>(
+    (prefs ?? []).map((p: { user_id: string; site_config_id: string; enabled: boolean }) =>
+      [`${p.user_id}:${p.site_config_id}`, p.enabled] as const
+    )
+  )
+
+  function sitesForUser(userId: string): string[] {
+    return (configs ?? [])
+      .filter((c: { id: string; enabled: boolean }) => prefMap.get(`${userId}:${c.id}`) ?? c.enabled)
+      .map((c: { site_name: string }) => c.site_name)
+  }
 
   // Track new listings per user for the email digest
   const newListingsByUser: Record<string, Array<{ itemName: string; site: string; title: string; price: number | null; currency: string; url: string }>> = {}
 
   for (const item of items ?? []) {
     const query = buildQuery(item.brand, item.name)
-    console.log(`Scraping "${query}" (${item.id})…`)
+    const siteNames = sitesForUser(item.user_id)
+    console.log(`Scraping "${query}" (${item.id}) on ${siteNames.length} sites…`)
 
     const { data: existing } = await db
       .from('listings')
@@ -132,14 +145,14 @@ async function main() {
             .map(
               (l) =>
                 `<tr>
-                  <td style="padding:4px 8px;color:#555">${l.site}</td>
-                  <td style="padding:4px 8px">${l.title}</td>
-                  <td style="padding:4px 8px;white-space:nowrap">${l.price != null ? `${l.price} ${l.currency}` : '—'}</td>
-                  <td style="padding:4px 8px"><a href="${l.url}" style="color:#2563eb">View</a></td>
+                  <td style="padding:4px 8px;color:#555">${escapeHtml(l.site)}</td>
+                  <td style="padding:4px 8px">${escapeHtml(l.title)}</td>
+                  <td style="padding:4px 8px;white-space:nowrap">${l.price != null ? `${l.price} ${escapeHtml(l.currency)}` : '—'}</td>
+                  <td style="padding:4px 8px"><a href="${safeHref(l.url)}" style="color:#2563eb">View</a></td>
                 </tr>`
             )
             .join('')
-          return `<h3 style="margin:24px 0 8px;font-size:15px;color:#18181b">${itemName}</h3>
+          return `<h3 style="margin:24px 0 8px;font-size:15px;color:#18181b">${escapeHtml(itemName)}</h3>
                   <table style="width:100%;border-collapse:collapse;font-size:13px">
                     <thead><tr style="background:#f4f4f5">
                       <th style="padding:4px 8px;text-align:left;font-weight:500">Site</th>

@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
+import { getEnabledSiteNamesForUser } from '@/lib/sites'
 import { scrapeItem } from '@/lib/scrapers'
 import type { Item } from '@/lib/types'
 
@@ -23,12 +24,7 @@ export async function POST(
     return Response.json({ error: 'Item not found' }, { status: 404 })
   }
 
-  const { data: sites } = await db()
-    .from('site_configs')
-    .select('site_name')
-    .eq('enabled', true)
-
-  const siteNames = (sites ?? []).map((s: { site_name: string }) => s.site_name)
+  const siteNames = await getEnabledSiteNamesForUser(user.id)
   const typedItem = item as Item
   const query = [typedItem.brand, typedItem.name].filter(Boolean).join(' ')
   const listings = await scrapeItem(query, siteNames)

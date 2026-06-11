@@ -25,10 +25,12 @@ export async function PATCH(
       ...(notify !== undefined && { notify }),
     })
     .eq('id', id)
+    .eq('user_id', user.id)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(data)
 }
 
@@ -42,8 +44,17 @@ export async function DELETE(
 
   const { id } = await params
 
+  // Verify ownership before touching related rows
+  const { data: item } = await supabase
+    .from('items')
+    .select('id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (!item) return Response.json({ error: 'Not found' }, { status: 404 })
+
   await supabase.from('listings').delete().eq('item_id', id)
-  const { error } = await supabase.from('items').delete().eq('id', id)
+  const { error } = await supabase.from('items').delete().eq('id', id).eq('user_id', user.id)
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return new Response(null, { status: 204 })

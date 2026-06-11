@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
+import { getEnabledSiteNamesForUser } from '@/lib/sites'
 import { SCRAPERS, ENRICHERS, enrichBatch, isRelevant, buildQuery } from '@/lib/scrapers'
 
 export const maxDuration = 60
@@ -24,12 +25,7 @@ export async function GET(
     return Response.json({ error: 'Item not found' }, { status: 404 })
   }
 
-  const { data: sites } = await db()
-    .from('site_configs')
-    .select('site_name')
-    .eq('enabled', true)
-
-  const siteNames = (sites ?? []).map((s: { site_name: string }) => s.site_name)
+  const siteNames = await getEnabledSiteNamesForUser(user.id)
   const query = buildQuery(item.brand, item.name)
   const encoder = new TextEncoder()
 

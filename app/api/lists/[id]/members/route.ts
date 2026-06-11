@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db'
+import { escapeHtml } from '@/lib/escapeHtml'
 import { Resend } from 'resend'
 
 export async function GET(
@@ -134,7 +135,7 @@ export async function POST(
       to: email.trim(),
       subject: `You've been invited to a list on Kompi`,
       html: `
-        <p>You've been invited to join the list <strong>${list.name}</strong> on Kompi.</p>
+        <p>You've been invited to join the list <strong>${escapeHtml(list.name)}</strong> on Kompi.</p>
         <p><a href="${joinUrl}" style="background:#18181b;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block">Join list</a></p>
         <p style="color:#999;font-size:12px">Or copy this link: ${joinUrl}</p>
       `,

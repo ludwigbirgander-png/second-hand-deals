@@ -135,7 +135,6 @@ export function AddItemModal({ categories: initialCategories, lists: initialList
         body: JSON.stringify({
           name: name.trim(),
           brand: brand.trim() || null,
-          noScrape: true,
           min_price: minPrice > 0 ? minPrice : null,
           max_price: maxPrice < PRICE_MAX ? maxPrice : null,
           notify,

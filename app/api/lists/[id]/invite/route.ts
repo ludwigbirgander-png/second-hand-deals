@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { canManageList } from '@/lib/access'
 
 export async function GET(
   _request: Request,
@@ -9,6 +10,9 @@ export async function GET(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
+  if (!(await canManageList(supabase, id, user.id))) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { data, error } = await supabase
     .from('list_invites')
@@ -35,6 +39,10 @@ export async function POST(
     return Response.json({ error: 'Invalid role' }, { status: 400 })
   }
 
+  if (!(await canManageList(supabase, id, user.id))) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { data, error } = await supabase
     .from('list_invites')
     .insert({ list_id: id, role, created_by: user.id })
@@ -55,6 +63,10 @@ export async function DELETE(
 
   const { id } = await params
   const { token } = await request.json()
+
+  if (!(await canManageList(supabase, id, user.id))) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { error } = await supabase
     .from('list_invites')

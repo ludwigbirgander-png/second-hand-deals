@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { ownsItem } from '@/lib/access'
 
 export async function PUT(
   request: Request,
@@ -10,6 +11,10 @@ export async function PUT(
 
   const { id } = await params
   const { listIds = [], categoryIds = [] } = await request.json()
+
+  if (!(await ownsItem(supabase, id, user.id))) {
+    return Response.json({ error: 'Not found' }, { status: 404 })
+  }
 
   await supabase.from('item_lists').delete().eq('item_id', id)
   if (listIds.length > 0) {

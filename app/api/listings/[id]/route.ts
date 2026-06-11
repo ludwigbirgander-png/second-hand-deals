@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { ownsItem } from '@/lib/access'
 
 export async function PATCH(
   request: Request,
@@ -10,6 +11,19 @@ export async function PATCH(
 
   const { id } = await params
   const { starred } = await request.json()
+  if (typeof starred !== 'boolean') {
+    return Response.json({ error: 'starred must be a boolean' }, { status: 400 })
+  }
+
+  // Verify the listing belongs to one of the caller's items
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('item_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!listing || !(await ownsItem(supabase, listing.item_id, user.id))) {
+    return Response.json({ error: 'Not found' }, { status: 404 })
+  }
 
   const { data, error } = await supabase
     .from('listings')
