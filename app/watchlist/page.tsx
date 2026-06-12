@@ -155,8 +155,8 @@ export default function WatchlistPage() {
     return (
       <div className="space-y-4">
         <div className="h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
-        <div className="h-32 rounded-2xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
-        <div className="h-32 rounded-2xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+        <div className="h-32 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+        <div className="h-32 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
       </div>
     )
   }
@@ -197,7 +197,7 @@ export default function WatchlistPage() {
 
       {items.length === 0 && view !== 'following' && (
         <div className="py-16 text-center">
-          <p className="text-sm text-zinc-400 dark:text-zinc-500">Your watchlist is empty.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Your watchlist is empty.</p>
           <button
             onClick={() => setModalOpen(true)}
             className="mt-3 text-sm text-zinc-500 dark:text-zinc-400 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
@@ -280,7 +280,7 @@ export default function WatchlistPage() {
                 </button>
               </form>
             ) : (
-              <button onClick={() => setShowNewList(true)} className="text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
+              <button onClick={() => setShowNewList(true)} className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
                 + New list
               </button>
             )}
@@ -332,7 +332,7 @@ export default function WatchlistPage() {
                 </button>
               </form>
             ) : (
-              <button onClick={() => setShowNewCat(true)} className="text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
+              <button onClick={() => setShowNewCat(true)} className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
                 + New category
               </button>
             )}
@@ -343,7 +343,7 @@ export default function WatchlistPage() {
           <>
             {followedLists.length === 0 && (
               <div className="py-16 text-center">
-                <p className="text-sm text-zinc-400 dark:text-zinc-500">You&apos;re not following any lists yet.</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">You&apos;re not following any lists yet.</p>
                 <p className="mt-1 text-xs text-zinc-300 dark:text-zinc-600">When someone shares a public list with you, it will appear here.</p>
               </div>
             )}

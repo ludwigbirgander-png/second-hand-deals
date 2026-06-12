@@ -80,7 +80,7 @@ function AuctionCountdown({ endsAt }: { endsAt: string }) {
   }, [endsAt])
 
   return (
-    <span className={`text-xs tabular-nums ${urgent ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-zinc-400 dark:text-zinc-500'}`}>
+    <span className={`text-xs tabular-nums ${urgent ? 'text-red-600 dark:text-red-400 font-medium' : 'text-zinc-500 dark:text-zinc-400'}`}>
       {display}
     </span>
   )
@@ -96,7 +96,14 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
   )
 
   if (listings.length === 0) {
-    return <p className="text-zinc-400 dark:text-zinc-500 text-sm py-8 text-center">No listings found yet</p>
+    return (
+      <div className="text-center py-12">
+        <p className="text-sm text-zinc-700 dark:text-zinc-300">Nothing yet — the flea market restocks daily.</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          Try hitting Refresh, widening the price range, or dropping the brand from the search.
+        </p>
+      </div>
+    )
   }
 
   async function toggleStar(e: React.MouseEvent, id: string) {
@@ -130,6 +137,7 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
           <button
             key={key}
             onClick={() => { setSortKey(key); setVisible(PAGE_SIZE) }}
+            aria-pressed={sortKey === key}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               sortKey === key
                 ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
@@ -150,7 +158,7 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`group relative flex flex-col rounded-xl border bg-white dark:bg-zinc-900 overflow-hidden hover:shadow-md transition-shadow ${
+              className={`group relative flex flex-col rounded-xl border bg-white dark:bg-zinc-900 overflow-hidden hover:shadow-sm transition-shadow ${
                 isStarred
                   ? 'border-amber-400 dark:border-amber-500'
                   : 'border-zinc-200 dark:border-zinc-800'
@@ -167,20 +175,23 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
                   />
                 ) : null}
 
-                {/* Star button */}
+                {/* Star button — 44px hit area around a 28px visual chip */}
                 <button
                   onClick={(e) => toggleStar(e, l.id)}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white/90 dark:bg-zinc-800/90 flex items-center justify-center shadow-sm transition-colors hover:bg-white dark:hover:bg-zinc-700"
+                  className="absolute top-0 right-0 w-11 h-11 flex items-center justify-center group/star"
                   aria-label={isStarred ? 'Unstar listing' : 'Star listing'}
+                  aria-pressed={isStarred}
                 >
+                  <span className="w-7 h-7 rounded-lg bg-white/90 dark:bg-zinc-800/90 flex items-center justify-center shadow-sm transition-colors group-hover/star:bg-white dark:group-hover/star:bg-zinc-700">
                   <svg
-                    className={`w-3.5 h-3.5 transition-colors ${isStarred ? 'fill-amber-400 text-amber-400' : 'fill-none text-zinc-400'}`}
+                    className={`w-3.5 h-3.5 transition-colors ${isStarred ? 'fill-amber-400 text-amber-400' : 'fill-none text-zinc-500'}`}
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                     strokeWidth={2}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                   </svg>
+                  </span>
                 </button>
 
                 {/* Site badge */}
@@ -206,7 +217,7 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">{l.size}</span>
                     )}
                     {l.location && (
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500">{l.location}</span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">{l.location}</span>
                     )}
                   </div>
                 )}
@@ -217,9 +228,9 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
                       {l.price != null ? `${l.price} kr` : '–'}
                     </p>
                     {l.shipping_cost === 0 ? (
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500">Free shipping</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Free shipping</p>
                     ) : l.shipping_cost != null ? (
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500">+{l.shipping_cost} kr shipping</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">+{l.shipping_cost} kr shipping</p>
                     ) : null}
                   </div>
                   {/* Only auctions get a date — everything else is buy-now */}

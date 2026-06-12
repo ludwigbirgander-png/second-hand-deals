@@ -32,8 +32,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Sign in</h1>
-          <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">Kompi</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Kompi</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Sign in to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,7 +82,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-zinc-400 dark:text-zinc-500">
+        <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
           No account?{' '}
           <Link href="/signup" className="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 underline underline-offset-2 transition-colors">
             Create one

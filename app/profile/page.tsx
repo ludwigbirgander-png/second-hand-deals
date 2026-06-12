@@ -129,7 +129,7 @@ export default function SettingsPage() {
   )
   const activeCount = sites.filter((s) => s.enabled).length
 
-  const sectionHeading = 'text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500'
+  const sectionHeading = 'text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400'
   const divider = 'border-t border-zinc-100 dark:border-zinc-800 pt-8'
 
   return (
@@ -141,7 +141,7 @@ export default function SettingsPage() {
         <h2 className={sectionHeading}>Account</h2>
 
         <div>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">Email</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Email</p>
           <p className="text-sm text-zinc-700 dark:text-zinc-300">{email || '—'}</p>
         </div>
 
@@ -160,7 +160,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Theme</p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">Choose your preferred color scheme</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Choose your preferred color scheme</p>
           </div>
           <div className="flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 p-0.5 gap-0.5">
             {THEME_OPTIONS.map((opt) => (
@@ -172,7 +172,7 @@ export default function SettingsPage() {
                 className={`p-1.5 rounded-md transition-colors ${
                   theme === opt.value
                     ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
                 {opt.icon}
@@ -186,7 +186,7 @@ export default function SettingsPage() {
       <section className={`space-y-5 ${divider}`}>
         <div>
           <h2 className={sectionHeading}>Sites</h2>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Choose which marketplaces to search for deals</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Choose which marketplaces to search for deals</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -200,13 +200,13 @@ export default function SettingsPage() {
               className="w-full pl-8 pr-4 py-2 text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-1 focus:ring-zinc-200 dark:focus:ring-zinc-700 bg-white dark:bg-zinc-800"
             />
           </div>
-          <span className="text-sm text-zinc-400 dark:text-zinc-500 shrink-0">
+          <span className="text-sm text-zinc-500 dark:text-zinc-400 shrink-0">
             {activeCount} of {sites.length} active
           </span>
         </div>
 
         {filtered.length === 0 && search && (
-          <p className="text-sm text-zinc-400 dark:text-zinc-500 py-8 text-center">No sites match &ldquo;{search}&rdquo;</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 py-8 text-center">No sites match &ldquo;{search}&rdquo;</p>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -253,7 +253,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 truncate">{site.base_url.replace('https://', '')}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">{site.base_url.replace('https://', '')}</p>
 
                     {meta.description && (
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed line-clamp-2">
@@ -262,11 +262,11 @@ export default function SettingsPage() {
                     )}
 
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
                         {meta.category}
                       </span>
                       {site.unreliable && (
-                        <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
                           Limited support
                         </span>
                       )}
@@ -279,8 +279,8 @@ export default function SettingsPage() {
         </div>
 
         {sites.some((s) => s.unreliable) && (
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-5 py-4 text-sm text-amber-800 dark:text-amber-300">
-            <p><strong>Facebook Marketplace:</strong> Requires a logged-in browser session — results will always be empty.</p>
+          <div className="bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-5 py-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <p><strong className="text-zinc-900 dark:text-zinc-100">Facebook Marketplace:</strong> Requires a logged-in browser session — results will always be empty.</p>
           </div>
         )}
       </section>

@@ -133,7 +133,7 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-zinc-100 dark:border-zinc-800">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">List settings — {list.name}</h2>
-          <button onClick={onClose} className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+          <button onClick={onClose} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
             <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
               <path d="M4 4l8 8M12 4l-8 8" />
             </svg>
@@ -146,7 +146,7 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
               key={t}
               onClick={() => setTab(t)}
               className={`py-3 mr-4 text-xs font-medium border-b-2 transition-colors capitalize ${
-                tab === t ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'
+                tab === t ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
               }`}
             >
               {t}
@@ -175,7 +175,7 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
                     />
                     <div>
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{opt.label}</p>
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">{opt.desc}</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{opt.desc}</p>
                     </div>
                   </label>
                 ))}
@@ -222,17 +222,17 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
               )}
 
               {membersLoading ? (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Loading…</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Loading…</p>
               ) : (
                 <div className="space-y-1">
                   {members.map((m) => (
                     <div key={m.user_id} className="flex items-center gap-2 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{m.display_name || m.email}</p>
-                        {m.display_name && <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">{m.email}</p>}
+                        {m.display_name && <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{m.email}</p>}
                       </div>
                       {m.role === 'owner' ? (
-                        <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">Owner</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">Owner</span>
                       ) : (
                         <>
                           <select
@@ -281,14 +281,14 @@ export function ListSettingsModal({ list, onClose, onUpdated }: Props) {
               </div>
 
               {shareTokens.length === 0 ? (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">No share links yet.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">No share links yet.</p>
               ) : (
                 <div className="space-y-2">
                   {shareTokens.map((t) => (
                     <div key={t.token} className="flex items-center gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{appUrl}/lists/join/{t.token}</p>
-                        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 capitalize">{t.role} access</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 capitalize">{t.role} access</p>
                       </div>
                       <button
                         onClick={() => copyLink(t.token)}

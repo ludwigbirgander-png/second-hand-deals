@@ -74,7 +74,7 @@ export default function JoinListPage({ params }: { params: Promise<{ token: stri
           {joining ? 'Joining…' : 'Join list'}
         </button>
 
-        <Link href="/" className="block text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+        <Link href="/" className="block text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
           Cancel
         </Link>
       </div>

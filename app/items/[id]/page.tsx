@@ -49,7 +49,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   if (!item) {
     return (
       <div className="text-center py-16">
-        <p className="text-zinc-400 dark:text-zinc-500">Item not found</p>
+        <p className="text-zinc-500 dark:text-zinc-400">Item not found</p>
         <Link href="/" className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 underline mt-2 block">← Back</Link>
       </div>
     )
@@ -58,9 +58,9 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/" className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">← Watchlist</Link>
+        <Link href="/" className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">← Watchlist</Link>
         <h1 className="text-2xl font-semibold flex-1">
-          {item.brand && <span className="text-zinc-400 dark:text-zinc-500 font-normal">{item.brand} </span>}
+          {item.brand && <span className="text-zinc-500 dark:text-zinc-400 font-normal">{item.brand} </span>}
           {item.name}
         </h1>
         <button
@@ -72,7 +72,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
         <button
           onClick={refresh}
           disabled={refreshing}
-          className="px-4 py-2 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 transition-colors"
+          className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition-colors"
         >
           {refreshing ? 'Refreshing…' : 'Refresh'}
         </button>
@@ -87,7 +87,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       )}
 
       {refreshing ? (
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
           <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-4">Searching for listings…</h2>
           <ScrapeProgress
             itemId={id}
@@ -104,7 +104,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               {listings.length} listing{listings.length !== 1 ? 's' : ''} found
             </h2>
             {(item.min_price != null || item.max_price != null) && (
-              <span className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
                 {item.min_price != null ? `${item.min_price.toLocaleString('sv-SE')} kr` : 'Any'}
                 {' — '}
                 {item.max_price != null ? `${item.max_price.toLocaleString('sv-SE')} kr` : 'no max'}

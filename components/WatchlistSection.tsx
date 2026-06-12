@@ -84,7 +84,7 @@ export function WatchlistSection({
             />
           ) : (
             <h2
-              className={`text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500 ${canManage ? 'cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors' : ''}`}
+              className={`text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 ${canManage ? 'cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors' : ''}`}
               onDoubleClick={() => canManage && setEditing(true)}
             >
               {title}
@@ -144,7 +144,7 @@ export function WatchlistSection({
         {items.length === 0 ? (
           <div
             className={`rounded-lg border border-dashed py-5 text-center text-sm transition-colors ${
-              dragOver ? 'border-zinc-400 dark:border-zinc-500 text-zinc-500 dark:text-zinc-400' : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'
+              dragOver ? 'border-zinc-400 dark:border-zinc-500 text-zinc-500 dark:text-zinc-400' : 'border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400'
             }`}
           >
             {isDefault ? 'No items here yet' : isReadOnly ? 'No items in this list' : 'Drop items here to add them'}

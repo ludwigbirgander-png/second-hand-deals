@@ -77,7 +77,7 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
 
   return (
     <div className="space-y-4">
-      {label && <p className="text-sm text-zinc-400 dark:text-zinc-500">{label}</p>}
+      {label && <p className="text-sm text-zinc-500 dark:text-zinc-400">{label}</p>}
 
       {/* Progress bar */}
       <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
@@ -105,11 +105,11 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
                   <div className="w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700" />
                 )}
               </div>
-              <span className={`flex-1 text-sm ${status === 'scraping' ? 'font-medium text-zinc-900 dark:text-zinc-50' : status === 'done' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500'}`}>
+              <span className={`flex-1 text-sm ${status === 'scraping' ? 'font-medium text-zinc-900 dark:text-zinc-50' : status === 'done' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-400'}`}>
                 {site}
               </span>
               {status === 'done' && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${count > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${count > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
                   {count > 0 ? `${count} found` : 'none'}
                 </span>
               )}
@@ -124,7 +124,7 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
             ? <><strong className="text-zinc-900 dark:text-zinc-100">{totalFound}</strong> new listings found</>
             : 'No new listings found'}
           {pruned > 0 && (
-            <span className="text-zinc-400 dark:text-zinc-500"> · {pruned} unavailable listing{pruned !== 1 ? 's' : ''} removed</span>
+            <span className="text-zinc-500 dark:text-zinc-400"> · {pruned} unavailable listing{pruned !== 1 ? 's' : ''} removed</span>
           )}
         </p>
       )}

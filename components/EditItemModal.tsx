@@ -170,7 +170,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
       <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold">Edit item</h2>
-          <button onClick={onClose} className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 text-2xl leading-none">&times;</button>
+          <button onClick={onClose} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-2xl leading-none">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -208,7 +208,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   placeholder="Any"
                   className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1.5 text-xs text-center tabular-nums outline-none focus:border-zinc-400 dark:focus:border-zinc-500 pr-6"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 dark:text-zinc-500 pointer-events-none">kr</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-500 dark:text-zinc-400 pointer-events-none">kr</span>
               </div>
 
               <div className="relative flex-1 h-5 flex items-center">
@@ -241,7 +241,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   placeholder="No max"
                   className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1.5 text-xs text-center tabular-nums outline-none focus:border-zinc-400 dark:focus:border-zinc-500 pr-6"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400 dark:text-zinc-500 pointer-events-none">kr</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-500 dark:text-zinc-400 pointer-events-none">kr</span>
               </div>
             </div>
           </div>
@@ -266,7 +266,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   )
                 })}
                 {allCategories.length === 0 && (
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500">No categories yet</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">No categories yet</p>
                 )}
               </div>
             )}
@@ -292,7 +292,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
                   )
                 })}
                 {allLists.length === 0 && (
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500">No lists yet</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">No lists yet</p>
                 )}
               </div>
             )}
@@ -302,7 +302,7 @@ export function EditItemModal({ item, onClose, onSaved }: Props) {
           <div className="flex items-center justify-between py-0.5">
             <div>
               <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Email notifications</p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">Get a daily digest when new listings appear</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Get a daily digest when new listings appear</p>
             </div>
             <button
               type="button"

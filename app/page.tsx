@@ -97,7 +97,7 @@ export default function HomePage() {
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
             Searching for listings…
           </h2>
-          <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-6">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
             {brand ? `${brand} ${name}` : name}
           </p>
           <ScrapeProgress
@@ -115,7 +115,7 @@ export default function HomePage() {
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 mb-2">
           What are you looking for?
         </h1>
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Track prices across Blocket, Tradera, Sellpy, Vinted and more
         </p>
       </div>
@@ -129,11 +129,11 @@ export default function HomePage() {
           placeholder="Item name, e.g. Sony WH-1000XM5"
           autoFocus
           required
-          className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-5 py-4 text-base outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-2 focus:ring-zinc-100 dark:focus:ring-zinc-800 transition-all shadow-sm"
+          className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-5 py-4 text-base outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-2 focus:ring-zinc-100 dark:focus:ring-zinc-800 transition-all"
         />
 
         {expanded && (
-          <div className="mt-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-5 shadow-sm">
+          <div className="mt-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 space-y-5">
             {/* Brand */}
             <div>
               <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 block mb-1.5">
@@ -234,7 +234,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between py-0.5">
               <div>
                 <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Email notifications</p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Daily digest when new listings appear</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Daily digest when new listings appear</p>
               </div>
               <button
                 type="button"
