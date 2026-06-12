@@ -97,7 +97,8 @@ export default function SettingsPage() {
     })
     fetch('/api/profile/sites')
       .then((r) => r.json())
-      .then(setSites)
+      .then((data) => setSites(Array.isArray(data) ? data : []))
+      .catch(() => setSites([]))
   }, [])
 
   async function signOut() {

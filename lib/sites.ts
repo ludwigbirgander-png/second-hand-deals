@@ -5,6 +5,7 @@ export interface EffectiveSite {
   site_name: string
   enabled: boolean
   unreliable: boolean
+  base_url: string
 }
 
 /**
@@ -14,7 +15,7 @@ export interface EffectiveSite {
  */
 export async function getSitesForUser(userId: string): Promise<EffectiveSite[]> {
   const [{ data: configs }, { data: prefs }] = await Promise.all([
-    db().from('site_configs').select('id, site_name, enabled, unreliable').order('site_name'),
+    db().from('site_configs').select('id, site_name, enabled, unreliable, base_url').order('site_name'),
     db().from('user_site_prefs').select('site_config_id, enabled').eq('user_id', userId),
   ])
 
@@ -22,11 +23,12 @@ export async function getSitesForUser(userId: string): Promise<EffectiveSite[]> 
     (prefs ?? []).map((p: { site_config_id: string; enabled: boolean }) => [p.site_config_id, p.enabled])
   )
 
-  return (configs ?? []).map((c: { id: string; site_name: string; enabled: boolean; unreliable: boolean }) => ({
+  return (configs ?? []).map((c: { id: string; site_name: string; enabled: boolean; unreliable: boolean; base_url: string }) => ({
     id: c.id,
     site_name: c.site_name,
     enabled: prefMap.get(c.id) ?? c.enabled,
     unreliable: c.unreliable,
+    base_url: c.base_url,
   }))
 }
 
