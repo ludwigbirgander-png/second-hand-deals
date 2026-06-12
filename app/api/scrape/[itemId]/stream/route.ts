@@ -45,6 +45,8 @@ export async function POST(
       const existingUrls = new Set((existing ?? []).map((e: { url: string }) => e.url))
 
       let total = 0
+      const scrapeStart = new Date().toISOString()
+      const succeededSites: string[] = []
 
       for (const site of siteNames) {
         const scraper = SCRAPERS[site]
@@ -92,6 +94,7 @@ export async function POST(
             total += fresh.length
           }
 
+          succeededSites.push(site)
           send({ type: 'done', site, count: fresh.length })
         } catch {
           send({ type: 'done', site, count: 0 })
@@ -100,7 +103,22 @@ export async function POST(
         await new Promise((r) => setTimeout(r, 800))
       }
 
-      send({ type: 'complete', total })
+      // Prune: listings from successfully scraped sites that were NOT returned
+      // this run are no longer available — delete them (starred ones are kept).
+      // Sites that errored or are disabled are left untouched.
+      let pruned = 0
+      if (succeededSites.length > 0) {
+        const { count } = await db()
+          .from('listings')
+          .delete({ count: 'exact' })
+          .eq('item_id', itemId)
+          .eq('starred', false)
+          .in('site', succeededSites)
+          .lt('last_seen_at', scrapeStart)
+        pruned = count ?? 0
+      }
+
+      send({ type: 'complete', total, pruned })
       controller.close()
     },
   })

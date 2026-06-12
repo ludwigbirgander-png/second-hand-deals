@@ -15,6 +15,7 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
   const [siteStatuses, setSiteStatuses] = useState<Record<string, SiteStatus>>({})
   const [siteCounts, setSiteCounts] = useState<Record<string, number>>({})
   const [totalFound, setTotalFound] = useState<number | null>(null)
+  const [pruned, setPruned] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -35,6 +36,7 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
         }
         if (event.type === 'complete') {
           setTotalFound(event.total)
+          setPruned(event.pruned ?? 0)
         }
       } catch {
         // malformed line — skip
@@ -121,6 +123,9 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
           {totalFound > 0
             ? <><strong className="text-zinc-900 dark:text-zinc-100">{totalFound}</strong> new listings found</>
             : 'No new listings found'}
+          {pruned > 0 && (
+            <span className="text-zinc-400 dark:text-zinc-500"> · {pruned} unavailable listing{pruned !== 1 ? 's' : ''} removed</span>
+          )}
         </p>
       )}
     </div>

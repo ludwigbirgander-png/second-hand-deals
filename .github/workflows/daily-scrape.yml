@@ -1,8 +1,9 @@
 name: Daily Scrape
 
 on:
-  schedule:
-    - cron: '0 7 * * *'  # 8am CET (UTC+1)
+  # Schedule paused 2026-06-12 — re-enable by uncommenting:
+  # schedule:
+  #   - cron: '0 7 * * *'  # 8am CET (UTC+1)
   workflow_dispatch:      # manual trigger for testing
 
 jobs:
