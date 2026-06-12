@@ -27,9 +27,34 @@ export async function GET() {
     countMap[row.item_id] = Number(row.new_count)
   }
 
+  // Lowest-priced listing per item in a single query (ordered by price, so the
+  // first row seen per item is the cheapest). Respects each item's price range.
+  const itemById: Record<string, any> = {}
+  for (const item of transformed) itemById[item.id] = item
+
+  const lowestMap: Record<string, any> = {}
+  const itemIds = transformed.map((i: any) => i.id)
+  if (itemIds.length > 0) {
+    const { data: priced } = await supabase
+      .from('listings')
+      .select('id, item_id, price, currency, image_url, url, site, title, found_at')
+      .in('item_id', itemIds)
+      .not('price', 'is', null)
+      .order('price', { ascending: true })
+
+    for (const l of priced ?? []) {
+      if (lowestMap[l.item_id]) continue
+      const item = itemById[l.item_id]
+      if (item?.min_price != null && l.price < item.min_price) continue
+      if (item?.max_price != null && l.price > item.max_price) continue
+      lowestMap[l.item_id] = l
+    }
+  }
+
   const enriched = transformed.map((item: any) => ({
     ...item,
     new_listings_count: countMap[item.id] ?? 0,
+    lowestListing: lowestMap[item.id] ?? null,
   }))
 
   return Response.json(enriched)

@@ -40,11 +40,13 @@ export async function POST(
 
   const seen = new Map<string, typeof listings[0]>()
   for (const l of listings) seen.set(l.url, l)
-  const fresh = Array.from(seen.values()).filter((l) => !existingUrls.has(l.url))
+  const deduped = Array.from(seen.values())
+  const fresh = deduped.filter((l) => !existingUrls.has(l.url))
 
-  if (fresh.length > 0) {
+  // Upsert everything: refreshes price and last_seen_at on existing listings
+  if (deduped.length > 0) {
     await db().from('listings').upsert(
-      fresh.map((l) => ({
+      deduped.map((l) => ({
         item_id: itemId,
         site: l.site,
         title: l.title,
@@ -52,8 +54,9 @@ export async function POST(
         currency: l.currency,
         url: l.url,
         image_url: l.imageUrl,
+        last_seen_at: new Date().toISOString(),
       })),
-      { onConflict: 'item_id,url', ignoreDuplicates: true }
+      { onConflict: 'item_id,url', ignoreDuplicates: false }
     )
   }
 

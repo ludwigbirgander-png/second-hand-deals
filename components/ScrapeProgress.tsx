@@ -19,36 +19,46 @@ export function ScrapeProgress({ itemId, label, onComplete }: Props) {
   useEffect(() => {
     let cancelled = false
 
+    function handleLine(line: string) {
+      try {
+        const event = JSON.parse(line)
+        if (event.type === 'sites') {
+          setSiteList(event.sites)
+          setSiteStatuses(Object.fromEntries(event.sites.map((s: string) => [s, 'pending' as SiteStatus])))
+        }
+        if (event.type === 'start') {
+          setSiteStatuses((p) => ({ ...p, [event.site]: 'scraping' }))
+        }
+        if (event.type === 'done') {
+          setSiteStatuses((p) => ({ ...p, [event.site]: 'done' }))
+          setSiteCounts((p) => ({ ...p, [event.site]: event.count }))
+        }
+        if (event.type === 'complete') {
+          setTotalFound(event.total)
+        }
+      } catch {
+        // malformed line — skip
+      }
+    }
+
     async function run() {
-      const res = await fetch(`/api/scrape/${itemId}/stream`)
+      const res = await fetch(`/api/scrape/${itemId}/stream`, { method: 'POST' })
       const reader = res.body!.getReader()
       const decoder = new TextDecoder()
 
+      // Buffer across chunks: an NDJSON line can be split between reads
+      let buffer = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done || cancelled) break
-        for (const line of decoder.decode(value).split('\n').filter(Boolean)) {
-          try {
-            const event = JSON.parse(line)
-            if (event.type === 'sites') {
-              setSiteList(event.sites)
-              setSiteStatuses(Object.fromEntries(event.sites.map((s: string) => [s, 'pending' as SiteStatus])))
-            }
-            if (event.type === 'start') {
-              setSiteStatuses((p) => ({ ...p, [event.site]: 'scraping' }))
-            }
-            if (event.type === 'done') {
-              setSiteStatuses((p) => ({ ...p, [event.site]: 'done' }))
-              setSiteCounts((p) => ({ ...p, [event.site]: event.count }))
-            }
-            if (event.type === 'complete') {
-              setTotalFound(event.total)
-            }
-          } catch {
-            // malformed line — skip
-          }
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (line.trim()) handleLine(line)
         }
       }
+      if (!cancelled && buffer.trim()) handleLine(buffer)
 
       if (!cancelled) {
         await new Promise((r) => setTimeout(r, 900))

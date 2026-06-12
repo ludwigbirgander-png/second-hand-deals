@@ -5,7 +5,9 @@ import { SCRAPERS, ENRICHERS, enrichBatch, isRelevant, buildQuery } from '@/lib/
 
 export const maxDuration = 60
 
-export async function GET(
+// POST because this endpoint has side effects (writes listings to the DB) —
+// GETs can be prefetched or retried by browsers and proxies.
+export async function POST(
   _request: Request,
   { params }: { params: Promise<{ itemId: string }> }
 ) {
@@ -62,11 +64,14 @@ export async function GET(
 
           const seen = new Map<string, typeof enriched[0]>()
           for (const l of enriched) seen.set(l.url, l)
-          const fresh = Array.from(seen.values()).filter((l) => !existingUrls.has(l.url))
+          const deduped = Array.from(seen.values())
+          const fresh = deduped.filter((l) => !existingUrls.has(l.url))
 
-          if (fresh.length > 0) {
+          // Upsert everything (not just new): refreshes price and last_seen_at
+          // on existing listings so stale ones can be pruned later
+          if (deduped.length > 0) {
             await db().from('listings').upsert(
-              fresh.map((l) => ({
+              deduped.map((l) => ({
                 item_id: itemId,
                 site: l.site,
                 title: l.title,
@@ -79,8 +84,9 @@ export async function GET(
                 shipping_cost: l.shippingCost ?? null,
                 auction_ends_at: l.auctionEndsAt ?? null,
                 location: l.location ?? null,
+                last_seen_at: new Date().toISOString(),
               })),
-              { onConflict: 'item_id,url', ignoreDuplicates: true }
+              { onConflict: 'item_id,url', ignoreDuplicates: false }
             )
             fresh.forEach((l) => existingUrls.add(l.url))
             total += fresh.length

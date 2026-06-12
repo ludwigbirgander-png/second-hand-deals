@@ -51,11 +51,13 @@ create table if not exists listings (
   shipping_cost integer,
   auction_ends_at timestamptz,
   location text,
-  found_at timestamptz not null default now()
+  found_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
 );
 
 create index if not exists listings_item_id_idx on listings(item_id);
 create index if not exists listings_found_at_idx on listings(found_at);
+create index if not exists listings_last_seen_at_idx on listings(last_seen_at);
 -- Required by upsert(..., { onConflict: 'item_id,url' }) in the scrape paths
 create unique index if not exists listings_item_id_url_key on listings(item_id, url);
 

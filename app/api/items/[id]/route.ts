@@ -1,5 +1,33 @@
 import { createClient } from '@/lib/supabase/server'
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+
+  // RLS scopes visibility (own items + items in shared lists)
+  const { data, error } = await supabase
+    .from('items')
+    .select('*, item_lists(lists(*)), item_categories(categories(*))')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
+
+  const { item_lists, item_categories, ...rest } = data as any
+  return Response.json({
+    ...rest,
+    lists: (item_lists ?? []).map((r: any) => r.lists).filter(Boolean),
+    categories: (item_categories ?? []).map((r: any) => r.categories).filter(Boolean),
+  })
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

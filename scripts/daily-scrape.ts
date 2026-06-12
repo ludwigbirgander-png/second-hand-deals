@@ -87,6 +87,7 @@ async function main() {
         shipping_cost: l.shippingCost ?? null,
         auction_ends_at: l.auctionEndsAt ?? null,
         location: l.location ?? null,
+        last_seen_at: new Date().toISOString(),
       })),
       { onConflict: 'item_id,url' }
     )
@@ -95,6 +96,18 @@ async function main() {
       console.error(`  Upsert failed:`, upsertError.message)
       continue
     }
+
+    // Prune stale listings: unstarred and not seen by any scrape for 14 days
+    // (sold/removed listings stop being returned by the marketplaces)
+    const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+    const { error: pruneError, count: pruned } = await db
+      .from('listings')
+      .delete({ count: 'exact' })
+      .eq('item_id', item.id)
+      .eq('starred', false)
+      .lt('last_seen_at', cutoff)
+    if (pruneError) console.error(`  Prune failed:`, pruneError.message)
+    else if (pruned) console.log(`  Pruned ${pruned} stale listings`)
 
     const fresh = scraped.filter((l) => !existingUrls.has(l.url))
     console.log(`  ${scraped.length} relevant (${fresh.length} new)`)

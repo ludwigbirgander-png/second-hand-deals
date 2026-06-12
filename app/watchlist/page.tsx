@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AddItemModal } from '@/components/AddItemModal'
 import { WatchlistSection } from '@/components/WatchlistSection'
-import type { ItemWithMeta, ItemList, Category, Listing } from '@/lib/types'
+import type { ItemWithMeta, ItemList, Category } from '@/lib/types'
 
 export default function WatchlistPage() {
   const [items, setItems] = useState<ItemWithMeta[]>([])
@@ -33,24 +33,10 @@ export default function WatchlistPage() {
       followingRes.json(),
     ])
 
+    // lowestListing is computed server-side in /api/items — no per-item fetches
     const baseItems: ItemWithMeta[] = Array.isArray(itemsData) ? itemsData : []
 
-    const withListings = await Promise.all(
-      baseItems.map(async (item) => {
-        try {
-          const r = await fetch(`/api/items/${item.id}/listings`)
-          const json = await r.json()
-          const listings: Listing[] = Array.isArray(json.listings) ? json.listings : []
-          const priced = listings.filter((l) => l.price != null)
-          const lowest = priced.sort((a, b) => a.price! - b.price!)[0] ?? null
-          return { ...item, lowestListing: lowest }
-        } catch {
-          return { ...item, lowestListing: null }
-        }
-      })
-    )
-
-    setItems(withListings)
+    setItems(baseItems)
     setLists(Array.isArray(listsData?.own) ? listsData.own : [])
     setSharedLists(Array.isArray(listsData?.shared) ? listsData.shared : [])
     setFollowedLists(Array.isArray(followingData) ? followingData : [])

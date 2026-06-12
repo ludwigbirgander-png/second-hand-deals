@@ -1,5 +1,6 @@
 export interface Item {
   id: string
+  user_id: string
   name: string
   brand: string | null
   min_price: number | null
@@ -42,6 +43,7 @@ export interface Listing {
   url: string
   image_url: string | null
   found_at: string
+  last_seen_at?: string
   starred: boolean
   condition: string | null
   size: string | null
@@ -86,6 +88,6 @@ export interface ListInvite {
   id: string
   list_id: string
   token: string
-  role: Omit<ListRole, 'owner'>
+  role: Exclude<ListRole, 'owner'>
   created_at: string
 }

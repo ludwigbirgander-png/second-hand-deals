@@ -17,13 +17,13 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   const fetchData = useCallback(async () => {
     const [itemRes, listingsRes] = await Promise.all([
-      fetch('/api/items'),
+      fetch(`/api/items/${id}`),
       fetch(`/api/items/${id}/listings`),
     ])
-    const items: ItemWithMeta[] = await itemRes.json()
+    const itemData: ItemWithMeta | null = itemRes.ok ? await itemRes.json() : null
     const { listings } = await listingsRes.json()
 
-    setItem(items.find((i) => i.id === id) ?? null)
+    setItem(itemData)
     setListings(listings ?? [])
     setLoading(false)
   }, [id])
