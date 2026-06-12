@@ -69,9 +69,9 @@ function AuctionCountdown({ endsAt }: { endsAt: string }) {
       const m = Math.floor((diff % 3600000) / 60000)
       setUrgent(h < 2)
       if (h < 24) {
-        setDisplay(h > 0 ? `${h}h ${m}m` : `${m}m`)
+        setDisplay(h > 0 ? `Ends in ${h}h ${m}m` : `Ends in ${m}m`)
       } else {
-        setDisplay(new Date(endsAt).toLocaleDateString('sv-SE'))
+        setDisplay(`Ends ${new Date(endsAt).toLocaleDateString('sv-SE')}`)
       }
     }
     update()
@@ -222,14 +222,10 @@ export function ListingTable({ listings }: { listings: Listing[] }) {
                       <p className="text-xs text-zinc-400 dark:text-zinc-500">+{l.shipping_cost} kr shipping</p>
                     ) : null}
                   </div>
-                  <div className="flex flex-col items-end gap-0.5">
-                    {l.auction_ends_at && (
-                      <AuctionCountdown endsAt={l.auction_ends_at} />
-                    )}
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                      {new Date(l.found_at).toLocaleDateString('sv-SE')}
-                    </p>
-                  </div>
+                  {/* Only auctions get a date — everything else is buy-now */}
+                  {l.auction_ends_at && (
+                    <AuctionCountdown endsAt={l.auction_ends_at} />
+                  )}
                 </div>
               </div>
             </a>
