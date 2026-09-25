@@ -6,6 +6,11 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
+  // Only same-site paths, never protocol-relative URLs like //evil.example
+  const nextParam = searchParams.get('next')
+  const next = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/watchlist'
+  const isReset = next === '/reset-password'
+
   if (code) {
     const cookieStore = await cookies()
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') ?? ''
@@ -19,8 +24,11 @@ export async function GET(request: Request) {
           ),
       },
     })
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error && isReset) return NextResponse.redirect(`${origin}/forgot-password?expired=1`)
+  } else if (isReset) {
+    return NextResponse.redirect(`${origin}/forgot-password?expired=1`)
   }
 
-  return NextResponse.redirect(`${origin}/watchlist`)
+  return NextResponse.redirect(`${origin}${next}`)
 }

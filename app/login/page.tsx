@@ -36,6 +36,9 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input label="Email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
         <Input label="Password" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+        <Link href="/forgot-password" className="self-end -mt-1 text-[13px] text-muted underline underline-offset-[3px] decoration-line-dashed hover:text-ink hover:decoration-ink">
+          Forgot password?
+        </Link>
         {error && <p role="alert" className="m-0 text-[13px] text-signal-deep">{error}</p>}
         <Button type="submit" block disabled={loading} className="mt-2">{loading ? 'Signing in…' : 'Sign in'}</Button>
       </form>

@@ -15,7 +15,7 @@ export function AppHeader({ email }: { email: string }) {
   const pathname = usePathname()
   const [settings, setSettings] = useState(false)
 
-  if (/^\/items\/[^/]+\/scan/.test(pathname) || pathname.startsWith('/lists/join')) return null
+  if (/^\/items\/[^/]+\/scan/.test(pathname) || pathname.startsWith('/lists/join') || pathname.startsWith('/reset-password')) return null
   const mobileVisible = pathname === '/watchlist'
 
   return (
