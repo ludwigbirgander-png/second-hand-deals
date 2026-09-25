@@ -1,104 +1,107 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { AddItemModal } from '@/components/AddItemModal'
-import { WatchlistSection } from '@/components/WatchlistSection'
-import type { ItemWithMeta, ItemList, Category } from '@/lib/types'
+import { useState, useEffect } from 'react'
+import type { ItemWithMeta, ItemList, Category, ListMember, ListRole } from '@/lib/types'
+import { NEW_GROUP_PALETTE } from '@/lib/colors'
+import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
+import { ScreenBackground } from '@/components/ScreenBackground'
+import { WatchlistGroup, type Group } from '@/components/WatchlistGroup'
+import { CategorySheet, ListSheet, type ListSheetRole } from '@/components/GroupSheets'
+import { ScreenTitle } from '@/components/ui/Display'
+import { Segmented, Input } from '@/components/ui/Form'
+import { Button } from '@/components/ui/Button'
+
+type View = 'lists' | 'categories' | 'following'
+type SharedList = ItemList & { userRole: ListRole }
+
+const VIEWS: { value: View; label: string }[] = [
+  { value: 'lists', label: 'Lists' },
+  { value: 'categories', label: 'Categories' },
+  { value: 'following', label: 'Following' },
+]
+
+async function loadWatchlist() {
+  const [itemsData, listsData, catsData, followingData] = await Promise.all([
+    fetch('/api/items').then((r) => r.json()),
+    fetch('/api/lists').then((r) => r.json()),
+    fetch('/api/categories').then((r) => r.json()),
+    fetch('/api/lists/following').then((r) => r.json()),
+  ])
+  // lowestListing is computed server-side in /api/items — no per-item fetches
+  return {
+    items: (Array.isArray(itemsData) ? itemsData : []) as ItemWithMeta[],
+    own: (Array.isArray(listsData?.own) ? listsData.own : []) as ItemList[],
+    shared: (Array.isArray(listsData?.shared) ? listsData.shared : []) as SharedList[],
+    followed: (Array.isArray(followingData) ? followingData : []) as ItemList[],
+    categories: (Array.isArray(catsData) ? catsData : []) as Category[],
+  }
+}
+
+/** Member avatars, only for collaborative lists (usually few). */
+async function loadMembers(lists: ItemList[]) {
+  const entries = await Promise.all(
+    lists
+      .filter((l) => l.visibility === 'collaborative')
+      .map(async (l) => {
+        const data: ListMember[] = await fetch(`/api/lists/${l.id}/members`).then((r) => r.json()).catch(() => [])
+        return [l.id, Array.isArray(data) ? data.map((m) => ({ name: m.display_name || m.email })) : []] as const
+      }),
+  )
+  return Object.fromEntries(entries) as Record<string, { name: string }[]>
+}
 
 export default function WatchlistPage() {
+  const desktop = useMediaQuery(DESKTOP)
   const [items, setItems] = useState<ItemWithMeta[]>([])
   const [lists, setLists] = useState<ItemList[]>([])
-  const [sharedLists, setSharedLists] = useState<(ItemList & { userRole: string })[]>([])
+  const [sharedLists, setSharedLists] = useState<SharedList[]>([])
   const [followedLists, setFollowedLists] = useState<ItemList[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [members, setMembers] = useState<Record<string, { name: string }[]>>({})
   const [loading, setLoading] = useState(true)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [view, setView] = useState<'lists' | 'categories' | 'following'>('lists')
-  const [newListInput, setNewListInput] = useState('')
-  const [showNewList, setShowNewList] = useState(false)
-  const [newCatInput, setNewCatInput] = useState('')
-  const [showNewCat, setShowNewCat] = useState(false)
+  const [view, setView] = useState<View>('lists')
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [managedList, setManagedList] = useState<{ list: ItemList; role: ListSheetRole } | null>(null)
+  const [managedCategory, setManagedCategory] = useState<Category | null>(null)
 
-  const fetchAll = useCallback(async () => {
-    const [itemsRes, listsRes, catsRes, followingRes] = await Promise.all([
-      fetch('/api/items'),
-      fetch('/api/lists'),
-      fetch('/api/categories'),
-      fetch('/api/lists/following'),
-    ])
-    const [itemsData, listsData, catsData, followingData] = await Promise.all([
-      itemsRes.json(),
-      listsRes.json(),
-      catsRes.json(),
-      followingRes.json(),
-    ])
-
-    // lowestListing is computed server-side in /api/items — no per-item fetches
-    const baseItems: ItemWithMeta[] = Array.isArray(itemsData) ? itemsData : []
-
-    setItems(baseItems)
-    setLists(Array.isArray(listsData?.own) ? listsData.own : [])
-    setSharedLists(Array.isArray(listsData?.shared) ? listsData.shared : [])
-    setFollowedLists(Array.isArray(followingData) ? followingData : [])
-    setCategories(Array.isArray(catsData) ? catsData : [])
-    setLoading(false)
+  useEffect(() => {
+    let cancelled = false
+    loadWatchlist()
+      .then((d) => {
+        if (cancelled) return
+        setItems(d.items)
+        setLists(d.own)
+        setSharedLists(d.shared)
+        setFollowedLists(d.followed)
+        setCategories(d.categories)
+        setLoading(false)
+        return loadMembers([...d.own, ...d.shared])
+      })
+      .then((m) => { if (m && !cancelled) setMembers(m) })
+    return () => { cancelled = true }
   }, [])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
-
-  async function deleteItem(id: string) {
-    await fetch(`/api/items/${id}`, { method: 'DELETE' })
-    setItems((prev) => prev.filter((i) => i.id !== id))
+  function changeView(v: View) {
+    setView(v)
+    setExpanded(null)
+    setAdding(false)
+    setNewName('')
   }
 
-  async function handleDrop(itemId: string, targetId: string, type: 'list' | 'category') {
-    const item = items.find((i) => i.id === itemId)
-    if (!item) return
+  // ─── List / category mutations ────────────────────────────────────────────
 
-    const listIds = item.lists.map((l) => l.id)
-    const categoryIds = item.categories.map((c) => c.id)
-
-    if (type === 'list') {
-      if (listIds.includes(targetId)) return
-      const newListIds = [...listIds, targetId]
-      await fetch(`/api/items/${itemId}/associations`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listIds: newListIds, categoryIds }),
-      })
-      const list = lists.find((l) => l.id === targetId) ?? sharedLists.find((l) => l.id === targetId)
-      if (list) setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, lists: [...i.lists, list] } : i))
-    } else {
-      if (categoryIds.includes(targetId)) return
-      const newCategoryIds = [...categoryIds, targetId]
-      await fetch(`/api/items/${itemId}/associations`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listIds, categoryIds: newCategoryIds }),
-      })
-      const cat = categories.find((c) => c.id === targetId)
-      if (cat) setItems((prev) => prev.map((i) => i.id === itemId ? { ...i, categories: [...i.categories, cat] } : i))
-    }
+  function listUpdated(updated: ItemList) {
+    setLists((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)))
+    setSharedLists((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)))
+    setItems((prev) => prev.map((i) => ({ ...i, lists: i.lists.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)) })))
+    setManagedList((m) => (m && m.list.id === updated.id ? { ...m, list: { ...m.list, ...updated } } : m))
   }
 
-  async function deleteList(id: string) {
-    await fetch(`/api/lists/${id}`, { method: 'DELETE' })
+  function listDeleted(id: string) {
     setLists((prev) => prev.filter((l) => l.id !== id))
     setItems((prev) => prev.map((i) => ({ ...i, lists: i.lists.filter((l) => l.id !== id) })))
-  }
-
-  async function renameList(id: string, name: string) {
-    await fetch(`/api/lists/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    })
-    setLists((prev) => prev.map((l) => l.id === id ? { ...l, name } : l))
-    setItems((prev) => prev.map((i) => ({ ...i, lists: i.lists.map((l) => l.id === id ? { ...l, name } : l) })))
-  }
-
-  function handleListUpdated(updated: ItemList) {
-    setLists((prev) => prev.map((l) => l.id === updated.id ? updated : l))
   }
 
   async function unfollowList(id: string) {
@@ -106,277 +109,151 @@ export default function WatchlistPage() {
     setFollowedLists((prev) => prev.filter((l) => l.id !== id))
   }
 
-  async function deleteCategory(id: string) {
-    await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+  function categoryUpdated(updated: Category) {
+    setCategories((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+    setItems((prev) => prev.map((i) => ({ ...i, categories: i.categories.map((c) => (c.id === updated.id ? updated : c)) })))
+  }
+
+  function categoryDeleted(id: string) {
     setCategories((prev) => prev.filter((c) => c.id !== id))
     setItems((prev) => prev.map((i) => ({ ...i, categories: i.categories.filter((c) => c.id !== id) })))
   }
 
-  async function renameCategory(id: string, name: string) {
-    await fetch(`/api/categories/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    })
-    setCategories((prev) => prev.map((c) => c.id === id ? { ...c, name } : c))
-    setItems((prev) => prev.map((i) => ({ ...i, categories: i.categories.map((c) => c.id === id ? { ...c, name } : c) })))
-  }
-
-  async function addList() {
-    if (!newListInput.trim()) return
-    const res = await fetch('/api/lists', {
+  async function createGroup(e: React.FormEvent) {
+    e.preventDefault()
+    const name = newName.trim()
+    if (!name) return
+    const isList = view === 'lists'
+    const existing = isList ? lists.length : categories.length
+    const res = await fetch(isList ? '/api/lists' : '/api/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newListInput.trim(), color: 'zinc' }),
+      body: JSON.stringify({ name, color: NEW_GROUP_PALETTE[existing % NEW_GROUP_PALETTE.length] }),
     })
-    const list = await res.json()
-    setLists((prev) => [...prev, list])
-    setNewListInput('')
-    setShowNewList(false)
+    if (!res.ok) return
+    const created = await res.json()
+    if (isList) setLists((prev) => [...prev, created])
+    else setCategories((prev) => [...prev, created])
+    setNewName('')
+    setAdding(false)
   }
 
-  async function addCategory() {
-    if (!newCatInput.trim()) return
-    const res = await fetch('/api/categories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newCatInput.trim(), color: 'zinc' }),
-    })
-    const cat = await res.json()
-    setCategories((prev) => [...prev, cat])
-    setNewCatInput('')
-    setShowNewCat(false)
-  }
+  // ─── Groups ───────────────────────────────────────────────────────────────
 
-  const unassignedItems = items.filter((i) => i.lists.length === 0)
-  const uncategorizedItems = items.filter((i) => i.categories.length === 0)
+  const itemsIn = (listId: string) => items.filter((i) => i.lists.some((l) => l.id === listId))
+  const emptyHint = 'Pick this list when you add an item'
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
-        <div className="h-32 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
-        <div className="h-32 rounded-xl bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
-      </div>
-    )
-  }
+  const groups: Group[] =
+    view === 'lists'
+      ? [
+          { id: 'all', name: 'All items', color: 'zinc', isDefault: true, items: items.filter((i) => i.lists.length === 0), emptyText: 'No items here yet' },
+          ...lists.map((l) => ({
+            id: l.id, name: l.name, color: l.color, items: itemsIn(l.id), members: members[l.id], emptyHint,
+            onManage: () => setManagedList({ list: l, role: 'owner' }),
+          })),
+          ...sharedLists.map((l) => ({
+            id: l.id, name: l.name, color: l.color, items: itemsIn(l.id), shared: true, members: members[l.id], emptyHint,
+            onManage: l.userRole === 'admin' ? () => setManagedList({ list: l, role: 'admin' }) : undefined,
+          })),
+        ]
+      : view === 'categories'
+        ? [
+            { id: 'none', name: 'Uncategorized', color: 'zinc', isDefault: true, items: items.filter((i) => i.categories.length === 0), emptyText: 'No items here yet' },
+            ...categories.map((c) => ({
+              id: c.id, name: c.name, color: c.color, emptyHint: 'Pick this category when you add an item',
+              items: items.filter((i) => i.categories.some((x) => x.id === c.id)),
+              onManage: () => setManagedCategory(c),
+            })),
+          ]
+        : followedLists.map((l) => ({
+            id: l.id, name: l.name, color: l.color, items: [], emptyText: 'No items in this list',
+            onManage: () => setManagedList({ list: l, role: 'follower' }),
+          }))
+
+  const newTotal = items.reduce((a, i) => a + (i.new_listings_count ?? 0), 0)
+  const addLabel = view === 'lists' ? '+ New list' : '+ New category'
+
+  const newGroupTile = view !== 'following' && (
+    <section className="md:pt-10">
+      {adding ? (
+        <form onSubmit={createGroup} className="flex flex-col gap-2.5 border border-dashed border-line-dashed rounded-lg md:rounded-xl p-5">
+          <Input
+            aria-label={view === 'lists' ? 'List name' : 'Category name'}
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder={view === 'lists' ? 'List name' : 'Category name'}
+            autoFocus
+            onBlur={() => { if (!newName.trim()) setAdding(false) }}
+          />
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={!newName.trim()}>Create</Button>
+            <Button variant="secondary" size="sm" onMouseDown={(e) => e.preventDefault()} onClick={() => { setAdding(false); setNewName('') }}>Cancel</Button>
+          </div>
+        </form>
+      ) : desktop ? (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="w-full min-h-[150px] border border-dashed border-line-dashed rounded-xl bg-transparent text-[15px] text-muted cursor-pointer hover:text-ink transition-colors"
+        >
+          {addLabel}
+        </button>
+      ) : (
+        <Button variant="ghost" size="sm" className="!pl-1 text-muted" onClick={() => setAdding(true)}>{addLabel}</Button>
+      )}
+    </section>
+  )
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-semibold flex-1">Watchlist</h1>
+    <div className="w-full max-w-[1280px] mx-auto px-4 md:px-5 min-[900px]:px-8 pt-0 md:pt-4 pb-20">
+      <ScreenBackground color={desktop ? 'var(--paper-2)' : 'var(--paper)'} />
 
-        <div className="flex rounded-xl border border-zinc-200 dark:border-zinc-700 p-0.5 text-sm">
-          <button
-            onClick={() => setView('lists')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'lists' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
-          >
-            Lists
-          </button>
-          <button
-            onClick={() => setView('categories')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'categories' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
-          >
-            Categories
-          </button>
-          <button
-            onClick={() => setView('following')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${view === 'following' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
-          >
-            Following
-          </button>
-        </div>
-
-        <button
-          onClick={() => setModalOpen(true)}
-          className="px-4 py-2 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors"
-        >
-          + Add item
-        </button>
-      </div>
-
-      {items.length === 0 && view !== 'following' && (
-        <div className="py-16 text-center">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Your watchlist is empty.</p>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="mt-3 text-sm text-zinc-500 dark:text-zinc-400 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-          >
-            Add your first item
-          </button>
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {view === 'lists' && (
-          <>
-            <WatchlistSection
-              title="All items"
-              items={unassignedItems}
-              onDrop={() => {}}
-              onDeleteItem={deleteItem}
-              onEditItem={fetchAll}
-              isDefault
-            />
-            {lists.map((list) => (
-              <WatchlistSection
-                key={list.id}
-                title={list.name}
-                color={list.color}
-                items={items.filter((i) => i.lists.some((l) => l.id === list.id))}
-                onDrop={(itemId) => handleDrop(itemId, list.id, 'list')}
-                onDeleteItem={deleteItem}
-                onDelete={() => deleteList(list.id)}
-                onRename={(name) => renameList(list.id, name)}
-                onEditItem={fetchAll}
-                onListUpdated={handleListUpdated}
-                sectionId={list.id}
-                sectionType="list"
-                list={list}
-                userRole="owner"
-              />
-            ))}
-
-            {sharedLists.length > 0 && (
-              <>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs font-medium uppercase tracking-wide text-zinc-300 dark:text-zinc-600">Shared with me</span>
-                  <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
-                </div>
-                {sharedLists.map((list) => (
-                  <WatchlistSection
-                    key={list.id}
-                    title={list.name}
-                    color={list.color}
-                    items={items.filter((i) => i.lists.some((l) => l.id === list.id))}
-                    onDrop={(itemId) => handleDrop(itemId, list.id, 'list')}
-                    onDeleteItem={deleteItem}
-                    onEditItem={fetchAll}
-                    sectionId={list.id}
-                    sectionType="list"
-                    list={list}
-                    userRole={list.userRole as any}
-                  />
-                ))}
-              </>
-            )}
-
-            {showNewList ? (
-              <form onSubmit={(e) => { e.preventDefault(); addList() }} className="flex gap-2">
-                <input
-                  autoFocus
-                  type="text"
-                  value={newListInput}
-                  onChange={(e) => setNewListInput(e.target.value)}
-                  onBlur={() => { if (!newListInput.trim()) setShowNewList(false) }}
-                  placeholder="List name"
-                  className="flex-1 rounded-xl border border-zinc-300 dark:border-zinc-600 px-4 py-2.5 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400 bg-transparent"
-                />
-                <button type="submit" disabled={!newListInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm disabled:opacity-40">
-                  Create
-                </button>
-                <button type="button" onClick={() => setShowNewList(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-500 dark:text-zinc-400">
-                  Cancel
-                </button>
-              </form>
-            ) : (
-              <button onClick={() => setShowNewList(true)} className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
-                + New list
-              </button>
-            )}
-          </>
-        )}
-
-        {view === 'categories' && (
-          <>
-            <WatchlistSection
-              title="Uncategorized"
-              items={uncategorizedItems}
-              onDrop={() => {}}
-              onDeleteItem={deleteItem}
-              onEditItem={fetchAll}
-              isDefault
-            />
-            {categories.map((cat) => (
-              <WatchlistSection
-                key={cat.id}
-                title={cat.name}
-                color={cat.color}
-                items={items.filter((i) => i.categories.some((c) => c.id === cat.id))}
-                onDrop={(itemId) => handleDrop(itemId, cat.id, 'category')}
-                onDeleteItem={deleteItem}
-                onDelete={() => deleteCategory(cat.id)}
-                onRename={(name) => renameCategory(cat.id, name)}
-                onEditItem={fetchAll}
-                sectionId={cat.id}
-                sectionType="category"
-              />
-            ))}
-
-            {showNewCat ? (
-              <form onSubmit={(e) => { e.preventDefault(); addCategory() }} className="flex gap-2">
-                <input
-                  autoFocus
-                  type="text"
-                  value={newCatInput}
-                  onChange={(e) => setNewCatInput(e.target.value)}
-                  onBlur={() => { if (!newCatInput.trim()) setShowNewCat(false) }}
-                  placeholder="Category name"
-                  className="flex-1 rounded-xl border border-zinc-300 dark:border-zinc-600 px-4 py-2.5 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400 bg-transparent"
-                />
-                <button type="submit" disabled={!newCatInput.trim()} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-sm disabled:opacity-40">
-                  Create
-                </button>
-                <button type="button" onClick={() => setShowNewCat(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-500 dark:text-zinc-400">
-                  Cancel
-                </button>
-              </form>
-            ) : (
-              <button onClick={() => setShowNewCat(true)} className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-1">
-                + New category
-              </button>
-            )}
-          </>
-        )}
-
-        {view === 'following' && (
-          <>
-            {followedLists.length === 0 && (
-              <div className="py-16 text-center">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">You&apos;re not following any lists yet.</p>
-                <p className="mt-1 text-xs text-zinc-300 dark:text-zinc-600">When someone shares a public list with you, it will appear here.</p>
-              </div>
-            )}
-            {followedLists.map((list) => (
-              <WatchlistSection
-                key={list.id}
-                title={list.name}
-                color={list.color}
-                items={[]}
-                onDrop={() => {}}
-                onDeleteItem={() => {}}
-                onEditItem={() => {}}
-                onDelete={() => unfollowList(list.id)}
-                sectionId={list.id}
-                sectionType="list"
-                list={list}
-                userRole="follower"
-              />
-            ))}
-          </>
-        )}
-      </div>
-
-      {modalOpen && (
-        <AddItemModal
-          categories={categories}
-          lists={lists}
-          onClose={() => setModalOpen(false)}
-          onCreated={fetchAll}
-          onNewCategory={(cat) => setCategories((prev) => [...prev, cat])}
-          onNewList={(list) => setLists((prev) => [...prev, list])}
+      <div className="flex flex-col md:flex-row md:flex-wrap md:items-end md:justify-between gap-5 md:gap-6 mt-3.5 mb-[26px] mx-1 md:mx-0 md:mt-6 md:mb-10">
+        <ScreenTitle
+          weight="bold"
+          size={[34, 64]}
+          title="Watchlist"
+          subtitle={loading ? ' ' : newTotal ? `${newTotal} new finds` : 'Nothing new today'}
+          subtitleColor="var(--grey-400)"
         />
+        <Segmented options={VIEWS} value={view} onChange={changeView} label="Group by" />
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-x-5 gap-y-7" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex flex-col gap-1.5">
+              <div className="h-7 w-32 rounded-pill bg-shade animate-pulse" />
+              <div className="h-[168px] rounded-xl bg-shade animate-pulse" />
+            </div>
+          ))}
+        </div>
+      ) : view === 'following' && followedLists.length === 0 ? (
+        <div className="py-14 md:py-24 px-3 text-center">
+          <p className="m-0 text-[17px] md:text-[22px] tracking-[-0.02em]">You’re not following any lists yet.</p>
+          <p className="mt-1.5 md:mt-2 mb-0 text-[13.5px] md:text-[15px] text-muted">When someone shares a public list with you, it will appear here.</p>
+        </div>
+      ) : (
+        <div className="md:grid md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] md:gap-x-5 md:gap-y-7 md:items-start">
+          {groups.map((g) => <WatchlistGroup key={g.id} group={g} expandedId={expanded} onExpand={setExpanded} />)}
+          {newGroupTile}
+        </div>
       )}
+
+      <ListSheet
+        list={managedList?.list ?? null}
+        role={managedList?.role ?? 'owner'}
+        onClose={() => setManagedList(null)}
+        onUpdated={listUpdated}
+        onDeleted={listDeleted}
+        onUnfollow={unfollowList}
+      />
+      <CategorySheet
+        category={managedCategory}
+        onClose={() => setManagedCategory(null)}
+        onUpdated={categoryUpdated}
+        onDeleted={categoryDeleted}
+      />
     </div>
   )
 }

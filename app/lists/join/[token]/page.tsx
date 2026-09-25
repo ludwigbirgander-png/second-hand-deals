@@ -3,6 +3,8 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { AuthShell } from '@/components/AuthShell'
+import { Button, buttonClass } from '@/components/ui/Button'
 
 export default function JoinListPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
@@ -20,6 +22,7 @@ export default function JoinListPage({ params }: { params: Promise<{ token: stri
         else setInfo(data)
         setLoading(false)
       })
+      .catch(() => { setError('Could not load the invite'); setLoading(false) })
   }, [token])
 
   async function join() {
@@ -31,53 +34,36 @@ export default function JoinListPage({ params }: { params: Promise<{ token: stri
       setJoining(false)
       return
     }
-    router.push('/')
+    router.push('/watchlist')
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="w-8 h-8 rounded-full border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-600 dark:border-t-zinc-300 animate-spin" />
-      </div>
+      <AuthShell>
+        <span className="block w-8 h-8 rounded-full border-2 border-shade border-t-ink animate-k-spin" aria-label="Loading" />
+      </AuthShell>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
-        <div className="w-full max-w-sm text-center">
-          <p className="text-sm text-red-500">{error}</p>
-          <Link href="/" className="mt-4 inline-block text-sm text-zinc-500 dark:text-zinc-400 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-200">
-            Go to watchlist
-          </Link>
-        </div>
-      </div>
+      <AuthShell subtitle="This invite didn’t work">
+        <p role="alert" className="m-0 text-[15px] text-signal-deep">{error}</p>
+        <Link href="/watchlist" className={`${buttonClass({ variant: 'secondary' })} mt-6 no-underline`}>Go to watchlist</Link>
+      </AuthShell>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
-      <div className="w-full max-w-sm text-center space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">You've been invited</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Join <span className="font-medium text-zinc-900 dark:text-zinc-100">{info?.list_name}</span> as a{' '}
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{info?.role}</span>
-          </p>
-        </div>
-
-        <button
-          onClick={join}
-          disabled={joining}
-          className="w-full rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 py-2.5 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-50 transition-colors"
-        >
-          {joining ? 'Joining…' : 'Join list'}
-        </button>
-
-        <Link href="/" className="block text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-          Cancel
-        </Link>
+    <AuthShell subtitle="You’ve been invited">
+      <p className="m-0 text-[17px] text-ink-2">
+        Join <strong className="font-medium text-ink">{info?.list_name}</strong> as {info?.role === 'admin' ? 'an' : 'a'}{' '}
+        <strong className="font-medium text-ink">{info?.role}</strong>.
+      </p>
+      <div className="flex flex-col gap-2 mt-8">
+        <Button block onClick={join} disabled={joining}>{joining ? 'Joining…' : 'Join list'}</Button>
+        <Link href="/watchlist" className={`${buttonClass({ variant: 'ghost', block: true })} no-underline`}>Cancel</Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }

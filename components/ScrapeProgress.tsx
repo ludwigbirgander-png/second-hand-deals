@@ -1,131 +1,104 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Icon } from './ui/Icon'
+import { Pill } from './ui/Pill'
 
-interface Props {
-  itemId: string
-  label?: string
-  onComplete: () => void
+export type SiteStatus = 'pending' | 'scraping' | 'done'
+
+export interface ScrapeState {
+  sites: { name: string; status: SiteStatus; count?: number }[]
+  total: number | null
+  pruned: number
+  finished: boolean
+  error: string | null
 }
 
-type SiteStatus = 'pending' | 'scraping' | 'done'
+const INITIAL: ScrapeState = { sites: [], total: null, pruned: 0, finished: false, error: null }
 
-export function ScrapeProgress({ itemId, label, onComplete }: Props) {
-  const [siteList, setSiteList] = useState<string[]>([])
-  const [siteStatuses, setSiteStatuses] = useState<Record<string, SiteStatus>>({})
-  const [siteCounts, setSiteCounts] = useState<Record<string, number>>({})
-  const [totalFound, setTotalFound] = useState<number | null>(null)
-  const [pruned, setPruned] = useState(0)
+/**
+ * Runs the NDJSON scrape stream for an item and exposes live per-site progress.
+ * Change `attempt` to run it again.
+ */
+export function useScrapeStream(itemId: string, attempt = 0): ScrapeState {
+  const runKey = `${itemId}:${attempt}`
+  // State is tagged with the run it belongs to, so a new run starts from INITIAL
+  const [tagged, setTagged] = useState<{ key: string; state: ScrapeState }>({ key: runKey, state: INITIAL })
 
   useEffect(() => {
     let cancelled = false
+    const setState = (update: (s: ScrapeState) => ScrapeState) =>
+      setTagged((t) => ({ key: runKey, state: update(t.key === runKey ? t.state : INITIAL) }))
+
+    const setSite = (name: string, patch: Partial<ScrapeState['sites'][number]>) =>
+      setState((s) => ({ ...s, sites: s.sites.map((x) => (x.name === name ? { ...x, ...patch } : x)) }))
 
     function handleLine(line: string) {
       try {
         const event = JSON.parse(line)
-        if (event.type === 'sites') {
-          setSiteList(event.sites)
-          setSiteStatuses(Object.fromEntries(event.sites.map((s: string) => [s, 'pending' as SiteStatus])))
-        }
-        if (event.type === 'start') {
-          setSiteStatuses((p) => ({ ...p, [event.site]: 'scraping' }))
-        }
-        if (event.type === 'done') {
-          setSiteStatuses((p) => ({ ...p, [event.site]: 'done' }))
-          setSiteCounts((p) => ({ ...p, [event.site]: event.count }))
-        }
-        if (event.type === 'complete') {
-          setTotalFound(event.total)
-          setPruned(event.pruned ?? 0)
-        }
+        if (event.type === 'sites') setState((s) => ({ ...s, sites: event.sites.map((name: string) => ({ name, status: 'pending' as SiteStatus })) }))
+        if (event.type === 'start') setSite(event.site, { status: 'scraping' })
+        if (event.type === 'done') setSite(event.site, { status: 'done', count: event.count })
+        if (event.type === 'complete') setState((s) => ({ ...s, total: event.total, pruned: event.pruned ?? 0 }))
       } catch {
         // malformed line — skip
       }
     }
 
     async function run() {
-      const res = await fetch(`/api/scrape/${itemId}/stream`, { method: 'POST' })
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
+      try {
+        const res = await fetch(`/api/scrape/${itemId}/stream`, { method: 'POST' })
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
 
-      // Buffer across chunks: an NDJSON line can be split between reads
-      let buffer = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done || cancelled) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        for (const line of lines) {
-          if (line.trim()) handleLine(line)
+        // Buffer across chunks: an NDJSON line can be split between reads
+        let buffer = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done || cancelled) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          for (const line of lines) if (line.trim()) handleLine(line)
         }
-      }
-      if (!cancelled && buffer.trim()) handleLine(buffer)
-
-      if (!cancelled) {
-        await new Promise((r) => setTimeout(r, 900))
-        onComplete()
+        if (!cancelled && buffer.trim()) handleLine(buffer)
+        if (!cancelled) setState((s) => ({ ...s, finished: true }))
+      } catch {
+        if (!cancelled) setState((s) => ({ ...s, error: 'The search could not finish.' }))
       }
     }
 
     run()
     return () => { cancelled = true }
-  }, [itemId, onComplete])
+  }, [itemId, runKey])
 
-  const doneCount = Object.values(siteStatuses).filter((s) => s === 'done').length
-  const progress = siteList.length > 0 ? (doneCount / siteList.length) * 100 : 0
+  return tagged.key === runKey ? tagged.state : INITIAL
+}
 
+function StatusIcon({ status }: { status: SiteStatus }) {
+  if (status === 'done') return <Icon name="check" size={18} strokeWidth={2.4} />
+  if (status === 'scraping') return <span className="w-4 h-4 rounded-full border-2 border-shade border-t-ink animate-k-spin box-border" />
+  return <span className="w-2 h-2 rounded-full bg-line-dashed" />
+}
+
+/** Per-site search checklist: dot → spinner → check, with an ink "N found" pill. */
+export function ScrapeProgress({ state }: { state: ScrapeState }) {
   return (
-    <div className="space-y-4">
-      {label && <p className="text-sm text-zinc-500 dark:text-zinc-400">{label}</p>}
-
-      {/* Progress bar */}
-      <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100 transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      {/* Site checklist */}
-      <div className="space-y-2">
-        {siteList.map((site) => {
-          const status = siteStatuses[site] ?? 'pending'
-          const count = siteCounts[site]
-          return (
-            <div key={site} className="flex items-center gap-3">
-              <div className="w-5 h-5 shrink-0 flex items-center justify-center">
-                {status === 'done' ? (
-                  <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : status === 'scraping' ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-zinc-300 dark:border-zinc-600 border-t-zinc-700 dark:border-t-zinc-300 animate-spin" />
-                ) : (
-                  <div className="w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-                )}
-              </div>
-              <span className={`flex-1 text-sm ${status === 'scraping' ? 'font-medium text-zinc-900 dark:text-zinc-50' : status === 'done' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                {site}
-              </span>
-              {status === 'done' && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${count > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
-                  {count > 0 ? `${count} found` : 'none'}
-                </span>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {totalFound !== null && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 pt-1">
-          {totalFound > 0
-            ? <><strong className="text-zinc-900 dark:text-zinc-100">{totalFound}</strong> new listings found</>
-            : 'No new listings found'}
-          {pruned > 0 && (
-            <span className="text-zinc-500 dark:text-zinc-400"> · {pruned} unavailable listing{pruned !== 1 ? 's' : ''} removed</span>
-          )}
+    <div aria-live="polite">
+      {state.sites.map((s) => (
+        <div key={s.name} className="flex items-center gap-3.5 h-[52px] border-b border-line-hair">
+          <span className="w-5 flex justify-center"><StatusIcon status={s.status} /></span>
+          <span className={`flex-1 text-[18px] tracking-[-0.015em] ${s.status === 'pending' ? 'text-muted' : 'text-ink'} ${s.status === 'scraping' ? 'font-medium' : ''}`}>
+            {s.name}
+          </span>
+          {s.status === 'done' && ((s.count ?? 0) > 0 ? <Pill variant="ink" size="sm">{s.count} found</Pill> : <Pill variant="dashed" size="sm">none</Pill>)}
+        </div>
+      ))}
+      {state.total != null && (
+        <p className="mt-3.5 mb-0 text-[14px] text-muted">
+          {state.total > 0 ? <><strong className="text-ink font-semibold">{state.total}</strong> new listings found</> : 'No new listings found'}
+          {state.pruned > 0 && <span> · {state.pruned} unavailable listing{state.pruned !== 1 ? 's' : ''} removed</span>}
         </p>
       )}
     </div>
