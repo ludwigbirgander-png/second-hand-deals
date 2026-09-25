@@ -20,7 +20,7 @@ export function AppHeader({ email }: { email: string }) {
 
   return (
     <div className={`sticky top-0 z-20 bg-screen transition-[background] duration-[var(--dur-slow)] ease-out ${mobileVisible ? '' : 'max-md:hidden'}`}>
-      <header className="max-w-[1280px] mx-auto px-4 md:px-5 min-[900px]:px-8 md:py-5">
+      <header className="max-w-[1280px] mx-auto px-4 md:px-5 wide:px-8 md:py-5">
         <div className="relative flex items-center gap-2.5 md:gap-3 h-14 md:h-11">
           <Link
             href="/watchlist"

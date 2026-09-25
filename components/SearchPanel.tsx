@@ -141,7 +141,7 @@ export function SearchPanel() {
         onSubmit={submit}
         className={
           'absolute left-0 right-0 z-[15] rounded-sm bg-screen transition-[box-shadow,background] duration-[var(--dur-base)] ease-out ' +
-          (open ? 'shadow-[0_16px_40px_rgba(11,11,10,.12),inset_0_0_0_1px_var(--border-soft)] max-md:top-[calc(50%-22px)] md:top-0' : 'top-0 shadow-[inset_0_0_0_1px_var(--border-soft)]')
+          (open ? 'shadow-[0_16px_40px_rgba(11,11,10,.12),inset_0_0_0_1px_var(--border-soft)] max-md:top-[calc(50%_-_22px)] md:top-0' : 'top-0 shadow-[inset_0_0_0_1px_var(--border-soft)]')
         }
       >
         <div className="flex items-center gap-3 h-11 pl-3.5 pr-0.5 md:pl-4 md:pr-1 cursor-text" onClick={() => inputRef.current?.focus()}>
@@ -169,7 +169,9 @@ export function SearchPanel() {
 
         <div className="grid transition-[grid-template-rows] duration-[var(--dur-slow)] ease-out" style={{ gridTemplateRows: open ? '1fr' : '0fr' }}>
           <div className="overflow-hidden min-h-0" inert={!open}>
-            <div className="border-t border-line-hair mx-[18px] md:mx-7 py-[18px] md:pt-6 md:pb-7 flex flex-col gap-5 md:gap-6 max-h-[calc(100dvh-120px)] overflow-y-auto">
+            {/* Full-width scroller, so the match rows' negative margins don't cause a sideways scrollbar */}
+            <div className="max-h-[calc(100dvh_-_120px)] overflow-y-auto overflow-x-hidden">
+            <div className="border-t border-line-hair mx-[18px] md:mx-7 py-[18px] md:pt-6 md:pb-7 flex flex-col gap-5 md:gap-6">
               {matches.length > 0 && (
                 <div>
                   <FieldLabel>Already in your watchlist</FieldLabel>
@@ -221,6 +223,7 @@ export function SearchPanel() {
                 </Button>
               </div>
               {error && <p role="alert" className="-mt-2 text-[13px] text-signal-deep">{error}</p>}
+            </div>
             </div>
           </div>
         </div>

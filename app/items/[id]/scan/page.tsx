@@ -36,7 +36,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
   const name = item ? (item.brand ? `${item.brand} ${item.name}` : item.name) : ' '
 
   return (
-    <div className="flex-1 flex flex-col w-full max-w-[1280px] mx-auto md:px-5 min-[900px]:px-8 md:pt-6 md:pb-20">
+    <div className="flex-1 flex flex-col w-full max-w-[1280px] mx-auto md:px-5 wide:px-8 md:pt-6 md:pb-20">
       <ScreenBackground color="var(--signal)" />
 
       <div className="px-5 md:px-0 pt-3 md:pt-0">

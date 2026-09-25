@@ -16,7 +16,7 @@ import { Price } from '@/components/ui/Price'
 import { AvatarStack } from '@/components/ui/Avatar'
 
 // Full-bleed panel content lines up with the header's 1280px row
-const INSET = 'px-4 md:px-5 min-[900px]:px-[max(32px,calc((100%-1216px)/2))]'
+const INSET = 'px-4 md:px-5 wide:px-[max(32px,calc((100%_-_1216px)/2))]'
 
 interface Loaded {
   itemData: ItemWithMeta | null

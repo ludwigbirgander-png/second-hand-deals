@@ -205,7 +205,7 @@ export default function WatchlistPage() {
   )
 
   return (
-    <div className="w-full max-w-[1280px] mx-auto px-4 md:px-5 min-[900px]:px-8 pt-0 md:pt-4 pb-20">
+    <div className="w-full max-w-[1280px] mx-auto px-4 md:px-5 wide:px-8 pt-0 md:pt-4 pb-20">
       <ScreenBackground color={desktop ? 'var(--paper-2)' : 'var(--paper)'} />
 
       <div className="flex flex-col md:flex-row md:flex-wrap md:items-end md:justify-between gap-5 md:gap-6 mt-3.5 mb-[26px] mx-1 md:mx-0 md:mt-6 md:mb-10">

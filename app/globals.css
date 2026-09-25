@@ -65,6 +65,9 @@
   --color-current: currentColor;
   --color-white: #ffffff;
 
+  /* Header/page gutters widen from 20px to 32px here (handoff: "20px sides under 900px") */
+  --breakpoint-wide: 56.25rem;
+
   --font-sans: var(--font-geist-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, Menlo, monospace;
 

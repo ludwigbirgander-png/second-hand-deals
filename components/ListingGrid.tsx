@@ -86,7 +86,7 @@ export function ListingGrid({ listings }: { listings: Listing[] }) {
     <>
       <div className="flex flex-col items-start gap-3.5 mb-3.5 md:mb-5">
         {heading}
-        <div className="w-[calc(100%+24px)] -mx-3 px-5 md:w-auto md:mx-0 md:px-0 overflow-x-auto k-noscroll">
+        <div className="w-[calc(100%_+_24px)] -mx-3 px-5 md:w-auto md:mx-0 md:px-0 overflow-x-auto k-noscroll">
           <Segmented
             variant="chips"
             size="sm"
