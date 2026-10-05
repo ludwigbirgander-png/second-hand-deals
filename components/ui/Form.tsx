@@ -2,7 +2,6 @@
 
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
-import { Chip } from './Chip'
 
 // ─── Input ────────────────────────────────────────────────────────────────────
 
@@ -114,12 +113,6 @@ export function Segmented<T extends string>({ options, value, onChange, size = '
       })}
     </div>
   )
-}
-
-// ─── TagToggle (legacy wrapper — replaced by Chip in the add/edit panel) ─────
-
-export function TagToggle({ label, color, selected, onClick }: { label: string; color: [string, string]; selected: boolean; onClick: () => void }) {
-  return <Chip label={label} color={color} active={selected} onClick={onClick} />
 }
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
