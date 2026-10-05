@@ -10,11 +10,11 @@ Personal users and small circles of friends sharing a joint wishlist. They open 
 
 ## Product Purpose
 
-A personal deal tracker that monitors second-hand listings across Swedish marketplaces (Blocket, Tradera, Vinted, Sellpy, Facebook Marketplace). Users add items to a watchlist, the app scrapes on their behalf, and surfaces the best finds in one place. Success looks like: opening the app and immediately spotting the right item at the right price, then clicking through to buy.
+A personal deal tracker that monitors second-hand listings across Swedish marketplaces (Blocket, Tradera, Vinted, Sellpy, Facebook Marketplace). Users add items to a watchlist and organise them in lists (lists only — there are no categories). The app scrapes on their behalf and surfaces the best finds in one place. Success looks like: opening the app and immediately spotting the right item at the right price, then clicking through to buy.
 
 ## Brand Personality
 
-Playful · Light · Friendly. Feels handpicked — like a curated vintage shop rather than a comparison engine. Warm without being loud. Considered without being cold. The Are.na school of visual restraint, but with a smile.
+Playful · Light · Friendly. Feels handpicked — like a curated vintage shop rather than a comparison engine. Warm without being loud. Considered without being cold. Set in Figtree on a warm paper canvas, with palette H "Crayon box" colours on lists. The Kompi eye — the "o" in the logo — is the only character: it looks, thinks while searching, cheers at new finds and dozes when nothing is new. No other mascots or illustrations.
 
 ## Anti-references
 

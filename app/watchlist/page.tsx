@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ItemWithMeta, ItemList, ListMember, ListRole } from '@/lib/types'
 import { NEW_GROUP_PALETTE, themeOf } from '@/lib/colors'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
-import { ScreenBackground } from '@/components/ScreenBackground'
 import { ListSheet, type ListSheetRole } from '@/components/GroupSheets'
 import { AddPanel, AddDock, type ItemFormValues } from '@/components/AddPanel'
 import { WINK_EVENT } from '@/components/AppHeader'
@@ -292,7 +291,6 @@ export default function WatchlistPage() {
 
   return (
     <div className="w-full max-w-[1280px] mx-auto px-4 wide:px-8 pt-1 md:pt-4 pb-32">
-      <ScreenBackground color="var(--paper)" />
 
       <ScreenTitle
         weight="bold"

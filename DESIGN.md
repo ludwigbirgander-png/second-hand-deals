@@ -1,60 +1,80 @@
 ---
 name: Kompi
-description: A curated deal tracker for Swedish second-hand marketplaces — warm paper, pop colors, flat surfaces.
+description: A curated deal tracker for Swedish second-hand marketplaces — warm paper canvas, palette H list colours, Figtree, and the eye as the only character.
 colors:
-  ink: "#0b0b0a"
-  ink-2: "#262623"
-  paper: "#ecebe4"
-  paper-2: "#e2e0d6"
-  paper-3: "#d5d1c1"
-  chalk: "#faf9f5"
-  grey-600: "#5f5d57"
-  grey-400: "#a09d94"
-  grey-300: "#c4c1b7"
-  signal: "#ff2438"
-  signal-deep: "#a8101f"
-  mint: "#cdf6cf"
-  mint-deep: "#3f8a4d"
-  violet: "#c67cf7"
-  periwinkle: "#c7d2fa"
-  lemon: "#f1f79c"
-  tangerine: "#f5821f"
-  bubblegum: "#ffc6e7"
-  grape: "#a88bf5"
-  sage: "#a0b8ab"
-  stone: "#ababab"
+  ink: "#1d1b16"
+  ink-2: "#34312a"
+  ink-3: "#5b574c"
+  paper: "#f6f1e7"
+  paper-2: "#ece5d7"
+  paper-3: "#ddd4c2"
+  chalk: "#fffdf8"
+  grey-600: "#6b665a"
+  grey-400: "#aaa498"
+  state-new: "#ff4a2b"
+  state-danger: "#b8260c"
+  add-bg: "#ffbdd6"
+lists:
+  zinc: { fill: "#D6D6D6", on: ink }
+  blue: { fill: "#466FFF", on: ink }
+  green: { fill: "#14B828", on: ink }
+  amber: { fill: "#FFD500", on: ink }
+  red: { fill: "#FF1A4F", on: ink }
+  purple: { fill: "#9100C2", on: chalk }
+  orange: { fill: "#FFA500", on: ink }
+  teal: { fill: "#00BAA6", on: ink }
+  pink: { fill: "#FFBDD6", on: ink }
+  indigo: { fill: "#0000AA", on: chalk }
 typography:
-  mega: { fontFamily: Geist, fontSize: 88px, fontWeight: 400, lineHeight: 0.9, letterSpacing: "-0.055em" }
-  display: { fontFamily: Geist, fontSize: 60px, fontWeight: 400, lineHeight: 0.94, letterSpacing: "-0.045em" }
-  headline: { fontFamily: Geist, fontSize: 34px, fontWeight: 700, lineHeight: 1.02, letterSpacing: "-0.032em" }
-  title: { fontFamily: Geist, fontSize: 24px, fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.022em" }
-  body: { fontFamily: Geist, fontSize: 15px, fontWeight: 400, lineHeight: 1.4, letterSpacing: "-0.005em" }
-  label: { fontFamily: Geist, fontSize: 13px, fontWeight: 400, lineHeight: 1.3 }
-rounded: { xs: 8px, sm: 12px, md: 20px, lg: 28px, xl: 36px, pill: 999px }
-spacing: [4px, 6px, 8px, 12px, 16px, 20px, 24px, 32px, 40px, 56px]
+  family: Figtree (next/font/google, 400/500/600/700)
+  mega: { size: 88px, lineHeight: 0.9, tracking: "-0.05em" }
+  display: { size: 64px, lineHeight: 0.95, tracking: "-0.045em" }
+  title: { size: 40px, lineHeight: 1, tracking: "-0.035em" }
+  headline: { size: 28px, lineHeight: 1.05, tracking: "-0.025em" }
+  subhead: { size: 20px, lineHeight: 1.2, tracking: "-0.015em" }
+  body: { size: 16px, lineHeight: 1.45, tracking: "-0.005em" }
+  small: { size: 14px, lineHeight: 1.4 }
+  label: { size: 13px, lineHeight: 1.3 }
+  micro: { size: 11px, tracking: "0.06em" }
+rounded: { xs: 6px, sm: 10px, md: 12px, lg: 16px, xl: 20px, pill: 999px }
+spacing: [4px, 8px, 12px, 16px, 20px, 24px, 32px, 40px, 56px, 72px]
+controls: { sm: 32px, md: 40px, lg: 48px, minHitMobile: 44px }
 ---
 
-# Design System: Kompi
+# Design System: Kompi (v2)
 
-The source of truth is the design handoff (`../design_handoff_kompi_redesign/`, kept next to the repo) and its tokens, which live in code in [`app/globals.css`](app/globals.css). This file summarises the rules.
+The source of truth is the v2 design handoff (`../design_handoff_kompi_redesign_v2/`, kept next to the repo: `README.md`, `IMPLEMENTATION.md`, `tokens/*.css`). In code the tokens live in [`app/globals.css`](app/globals.css). The v1 handoff is archived and should not be followed.
 
 ## Principles
-- **Full-bleed screen color.** Each screen owns one background: Watchlist is `paper-2` (desktop) / `paper` (mobile), Scan is `signal`, and an Item takes its first list's color (then its category's, then `stone`). Pages set it with `<ScreenBackground>`; the body transitions over `--dur-slow`.
-- **Flat by default.** Depth comes from color and overlap. Shadows appear only on detached surfaces: sheets and the open search panel.
-- **Ink is the single heavy accent.** Primary buttons, active segmented options, "N new" pills and the starred ring are ink. There is no separate star color.
-- **Oversized, tight type.** Geist 400/500/600/700 with negative tracking. Screen titles use a second line in the screen's deep tint (`ScreenTitle`), sized fluidly between the mobile and desktop values.
-- **Light only.** There is no dark mode.
+- **The canvas is always light paper.** Pop colour lives on chips, tiles, badges and the eye — never on the page background.
+- **Lists only.** Items are organised by lists; categories were removed. A list's colour shows as its chip, the dot on its tiles and the active-chip fill.
+- **One floating action.** "+ Add item" on the watchlist and "Edit item" on an item page (pink pill, ink disc). It grows into the add/edit card; `/` or typing opens it.
+- **Mostly flat.** Shadows only on things that float: the floating button (`--shadow-float`) and open panels (`--shadow-panel`).
+- **Figtree throughout.** Headlines 700, body 400, UI labels and buttons 500–600. Prices are tabular (`.k-num`).
 
-## Color roles
-- List/category color names stored in the DB map to screen colors in `lib/colors.ts` (`THEME`): zinc→stone, blue→periwinkle, green→mint, amber→lemon, red→signal, purple→violet, orange→tangerine, teal→sage, pink→bubblegum, indigo→grape.
-- Marketplaces: Blocket tangerine, Tradera periwinkle-deep, Vinted moss, Sellpy violet, Facebook stone. Shown only as a dot on a veil pill (`SiteBadge`).
-- Text: `ink` for content, `grey-600` (`text-muted`) for secondary text on paper and chalk, `on-color-muted` (58% ink) on color screens.
+## Colour
+- Neutrals are warm: ink `#1d1b16` on paper `#f6f1e7`, chalk `#fffdf8` for cards and fields, `--text-muted` for secondary text.
+- List colours are palette H "Crayon box", keyed by the stored names in `lists.color` (`lib/colors.ts` → `THEME[name] = [fill, textOnFill]`, i.e. `--list-<name>` / `--on-list-<name>`). The names never change; only their values do.
+- `--state-new` (red dot on "N new" badges), `--state-danger` (delete), `--focus-ring` (periwinkle).
+- Marketplaces show only as a coloured dot beside the site name (`SiteBadge`).
 
-## Components (`components/ui/`)
-Button / IconButton (pill and circle, press scales to .97), Pill / SiteBadge, Thumb (hatched placeholder), Avatar / AvatarStack, Price (Swedish grouping, dimmed `kr`), Input, Segmented (track or chips), TagToggle, Toggle, Sheet (bottom sheet on mobile, right drawer from `md`), ScreenTitle, TickProgress, StackCard, ListingCard.
+## The eye — the only character
+`components/brand/Eye.tsx` (keyframes in `globals.css`). It is the "o" in the logo and the app's only illustration.
+
+| State | Animation | Where |
+|---|---|---|
+| Looking | `blink` | Logo, idle |
+| Curious | `follow` | Empty watchlist |
+| Thinking | `roll` | Scrape running (scan screen, new tile) |
+| Happy | `happy` | New listings arrived after a refresh (~2s) |
+| Winking | `wink` | Logo, once, after adding an item |
+| Sleepy | `drowse` | "Nothing new today" |
+| Asleep | `zzz` | Item with no listings |
+
+One-off states play once and return to Looking. Under `prefers-reduced-motion` the eye shows a still pose instead.
+
+## Components (`components/ui/`, `components/brand/`)
+Logo (wordmark and icon), Eye, Button / IconButton (32/40/48, pill, `.k-press` scales to .96), Chip (list filter/picker, add and followed variants), Badge (new/soft/outline), ItemTile (photo + text below), ListingCard, Price (sm–mega), Input, PriceRange, Toggle, Segmented, Sheet, FloatingButton, Avatar/AvatarStack, Pill, SiteBadge. `AddPanel` is the add/edit card (desktop) or full-screen sheet (mobile).
 
 ## Motion
-Easing `cubic-bezier(.2,.8,.2,1)`; durations 140 / 240 / 420ms. Expanding panels animate `grid-template-rows: 0fr → 1fr`. Everything respects `prefers-reduced-motion`.
-
-## Known contrast exceptions (accepted as designed)
-The deep-tint subtitles on list colors (2.0–2.8:1), the grey "N new finds" subtitle, muted text on bright colors (3.0–3.7:1) and hairline input edges are below WCAG AA by design.
+Easing `--ease-out cubic-bezier(.2,.8,.2,1)` and `--ease-spring cubic-bezier(.34,1.5,.64,1)`; durations 140 / 240 / 420ms. The add card grows from the button with the spring; a new tile drops in (40px, scale .8). Everything respects `prefers-reduced-motion`.

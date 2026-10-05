@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ItemList, ItemWithMeta, Listing, ListMember, ListRole } from '@/lib/types'
 import { NEW_GROUP_PALETTE } from '@/lib/colors'
-import { ScreenBackground } from '@/components/ScreenBackground'
 import { ListingGrid } from '@/components/ListingGrid'
 import { AddPanel, type ItemFormValues } from '@/components/AddPanel'
 import { Button, IconButton, buttonClass } from '@/components/ui/Button'
@@ -124,7 +123,6 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   if (loading) {
     return (
       <div className={`${shell} pt-6`} aria-busy="true">
-        <ScreenBackground color="var(--paper)" />
         <div className="h-5 w-24 rounded-pill bg-shade animate-pulse" />
         <div className="mt-6 h-12 w-2/3 max-w-md rounded-md bg-shade animate-pulse" />
         <div className="mt-4 h-8 w-28 rounded-pill bg-shade animate-pulse" />
@@ -135,7 +133,6 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   if (!item) {
     return (
       <div className="text-center py-16 px-4">
-        <ScreenBackground color="var(--paper)" />
         <p className="m-0 text-[18px] font-semibold">Item not found</p>
         <Link href="/watchlist" className={`${buttonClass({ variant: 'ghost', size: 'sm' })} mt-2 no-underline`}>← Watchlist</Link>
       </div>
@@ -155,7 +152,6 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex-1 w-full pb-32">
-      <ScreenBackground color="var(--paper)" />
 
       {/* Header block */}
       <section className={`${shell} pt-2 pb-[18px] md:pt-[18px] md:pb-6`}>

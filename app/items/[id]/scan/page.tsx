@@ -4,7 +4,6 @@ import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Item } from '@/lib/types'
-import { ScreenBackground } from '@/components/ScreenBackground'
 import { ScrapeProgress, useScrapeStream } from '@/components/ScrapeProgress'
 import { ScreenTitle, TickProgress, fluid } from '@/components/ui/Display'
 import { Button, buttonClass } from '@/components/ui/Button'
@@ -38,7 +37,6 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex-1 flex flex-col w-full max-w-[1280px] mx-auto md:px-5 wide:px-8 md:pt-6 md:pb-20">
-      <ScreenBackground color="var(--paper)" />
 
       <div className="px-5 md:px-0 pt-3 md:pt-0">
         <Link href="/watchlist" className={`${buttonClass({ variant: 'ghost', size: 'sm' })} !pl-0 !text-muted no-underline`}>← Watchlist</Link>

@@ -36,7 +36,7 @@ export function AppHeader({ email }: { email: string }) {
   const mobileVisible = pathname === '/watchlist'
 
   return (
-    <div className={`sticky top-0 z-20 bg-screen transition-[background] duration-[var(--dur-slow)] ease-out ${mobileVisible ? '' : 'max-md:hidden'}`}>
+    <div className={`sticky top-0 z-20 bg-paper ${mobileVisible ? '' : 'max-md:hidden'}`}>
       <header className="max-w-[1280px] mx-auto flex items-center justify-between px-[14px] py-[10px] md:px-6 md:py-3">
         <Link href="/watchlist" aria-label="Kompi — watchlist" className="k-press rounded-xs no-underline">
           <Logo size={19} animation={eye} className="md:hidden" />
