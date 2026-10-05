@@ -283,7 +283,7 @@ function MembersTab({ listId }: { listId: string }) {
                   >
                     {['admin', 'editor', 'viewer'].map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                   </select>
-                  <IconButton icon="x" size="sm" variant="plain" label={`Remove ${m.email}`} onClick={() => remove(m.user_id)} />
+                  <IconButton icon="x" size="sm" variant="ghost" label={`Remove ${m.email}`} onClick={() => remove(m.user_id)} />
                 </>
               )}
             </div>
@@ -338,7 +338,7 @@ function ShareTab({ listId }: { listId: string }) {
                 <span className="block text-[13px] text-ink">{t.role === 'viewer' ? 'Can view' : 'Can edit'}</span>
               </span>
               <Button variant="secondary" size="sm" onClick={() => copy(t.token)}>{copied === t.token ? 'Copied' : 'Copy'}</Button>
-              <IconButton icon="x" size="sm" variant="plain" label="Revoke link" onClick={() => revoke(t.token)} />
+              <IconButton icon="x" size="sm" variant="ghost" label="Revoke link" onClick={() => revoke(t.token)} />
             </div>
           ))}
         </div>

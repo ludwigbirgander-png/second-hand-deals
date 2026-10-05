@@ -20,7 +20,7 @@ interface ScreenTitleProps {
 }
 
 /** Oversized screen title with a second line in the screen's deep tint. */
-export function ScreenTitle({ title, subtitle, subtitleColor = 'var(--on-color-faint)', weight = 'regular', size, className, as: Tag = 'h1' }: ScreenTitleProps) {
+export function ScreenTitle({ title, subtitle, subtitleColor = 'var(--text-muted)', weight = 'regular', size, className, as: Tag = 'h1' }: ScreenTitleProps) {
   const bold = weight === 'bold'
   const [m, d] = size ?? (bold ? [34, 34] : [60, 60])
   const head: CSSProperties = {

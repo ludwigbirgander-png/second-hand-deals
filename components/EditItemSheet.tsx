@@ -93,7 +93,7 @@ function EditItemForm({ item, onClose, onSaved, onDeleted }: Omit<Props, 'open'>
 
   const tags = (arr: { id: string; name: string; color: string }[], sel: string[], set: (v: string[]) => void) => (
     <div className="flex flex-wrap gap-1.5">
-      {arr.map((x) => <TagToggle key={x.id} label={x.name} color={themeOf(x.color)[0]} selected={sel.includes(x.id)} onClick={() => toggle(x.id, sel, set)} />)}
+      {arr.map((x) => <TagToggle key={x.id} label={x.name} color={themeOf(x.color)} selected={sel.includes(x.id)} onClick={() => toggle(x.id, sel, set)} />)}
     </div>
   )
 

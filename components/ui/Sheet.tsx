@@ -82,7 +82,7 @@ export function Sheet({ open, onClose, title, children }: Props) {
           <Icon name="x" size={16} strokeWidth={1.5} />
         </button>
         {title && (
-          <h2 className="m-0 mb-4 text-[28px] md:mt-1.5 md:mr-14 md:mb-5 md:text-[36px] font-normal tracking-[-0.03em] leading-[1.05]">
+          <h2 className="m-0 mb-4 text-[28px] md:mt-1.5 md:mr-14 md:mb-5 md:text-[28px] font-bold tracking-[-0.025em] leading-[1.05]">
             {title}
           </h2>
         )}

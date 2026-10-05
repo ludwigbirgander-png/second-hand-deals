@@ -22,6 +22,7 @@ export interface ItemWithMeta extends Item {
   lists: ItemList[]
   lowestListing?: Listing | null
   new_listings_count?: number
+  listing_count?: number
   last_viewed_at?: string | null
 }
 

@@ -50,9 +50,20 @@ export async function GET() {
     }
   }
 
+  // Total listings per item. Exact head counts (no rows transferred) rather than
+  // counting fetched rows, which PostgREST caps at 1000 per request.
+  const totals = await Promise.all(
+    itemIds.map(async (id: string) => {
+      const { count } = await supabase.from('listings').select('id', { count: 'exact', head: true }).eq('item_id', id)
+      return [id, count ?? 0] as const
+    })
+  )
+  const totalMap: Record<string, number> = Object.fromEntries(totals)
+
   const enriched = transformed.map((item: any) => ({
     ...item,
     new_listings_count: countMap[item.id] ?? 0,
+    listing_count: totalMap[item.id] ?? 0,
     lowestListing: lowestMap[item.id] ?? null,
   }))
 

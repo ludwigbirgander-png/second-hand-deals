@@ -4,41 +4,44 @@ import { SITE_COLORS } from '@/lib/colors'
 type Variant = 'veil' | 'solid' | 'ink' | 'dashed'
 
 const VARIANTS: Record<Variant, string> = {
-  veil: 'bg-veil-strong text-ink',
+  veil: 'bg-veil text-ink',
   solid: 'text-ink',
   ink: 'bg-ink text-chalk',
-  dashed: 'bg-transparent text-on-color-muted border border-dashed border-line-dashed',
+  dashed: 'bg-transparent text-muted shadow-[inset_0_0_0_1.5px_var(--border-dashed)]',
 }
 
-const SIZES = { sm: 'h-[22px] px-2 text-[11px]', md: 'h-7 px-[11px] text-[12.5px]', lg: 'h-[34px] px-[11px] text-[14px]' }
+const SIZES = { sm: 'h-5 px-2 text-[11px]', md: 'h-6 px-2.5 text-[12px]', lg: 'h-8 px-3 text-[14px]' }
 
 interface Props extends HTMLAttributes<HTMLSpanElement> {
   variant?: Variant
   size?: keyof typeof SIZES
   /** Background for the `solid` variant */
   color?: string
-  /** Colored dot before the label */
-  dot?: string
 }
 
-export function Pill({ variant = 'veil', size = 'md', color, dot, className, style, children, ...rest }: Props) {
+/** Capsule label for tags such as listing condition or "shared". */
+export function Pill({ variant = 'veil', size = 'md', color, className, style, children, ...rest }: Props) {
   const bg: CSSProperties = variant === 'solid' ? { background: color ?? 'var(--paper-2)' } : {}
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-pill font-medium tracking-[-0.005em] whitespace-nowrap tabular-nums box-border ${SIZES[size]} ${VARIANTS[variant]} ${className ?? ''}`}
+      className={`inline-flex items-center gap-1.5 rounded-pill font-semibold leading-none whitespace-nowrap box-border ${SIZES[size]} ${VARIANTS[variant]} ${className ?? ''}`}
       style={{ ...bg, ...style }}
       {...rest}
     >
-      {dot && <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: dot }} />}
       {children}
     </span>
   )
 }
 
-export function SiteBadge({ site, className }: { site: string; className?: string }) {
+/** Marketplace provenance: a site-coloured dot, the site name and optional meta ("· 2d"). */
+export function SiteBadge({ site, meta, className }: { site: string; meta?: string; className?: string }) {
   return (
-    <Pill variant="veil" size="sm" dot={SITE_COLORS[site] ?? 'var(--stone)'} className={className}>
-      {site}
-    </Pill>
+    <span className={`inline-flex items-center gap-1.5 min-w-0 text-[12px] font-medium leading-[1.2] text-muted whitespace-nowrap ${className ?? ''}`}>
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: SITE_COLORS[site] ?? 'var(--stone-deep)' }} />
+      <span className="truncate">
+        {site === 'Facebook Marketplace' ? 'Facebook' : site}
+        {meta ? ` · ${meta}` : ''}
+      </span>
+    </span>
   )
 }

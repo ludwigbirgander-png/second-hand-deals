@@ -44,7 +44,7 @@ export function WatchlistGroup({ group: g, expandedId, onExpand }: Props) {
           <IconButton
             icon="more"
             size="sm"
-            variant="plain"
+            variant="ghost"
             label={`Manage ${g.name}`}
             onClick={g.onManage}
             className="relative before:content-[''] before:absolute before:-inset-1.5"
@@ -76,7 +76,7 @@ export function WatchlistGroup({ group: g, expandedId, onExpand }: Props) {
                 ) : null}
                 eyebrow={it.brand}
                 title={it.name}
-                value={<Price value={it.lowestListing?.price} size="lead" />}
+                value={<Price value={it.lowestListing?.price} size="md" />}
                 expanded={expandedId === it.id}
                 onToggle={() => onExpand(expandedId === it.id ? null : it.id)}
                 details={

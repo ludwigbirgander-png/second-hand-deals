@@ -4,7 +4,8 @@ import { useState } from 'react'
 import type { Listing } from '@/lib/types'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
 import { ListingCard } from './ui/Cards'
-import { Segmented } from './ui/Form'
+import { Chip } from './ui/Chip'
+import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
 
 type SortKey = 'price-asc' | 'price-desc' | 'date-desc' | 'date-asc' | 'platform'
@@ -33,9 +34,11 @@ function sortListings(listings: Listing[], key: SortKey): Listing[] {
   }
 }
 
-export function ListingGrid({ listings }: { listings: Listing[] }) {
+/** `newSince`: the item's last visit; listings found after it get a "New" badge. */
+export function ListingGrid({ listings, newSince }: { listings: Listing[]; newSince?: string | null }) {
   const desktop = useMediaQuery(DESKTOP)
-  const pageSize = desktop ? 12 : 6
+  // Whole rows: 5 columns on desktop, 2 on mobile
+  const pageSize = desktop ? 15 : 6
   const [sortKey, setSortKey] = useState<SortKey>('price-asc')
   const [pages, setPages] = useState(1)
   const [starredIds, setStarredIds] = useState<Set<string>>(() => new Set(listings.filter((l) => l.starred).map((l) => l.id)))
@@ -57,10 +60,17 @@ export function ListingGrid({ listings }: { listings: Listing[] }) {
     if (!res?.ok) flip(!nowStarred)
   }
 
+  const since = newSince ? new Date(newSince).getTime() : null
+  const isNew = (l: Listing) => since != null && new Date(l.found_at).getTime() > since
+  const newCount = listings.filter(isNew).length
+
   const heading = (
-    <h2 className="m-0 text-[24px] md:text-[30px] font-normal tracking-[-0.025em] md:tracking-[-0.03em] mx-2 md:mx-0">
-      {listings.length} listing{listings.length !== 1 ? 's' : ''} found
-    </h2>
+    <div className="flex items-center gap-2.5 mx-1 md:mx-0">
+      <h2 className="m-0 text-[20px] md:text-[26px] font-bold tracking-[-0.02em] leading-[1.1]">
+        {listings.length} listing{listings.length !== 1 ? 's' : ''} found
+      </h2>
+      {newCount > 0 && <Badge>{newCount} new</Badge>}
+    </div>
   )
 
   if (listings.length === 0) {
@@ -86,20 +96,14 @@ export function ListingGrid({ listings }: { listings: Listing[] }) {
     <>
       <div className="flex flex-col items-start gap-3.5 mb-3.5 md:mb-5">
         {heading}
-        <div className="w-[calc(100%_+_24px)] -mx-3 px-5 md:w-auto md:mx-0 md:px-0 overflow-x-auto k-noscroll">
-          <Segmented
-            variant="chips"
-            size="sm"
-            options={SORT_OPTIONS}
-            value={sortKey}
-            onChange={(v) => { setSortKey(v); setPages(1) }}
-            className="max-md:!flex-nowrap"
-            label="Sort listings"
-          />
+        <div role="group" aria-label="Sort listings" className="flex gap-2 w-[calc(100%_+_32px)] -mx-4 px-4 md:w-auto md:mx-0 md:px-0 md:flex-wrap overflow-x-auto k-noscroll">
+          {SORT_OPTIONS.map((o) => (
+            <Chip key={o.value} size="sm" label={o.label} active={sortKey === o.value} onClick={() => { setSortKey(o.value); setPages(1) }} />
+          ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-2.5">
-        {shown.map((l) => <ListingCard key={l.id} listing={l} starred={starredIds.has(l.id)} onStar={() => toggleStar(l.id)} />)}
+      <div className="grid grid-cols-2 gap-x-2.5 gap-y-3.5 md:grid-cols-5 md:gap-x-3.5 md:gap-y-4">
+        {shown.map((l) => <ListingCard key={l.id} listing={l} isNew={isNew(l)} starred={starredIds.has(l.id)} onStar={() => toggleStar(l.id)} />)}
       </div>
       {visible < ordered.length && (
         <Button variant="secondary" block className="mt-3 md:mt-4" onClick={() => setPages((p) => p + 1)}>

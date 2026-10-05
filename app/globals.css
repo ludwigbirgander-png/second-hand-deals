@@ -100,8 +100,6 @@
   --text-small: 14px; --text-small--line-height: 1.4;
   --text-label: 13px; --text-label--line-height: 1.3;
   --text-micro: 11px; --text-micro--letter-spacing: 0.06em;
-  /* LEGACY v1 size still used by Price; removed in step 5 */
-  --text-lead: 20px; --text-lead--line-height: 1.2; --text-lead--letter-spacing: -0.012em;
 
   --radius-xs: 6px; --radius-sm: 10px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-pill: 999px;
 

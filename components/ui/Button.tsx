@@ -4,24 +4,23 @@ import { Icon, type IconName } from './Icon'
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
+// height / font size / horizontal padding: sm 32/14/14, md 40/15/16, lg 48/16/20
 const SIZES: Record<Size, string> = {
-  sm: 'h-9 px-4 text-[13px]',
-  md: 'h-12 px-[22px] text-[15px]',
-  lg: 'h-[60px] px-7 text-[17px]',
+  sm: 'h-8 px-3.5 text-[14px]',
+  md: 'h-10 px-4 text-[15px]',
+  lg: 'h-12 px-5 text-[16px]',
 }
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-ink text-chalk',
-  secondary: 'bg-veil text-ink shadow-[inset_0_0_0_1px_var(--border-soft)]',
+  secondary: 'bg-chalk text-ink shadow-[inset_0_0_0_1.5px_var(--border-soft)]',
   ghost: 'bg-transparent text-ink',
-  danger: 'bg-signal text-ink',
+  danger: 'bg-transparent text-state-danger',
 }
 
 const BASE =
-  'inline-flex items-center justify-center gap-2.5 rounded-pill font-medium tracking-[-0.01em] whitespace-nowrap cursor-pointer ' +
-  'transition-[transform,background,opacity] duration-[var(--dur-fast)] ease-out ' +
-  'enabled:active:scale-[var(--press-scale)] disabled:opacity-35 disabled:cursor-default ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink'
+  'k-press inline-flex items-center justify-center gap-2 rounded-pill font-semibold leading-none tracking-[-0.01em] whitespace-nowrap cursor-pointer ' +
+  'disabled:opacity-40 disabled:cursor-default disabled:active:scale-100'
 
 export function buttonClass({ variant = 'primary', size = 'md', block = false }: { variant?: Variant; size?: Size; block?: boolean } = {}) {
   return `${BASE} ${SIZES[size]} ${VARIANTS[variant]} ${block ? 'w-full' : ''}`
@@ -43,18 +42,18 @@ export function Button({ variant, size, block, icon, className, type = 'button',
   )
 }
 
-type IconVariant = 'veil' | 'ink' | 'chalk' | 'outline' | 'plain' | 'shade'
+type IconVariant = 'chalk' | 'ink' | 'outline' | 'ghost' | 'star'
 
 const ICON_VARIANTS: Record<IconVariant, string> = {
-  veil: 'bg-veil text-ink',
-  ink: 'bg-ink text-chalk',
   chalk: 'bg-chalk text-ink',
-  outline: 'bg-transparent text-ink shadow-[inset_0_0_0_1px_var(--border-soft)]',
-  plain: 'bg-transparent text-ink hover:bg-shade',
-  shade: 'bg-shade text-ink',
+  ink: 'bg-ink text-chalk',
+  outline: 'bg-transparent text-ink shadow-[inset_0_0_0_1.5px_var(--border-soft)]',
+  ghost: 'bg-transparent text-ink hover:bg-shade',
+  star: 'bg-chalk text-ink',
 }
 
-const ICON_SIZES = { sm: ['w-8 h-8', 15], md: ['w-11 h-11', 18], lg: ['w-14 h-14', 22] } as const
+// sm 32, md 40 (44 on mobile for the hit target), lg 48; icon ≈ 45% of the button
+const ICON_SIZES = { sm: ['w-8 h-8', 15], md: ['w-11 h-11 md:w-10 md:h-10', 18], lg: ['w-12 h-12', 22] } as const
 
 interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   icon: IconName
@@ -64,21 +63,18 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   filled?: boolean
 }
 
-export function IconButton({ icon, label, variant = 'veil', size = 'md', filled = false, className, ...rest }: IconButtonProps) {
+export function IconButton({ icon, label, variant = 'chalk', size = 'md', filled = false, className, ...rest }: IconButtonProps) {
   const [box, iconSize] = ICON_SIZES[size]
+  const look = variant === 'star' && filled ? 'bg-lemon text-ink' : ICON_VARIANTS[variant]
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
-      className={
-        `${box} ${ICON_VARIANTS[variant]} inline-flex shrink-0 items-center justify-center rounded-full cursor-pointer ` +
-        'transition-[transform,background] duration-[var(--dur-fast)] ease-out enabled:active:scale-[.92] disabled:opacity-35 ' +
-        `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${className ?? ''}`
-      }
+      className={`k-press ${box} ${look} inline-flex shrink-0 items-center justify-center rounded-full cursor-pointer disabled:opacity-40 ${className ?? ''}`}
       {...rest}
     >
-      <Icon name={icon} size={iconSize} filled={filled} />
+      <Icon name={icon} size={iconSize} strokeWidth={2} filled={filled} />
     </button>
   )
 }

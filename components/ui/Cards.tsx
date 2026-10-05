@@ -5,8 +5,8 @@ import Link from 'next/link'
 import type { Listing } from '@/lib/types'
 import { CONDITION_COLORS } from '@/lib/colors'
 import { IconButton } from './Button'
-import { Thumb } from './Thumb'
 import { Pill, SiteBadge } from './Pill'
+import { Badge } from './Badge'
 import { Price } from './Price'
 
 // ─── StackCard ────────────────────────────────────────────────────────────────
@@ -90,57 +90,57 @@ interface ListingCardProps {
   listing: Listing
   starred: boolean
   onStar: () => void
+  /** Found since the user's last visit */
+  isNew?: boolean
 }
 
-/** Chalk listing tile: photo with star + site badge, title, condition, price. Starred adds a 2px ink ring. */
-export function ListingCard({ listing: l, starred, onStar }: ListingCardProps) {
+/** Chalk listing card: photo (with "New"), price + star, title, site, then condition/shipping/auction. Starred adds an ink ring. */
+export function ListingCard({ listing: l, starred, onStar, isNew = false }: ListingCardProps) {
   const auction = useAuctionCountdown(l.auction_ends_at)
   return (
-    <div className={`relative flex flex-col min-w-0 bg-chalk rounded-[24px] p-1.5 ${starred ? 'shadow-[inset_0_0_0_2px_var(--ink)]' : ''}`}>
+    <div className={`relative flex flex-col gap-2 min-w-0 p-2 pb-3 rounded-lg bg-chalk ${starred ? 'shadow-[inset_0_0_0_2px_var(--ink)]' : ''}`}>
       <a
         href={l.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex flex-col flex-1 text-ink no-underline rounded-[18px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="k-press relative block aspect-square rounded-md overflow-hidden bg-paper-2"
+        style={l.image_url ? undefined : { backgroundImage: 'var(--pattern-hatch)' }}
       >
-        <div className="relative">
-          <Thumb src={l.image_url} alt={l.title} />
-          <SiteBadge site={l.site} className="absolute left-2 bottom-2" />
-        </div>
-        <div className="flex flex-col flex-1 gap-1.5 px-2 pt-2.5 pb-2">
-          <div className="text-[14.5px] leading-[1.3] tracking-[-0.01em] line-clamp-2">{l.title}</div>
-          {(l.condition || l.size || l.location) && (
-            <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
-              {l.condition && <Pill variant="solid" size="sm" color={CONDITION_COLORS[l.condition] ?? 'var(--paper-2)'}>{l.condition}</Pill>}
-              {l.size && <span>{l.size}</span>}
-              {l.location && <span>{l.location}</span>}
-            </div>
-          )}
-          <div className="flex-1" />
-          <div className="flex items-end justify-between gap-1.5">
-            <div>
-              <Price value={l.price} size="title" />
-              {l.shipping_cost != null && (
-                <div className="text-[12px] text-muted mt-0.5">{l.shipping_cost === 0 ? 'Free shipping' : `+${l.shipping_cost} kr shipping`}</div>
-              )}
-            </div>
-            {auction && (
-              <span className={`text-[12px] tabular-nums text-right ${auction.urgent ? 'text-signal-deep font-medium' : 'text-muted'}`}>{auction.text}</span>
-            )}
-          </div>
-        </div>
+        {l.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={l.image_url} alt={l.title} className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {isNew && <Badge size="sm" className="absolute top-2 left-2">New</Badge>}
       </a>
-      <IconButton
-        icon="star"
-        size="sm"
-        filled={starred}
-        variant={starred ? 'ink' : 'chalk'}
-        label={starred ? 'Unstar listing' : 'Star listing'}
-        aria-pressed={starred}
-        onClick={onStar}
-        // 32px visual chip, 44px hit area
-        className="absolute top-3 right-3 before:content-[''] before:absolute before:-inset-1.5"
-      />
+      <div className="flex flex-col gap-1 px-1 min-w-0">
+        <div className="flex items-center justify-between gap-1.5">
+          <Price value={l.price} size="md" />
+          <IconButton
+            icon="star"
+            size="sm"
+            variant="star"
+            filled={starred}
+            label={starred ? 'Unstar listing' : 'Star listing'}
+            aria-pressed={starred}
+            onClick={onStar}
+            // 28px visual, 44px hit area
+            className="!w-7 !h-7 relative before:content-[''] before:absolute before:-inset-2"
+          />
+        </div>
+        <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-[13px] leading-[1.3] text-ink-2 line-clamp-2 no-underline hover:underline">
+          {l.title}
+        </a>
+        <SiteBadge site={l.site} />
+        {(l.condition || l.size || l.location || l.shipping_cost != null || auction) && (
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-0.5 text-[12px] text-muted">
+            {l.condition && <Pill variant="solid" size="sm" color={CONDITION_COLORS[l.condition] ?? 'var(--paper-2)'}>{l.condition}</Pill>}
+            {l.size && <span>{l.size}</span>}
+            {l.location && <span>{l.location}</span>}
+            {l.shipping_cost != null && <span>{l.shipping_cost === 0 ? 'Free shipping' : `+${l.shipping_cost} kr shipping`}</span>}
+            {auction && <span className={`tabular-nums ${auction.urgent ? 'text-state-danger font-semibold' : ''}`}>{auction.text}</span>}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

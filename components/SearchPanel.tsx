@@ -125,7 +125,7 @@ export function SearchPanel() {
   const tags = (arr: { id: string; name: string; color: string }[], sel: string[], set: (v: string[]) => void) => (
     <div className="flex flex-wrap gap-1.5">
       {arr.map((x) => (
-        <TagToggle key={x.id} label={x.name} color={themeOf(x.color)[0]} selected={sel.includes(x.id)} onClick={() => toggle(x.id, sel, set)} />
+        <TagToggle key={x.id} label={x.name} color={themeOf(x.color)} selected={sel.includes(x.id)} onClick={() => toggle(x.id, sel, set)} />
       ))}
     </div>
   )
@@ -184,7 +184,7 @@ export function SearchPanel() {
                           {it.brand && <span className="block text-[12.5px] text-muted">{it.brand}</span>}
                           <span className="block text-[15px] tracking-[-0.01em] truncate">{it.name}</span>
                         </span>
-                        <Price value={it.lowestListing?.price} size="body" />
+                        <Price value={it.lowestListing?.price} size="sm" />
                       </button>
                     ))}
                   </div>

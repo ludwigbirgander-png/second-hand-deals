@@ -42,7 +42,7 @@ export function AppHeader({ email }: { email: string }) {
           <Logo size={19} animation={eye} className="md:hidden" />
           <Logo size={22} animation={eye} className="max-md:hidden" />
         </Link>
-        <IconButton icon="gear" label="Settings" variant="plain" onClick={() => setSettings(true)} />
+        <IconButton icon="gear" label="Settings" variant="ghost" onClick={() => setSettings(true)} />
       </header>
       <SettingsSheet open={settings} onClose={() => setSettings(false)} email={email} />
     </div>

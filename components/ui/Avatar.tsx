@@ -1,4 +1,4 @@
-const PALETTE = ['var(--lemon)', 'var(--bubblegum)', 'var(--periwinkle)', 'var(--mint)', 'var(--tangerine)', 'var(--lilac)']
+const RING = ['var(--bubblegum)', 'var(--lime)', 'var(--periwinkle)', 'var(--tangerine)', 'var(--lilac)']
 
 function initials(name = '') {
   return name
@@ -9,40 +9,37 @@ function initials(name = '') {
     .join('')
 }
 
-interface AvatarProps {
-  name: string
-  color?: string
-  size?: number
-  ring?: string
-  overlap?: boolean
-}
-
-export function Avatar({ name, color, size = 36, ring, overlap }: AvatarProps) {
+/** Initials avatar for list members. */
+export function Avatar({ name, size = 28, index = 0, ring = 'var(--paper)' }: { name: string; size?: number; index?: number; ring?: string }) {
   return (
     <span
       title={name}
-      className="inline-flex items-center justify-center rounded-full text-ink font-medium tracking-[-0.02em] shrink-0"
-      style={{
-        width: size,
-        height: size,
-        fontSize: Math.round(size * 0.36),
-        background: color ?? PALETTE[name.length % PALETTE.length],
-        boxShadow: ring ? `0 0 0 2px ${ring}` : undefined,
-        marginLeft: overlap ? -size * 0.28 : undefined,
-      }}
+      className="inline-flex items-center justify-center rounded-full text-ink font-semibold leading-none shrink-0"
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.4), background: RING[index % RING.length], boxShadow: `0 0 0 2px ${ring}` }}
     >
       {initials(name)}
     </span>
   )
 }
 
-export function AvatarStack({ people, size = 36, ring = 'var(--paper)', max = 3 }: { people: { name: string }[]; size?: number; ring?: string; max?: number }) {
+export function AvatarStack({ people, size = 28, ring = 'var(--paper)', max = 3 }: { people: { name: string }[]; size?: number; ring?: string; max?: number }) {
   const shown = people.slice(0, max)
   const extra = people.length - shown.length
   return (
-    <span className="inline-flex items-center">
-      {shown.map((p, i) => <Avatar key={i} name={p.name} size={size} ring={ring} overlap={i > 0} />)}
-      {extra > 0 && <Avatar name={`+ ${extra}`} color="var(--fill-veil-strong)" size={size} ring={ring} overlap />}
+    <span className="inline-flex" style={{ paddingLeft: size * 0.3 }}>
+      {shown.map((p, i) => (
+        <span key={i} style={{ marginLeft: -size * 0.3 }}>
+          <Avatar name={p.name} size={size} index={i} ring={ring} />
+        </span>
+      ))}
+      {extra > 0 && (
+        <span
+          className="inline-flex items-center justify-center rounded-full bg-paper-2 text-[11px] font-semibold"
+          style={{ width: size, height: size, marginLeft: -size * 0.3, boxShadow: `0 0 0 2px ${ring}` }}
+        >
+          +{extra}
+        </span>
+      )}
     </span>
   )
 }
