@@ -246,7 +246,13 @@ export default function WatchlistPage() {
   const visible = ordered(activeListId === 'all' ? items : items.filter((i) => i.lists.some((l) => l.id === activeListId)))
   const newTotal = items.reduce((a, i) => a + (i.new_listings_count ?? 0), 0)
   const empty = !loading && items.length === 0
-  const subtitle = loading ? ' ' : empty ? 'Nothing tracked yet' : newTotal ? `${newTotal} new finds` : 'Nothing new today'
+  const subtitle = loading ? ' ' : empty ? 'Nothing tracked yet' : newTotal ? `${newTotal} new finds` : (
+    // Sleepy eye beside "Nothing new today"
+    <span className="inline-flex items-center gap-[0.25em]">
+      Nothing new today
+      <Eye animation="drowse" stroke={15} color="var(--text-muted)" style={{ width: '0.6em', height: '0.6em' }} />
+    </span>
+  )
 
   const manage = (list: ItemList, role: ListSheetRole) => () => setManagedList({ list, role })
   const ownActive = lists.find((l) => l.id === activeListId)
@@ -347,7 +353,11 @@ export default function WatchlistPage() {
               key={it.id}
               item={it}
               className={it.id === dropId ? 'k-drop-in' : undefined}
-              placeholder={scanning.has(it.id) ? <Eye animation="roll" size={48} /> : null}
+              placeholder={
+                scanning.has(it.id) ? <Eye animation="roll" size={48} />
+                  : (it.listing_count ?? 0) === 0 ? <Eye animation="zzz" size={48} />
+                    : null
+              }
             />
           ))}
         </div>

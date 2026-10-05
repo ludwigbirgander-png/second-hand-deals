@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './ui/Icon'
 import { Pill } from './ui/Pill'
+import { Eye, type EyeAnimation } from './brand/Eye'
 
 export type SiteStatus = 'pending' | 'scraping' | 'done'
 
@@ -82,10 +83,23 @@ function StatusIcon({ status }: { status: SiteStatus }) {
   return <span className="w-2 h-2 rounded-full bg-line-dashed" />
 }
 
+/** The eye's state for a scrape: Thinking while it runs, Happy when new listings arrived. */
+export function scrapeEye(state: ScrapeState): EyeAnimation {
+  if (state.error) return 'none'
+  if (!state.finished) return 'roll'
+  return (state.total ?? 0) > 0 ? 'happy' : 'blink'
+}
+
 /** Per-site search checklist: dot → spinner → check, with an ink "N found" pill. */
 export function ScrapeProgress({ state }: { state: ScrapeState }) {
   return (
     <div aria-live="polite">
+      <div className="flex items-center gap-3 pt-1 pb-3 border-b border-line-hair">
+        <Eye animation={scrapeEye(state)} size={36} />
+        <span className="text-[15px] font-semibold">
+          {state.finished ? ((state.total ?? 0) > 0 ? 'New listings found' : 'All caught up') : 'Searching the marketplaces…'}
+        </span>
+      </div>
       {state.sites.map((s) => (
         <div key={s.name} className="flex items-center gap-3.5 h-[52px] border-b border-line-hair">
           <span className="w-5 flex justify-center"><StatusIcon status={s.status} /></span>

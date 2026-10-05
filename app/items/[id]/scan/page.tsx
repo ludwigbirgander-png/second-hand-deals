@@ -23,12 +23,13 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
     fetch(`/api/items/${id}`).then((r) => (r.ok ? r.json() : null)).then(setItem).catch(() => {})
   }, [id])
 
-  // Hand over to the item page shortly after the last site reports in
+  // Hand over to the item page once the last site reports in — after ~2s of the
+  // Happy eye when new listings arrived
   useEffect(() => {
     if (!state.finished) return
-    const t = setTimeout(() => router.replace(`/items/${id}`), 1000)
+    const t = setTimeout(() => router.replace(`/items/${id}`), (state.total ?? 0) > 0 ? 2200 : 1000)
     return () => clearTimeout(t)
-  }, [state.finished, id, router])
+  }, [state.finished, state.total, id, router])
 
   const done = state.sites.filter((s) => s.status === 'done')
   const found = done.reduce((a, s) => a + (s.count ?? 0), 0)
@@ -37,15 +38,15 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex-1 flex flex-col w-full max-w-[1280px] mx-auto md:px-5 wide:px-8 md:pt-6 md:pb-20">
-      <ScreenBackground color="var(--signal)" />
+      <ScreenBackground color="var(--paper)" />
 
       <div className="px-5 md:px-0 pt-3 md:pt-0">
-        <Link href="/watchlist" className={`${buttonClass({ variant: 'ghost', size: 'sm' })} !pl-0 !text-on-color-muted no-underline`}>← Watchlist</Link>
+        <Link href="/watchlist" className={`${buttonClass({ variant: 'ghost', size: 'sm' })} !pl-0 !text-muted no-underline`}>← Watchlist</Link>
       </div>
 
       <div className="flex-1 flex flex-col md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:gap-10 md:items-end">
         <div className="px-5 md:px-0">
-          <ScreenTitle title="Searching" subtitle={name} subtitleColor="var(--signal-deep)" size={[52, 96]} className="mt-8 mb-7 md:mt-6 md:mb-12" />
+          <ScreenTitle weight="bold" title="Searching" subtitle={name} subtitleColor="var(--text-muted)" size={[52, 96]} className="mt-8 mb-7 md:mt-6 md:mb-12" />
           <TickProgress
             value={progress}
             ticks={desktop ? 56 : 36}
@@ -55,11 +56,11 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
           />
           <div className="flex items-baseline gap-2.5 md:gap-3.5 mt-[30px] mb-[22px] md:mt-11 md:mb-0">
             <Price value={found} currency="" size="mega" style={{ fontSize: fluid(88, 144) }} />
-            <span className="text-[15px] md:text-[18px] text-on-color-muted">listings found</span>
+            <span className="text-[15px] md:text-[18px] text-muted">listings found</span>
           </div>
         </div>
 
-        <div className="flex-1 md:flex-none bg-chalk rounded-t-xl md:rounded-xl px-5 pt-3.5 pb-10 md:px-7 md:pt-4 md:pb-7">
+        <div className="flex-1 md:flex-none bg-chalk rounded-t-xl md:rounded-xl shadow-[inset_0_0_0_1px_var(--border-hair)] px-5 pt-3.5 pb-10 md:px-7 md:pt-4 md:pb-7">
           {state.error ? (
             <div role="alert" className="py-6">
               <p className="m-0 text-[18px] tracking-[-0.015em]">{state.error}</p>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, type CSSProperties } from 'react'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 
 export type EyeKind = 'glance' | 'back' | 'happy' | 'wink' | 'closed'
 export type EyeAnimation = 'none' | 'blink' | 'look' | 'double' | 'roll' | 'happy' | 'wink' | 'surprise' | 'drowse' | 'nod' | 'zzz' | 'follow'
@@ -18,18 +19,23 @@ interface Props {
   style?: CSSProperties
 }
 
+// The still pose that best represents each animated state
+const STATIC_KIND: Partial<Record<EyeAnimation, EyeKind>> = { happy: 'happy', wink: 'wink', zzz: 'closed', drowse: 'closed' }
+
 /**
  * The Kompi eye: a ring with a pupil. The "o" in the wordmark and the app's only character.
- * Animations come from the kompi-a-* keyframes in globals.css; under reduced motion they stop
- * and the static `kind` shows.
+ * Animations come from the kompi-a-* keyframes in globals.css; under reduced motion the eye
+ * renders a still pose instead.
  */
-export function Eye({ kind = 'glance', animation = 'none', color = 'var(--ink)', fill = 'none', stroke = 17, size = 48, pupilR = 14, className, style }: Props) {
+export function Eye({ kind: kindProp = 'glance', animation: animationProp = 'none', color = 'var(--ink)', fill = 'none', stroke = 17, size = 48, pupilR = 14, className, style }: Props) {
   const ref = useRef<SVGSVGElement>(null)
+  const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
+  const animation: EyeAnimation = reduced ? 'none' : animationProp
+  const kind: EyeKind = reduced ? STATIC_KIND[animationProp] ?? kindProp : kindProp
 
   // Curious: the pupil follows the pointer (desktop only — there is no pointer on touch)
   useEffect(() => {
     if (animation !== 'follow') return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const move = (e: MouseEvent) => {
       const s = ref.current
       const p = s?.querySelector<SVGCircleElement>('.p')
