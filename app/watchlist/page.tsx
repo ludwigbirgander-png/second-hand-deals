@@ -1,30 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { ItemWithMeta, ItemList, Category, ListMember, ListRole } from '@/lib/types'
+import type { ItemWithMeta, ItemList, ListMember, ListRole } from '@/lib/types'
 import { NEW_GROUP_PALETTE } from '@/lib/colors'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
 import { ScreenBackground } from '@/components/ScreenBackground'
 import { WatchlistGroup, type Group } from '@/components/WatchlistGroup'
-import { CategorySheet, ListSheet, type ListSheetRole } from '@/components/GroupSheets'
+import { ListSheet, type ListSheetRole } from '@/components/GroupSheets'
 import { ScreenTitle } from '@/components/ui/Display'
 import { Segmented, Input } from '@/components/ui/Form'
 import { Button } from '@/components/ui/Button'
 
-type View = 'lists' | 'categories' | 'following'
+type View = 'lists' | 'following'
 type SharedList = ItemList & { userRole: ListRole }
 
 const VIEWS: { value: View; label: string }[] = [
   { value: 'lists', label: 'Lists' },
-  { value: 'categories', label: 'Categories' },
   { value: 'following', label: 'Following' },
 ]
 
 async function loadWatchlist() {
-  const [itemsData, listsData, catsData, followingData] = await Promise.all([
+  const [itemsData, listsData, followingData] = await Promise.all([
     fetch('/api/items').then((r) => r.json()),
     fetch('/api/lists').then((r) => r.json()),
-    fetch('/api/categories').then((r) => r.json()),
     fetch('/api/lists/following').then((r) => r.json()),
   ])
   // lowestListing is computed server-side in /api/items — no per-item fetches
@@ -33,7 +31,6 @@ async function loadWatchlist() {
     own: (Array.isArray(listsData?.own) ? listsData.own : []) as ItemList[],
     shared: (Array.isArray(listsData?.shared) ? listsData.shared : []) as SharedList[],
     followed: (Array.isArray(followingData) ? followingData : []) as ItemList[],
-    categories: (Array.isArray(catsData) ? catsData : []) as Category[],
   }
 }
 
@@ -56,7 +53,6 @@ export default function WatchlistPage() {
   const [lists, setLists] = useState<ItemList[]>([])
   const [sharedLists, setSharedLists] = useState<SharedList[]>([])
   const [followedLists, setFollowedLists] = useState<ItemList[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [members, setMembers] = useState<Record<string, { name: string }[]>>({})
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<View>('lists')
@@ -64,7 +60,6 @@ export default function WatchlistPage() {
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
   const [managedList, setManagedList] = useState<{ list: ItemList; role: ListSheetRole } | null>(null)
-  const [managedCategory, setManagedCategory] = useState<Category | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -75,7 +70,6 @@ export default function WatchlistPage() {
         setLists(d.own)
         setSharedLists(d.shared)
         setFollowedLists(d.followed)
-        setCategories(d.categories)
         setLoading(false)
         return loadMembers([...d.own, ...d.shared])
       })
@@ -90,7 +84,7 @@ export default function WatchlistPage() {
     setNewName('')
   }
 
-  // ─── List / category mutations ────────────────────────────────────────────
+  // ─── List mutations ────────────────────────────────────────────
 
   function listUpdated(updated: ItemList) {
     setLists((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)))
@@ -109,31 +103,18 @@ export default function WatchlistPage() {
     setFollowedLists((prev) => prev.filter((l) => l.id !== id))
   }
 
-  function categoryUpdated(updated: Category) {
-    setCategories((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
-    setItems((prev) => prev.map((i) => ({ ...i, categories: i.categories.map((c) => (c.id === updated.id ? updated : c)) })))
-  }
-
-  function categoryDeleted(id: string) {
-    setCategories((prev) => prev.filter((c) => c.id !== id))
-    setItems((prev) => prev.map((i) => ({ ...i, categories: i.categories.filter((c) => c.id !== id) })))
-  }
-
   async function createGroup(e: React.FormEvent) {
     e.preventDefault()
     const name = newName.trim()
     if (!name) return
-    const isList = view === 'lists'
-    const existing = isList ? lists.length : categories.length
-    const res = await fetch(isList ? '/api/lists' : '/api/categories', {
+    const res = await fetch('/api/lists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, color: NEW_GROUP_PALETTE[existing % NEW_GROUP_PALETTE.length] }),
+      body: JSON.stringify({ name, color: NEW_GROUP_PALETTE[lists.length % NEW_GROUP_PALETTE.length] }),
     })
     if (!res.ok) return
     const created = await res.json()
-    if (isList) setLists((prev) => [...prev, created])
-    else setCategories((prev) => [...prev, created])
+    setLists((prev) => [...prev, created])
     setNewName('')
     setAdding(false)
   }
@@ -156,32 +137,23 @@ export default function WatchlistPage() {
             onManage: l.userRole === 'admin' ? () => setManagedList({ list: l, role: 'admin' }) : undefined,
           })),
         ]
-      : view === 'categories'
-        ? [
-            { id: 'none', name: 'Uncategorized', color: 'zinc', isDefault: true, items: items.filter((i) => i.categories.length === 0), emptyText: 'No items here yet' },
-            ...categories.map((c) => ({
-              id: c.id, name: c.name, color: c.color, emptyHint: 'Pick this category when you add an item',
-              items: items.filter((i) => i.categories.some((x) => x.id === c.id)),
-              onManage: () => setManagedCategory(c),
-            })),
-          ]
-        : followedLists.map((l) => ({
-            id: l.id, name: l.name, color: l.color, items: [], emptyText: 'No items in this list',
-            onManage: () => setManagedList({ list: l, role: 'follower' }),
-          }))
+      : followedLists.map((l) => ({
+          id: l.id, name: l.name, color: l.color, items: [], emptyText: 'No items in this list',
+          onManage: () => setManagedList({ list: l, role: 'follower' }),
+        }))
 
   const newTotal = items.reduce((a, i) => a + (i.new_listings_count ?? 0), 0)
-  const addLabel = view === 'lists' ? '+ New list' : '+ New category'
+  const addLabel = '+ New list'
 
   const newGroupTile = view !== 'following' && (
     <section className="md:pt-10">
       {adding ? (
         <form onSubmit={createGroup} className="flex flex-col gap-2.5 border border-dashed border-line-dashed rounded-lg md:rounded-xl p-5">
           <Input
-            aria-label={view === 'lists' ? 'List name' : 'Category name'}
+            aria-label="List name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder={view === 'lists' ? 'List name' : 'Category name'}
+            placeholder="List name"
             autoFocus
             onBlur={() => { if (!newName.trim()) setAdding(false) }}
           />
@@ -247,12 +219,6 @@ export default function WatchlistPage() {
         onUpdated={listUpdated}
         onDeleted={listDeleted}
         onUnfollow={unfollowList}
-      />
-      <CategorySheet
-        category={managedCategory}
-        onClose={() => setManagedCategory(null)}
-        onUpdated={categoryUpdated}
-        onDeleted={categoryDeleted}
       />
     </div>
   )

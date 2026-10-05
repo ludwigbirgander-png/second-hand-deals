@@ -7,17 +7,16 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('items')
-    .select('*, item_lists(lists(*)), item_categories(categories(*))')
+    .select('*, item_lists(lists(*))')
     .order('created_at', { ascending: false })
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
   const transformed = (data ?? []).map((item: any) => {
-    const { item_lists, item_categories, ...rest } = item
+    const { item_lists, ...rest } = item
     return {
       ...rest,
       lists: (item_lists ?? []).map((r: any) => r.lists).filter(Boolean),
-      categories: (item_categories ?? []).map((r: any) => r.categories).filter(Boolean),
     }
   })
 

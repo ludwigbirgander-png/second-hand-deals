@@ -13,18 +13,17 @@ export async function GET(
   // RLS scopes visibility (own items + items in shared lists)
   const { data, error } = await supabase
     .from('items')
-    .select('*, item_lists(lists(*)), item_categories(categories(*))')
+    .select('*, item_lists(lists(*))')
     .eq('id', id)
     .maybeSingle()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
 
-  const { item_lists, item_categories, ...rest } = data as any
+  const { item_lists, ...rest } = data as any
   return Response.json({
     ...rest,
     lists: (item_lists ?? []).map((r: any) => r.lists).filter(Boolean),
-    categories: (item_categories ?? []).map((r: any) => r.categories).filter(Boolean),
   })
 }
 

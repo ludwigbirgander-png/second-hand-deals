@@ -15,7 +15,7 @@ export interface Group {
   name: string
   color: string
   items: ItemWithMeta[]
-  /** The implicit "All items" / "Uncategorized" group */
+  /** The implicit "All items" group */
   isDefault?: boolean
   shared?: boolean
   members?: { name: string }[]

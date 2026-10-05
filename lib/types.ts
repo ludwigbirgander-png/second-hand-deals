@@ -18,16 +18,8 @@ export interface ItemList {
   created_at: string
 }
 
-export interface Category {
-  id: string
-  name: string
-  color: string
-  created_at: string
-}
-
 export interface ItemWithMeta extends Item {
   lists: ItemList[]
-  categories: Category[]
   lowestListing?: Listing | null
   new_listings_count?: number
   last_viewed_at?: string | null

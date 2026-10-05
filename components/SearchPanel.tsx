@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Category, ItemList, ItemWithMeta } from '@/lib/types'
+import type { ItemList, ItemWithMeta } from '@/lib/types'
 import { themeOf } from '@/lib/colors'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
 import { Icon } from './ui/Icon'
@@ -27,7 +27,6 @@ export function SearchPanel() {
   const [brand, setBrand] = useState('')
   const [minText, setMinText] = useState('')
   const [maxText, setMaxText] = useState('')
-  const [cats, setCats] = useState<string[]>([])
   const [lists, setLists] = useState<string[]>([])
   const [notify, setNotify] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -36,7 +35,6 @@ export function SearchPanel() {
   const [loaded, setLoaded] = useState(false)
   const [items, setItems] = useState<ItemWithMeta[]>([])
   const [allLists, setAllLists] = useState<ItemList[]>([])
-  const [allCats, setAllCats] = useState<Category[]>([])
 
   const ref = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -47,12 +45,10 @@ export function SearchPanel() {
     Promise.all([
       fetch('/api/items').then((r) => r.json()),
       fetch('/api/lists').then((r) => r.json()),
-      fetch('/api/categories').then((r) => r.json()),
     ])
-      .then(([itemsData, listsData, catsData]) => {
+      .then(([itemsData, listsData]) => {
         setItems(Array.isArray(itemsData) ? itemsData : [])
         setAllLists(Array.isArray(listsData?.own) ? listsData.own : [])
-        setAllCats(Array.isArray(catsData) ? catsData : [])
         setLoaded(true)
       })
       .catch(() => setLoaded(true))
@@ -75,7 +71,7 @@ export function SearchPanel() {
   const matches = q ? items.filter((i) => `${i.brand ?? ''} ${i.name}`.toLowerCase().includes(q)).slice(0, 4) : []
 
   function reset() {
-    setName(''); setBrand(''); setMinText(''); setMaxText(''); setCats([]); setLists([]); setNotify(true); setSaving(false); setError(null)
+    setName(''); setBrand(''); setMinText(''); setMaxText(''); setLists([]); setNotify(true); setSaving(false); setError(null)
   }
 
   function close() {
@@ -111,11 +107,11 @@ export function SearchPanel() {
         setSaving(false)
         return
       }
-      if (lists.length > 0 || cats.length > 0) {
+      if (lists.length > 0) {
         await fetch(`/api/items/${item.id}/associations`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ listIds: lists, categoryIds: cats }),
+          body: JSON.stringify({ listIds: lists }),
         })
       }
       close()
@@ -207,9 +203,8 @@ export function SearchPanel() {
                 </div>
               </div>
 
-              {loaded && (allCats.length > 0 || allLists.length > 0) && (
+              {loaded && allLists.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5 md:gap-6">
-                  {allCats.length > 0 && <div><FieldLabel>Category</FieldLabel>{tags(allCats, cats, setCats)}</div>}
                   {allLists.length > 0 && <div><FieldLabel>List</FieldLabel>{tags(allLists, lists, setLists)}</div>}
                 </div>
               )}

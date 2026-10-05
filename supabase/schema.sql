@@ -67,7 +67,7 @@ create table if not exists notified (
   notified_at timestamptz not null default now()
 );
 
--- ── Lists & categories ──────────────────────────────────────────────────────
+-- ── Lists ──────────────────────────────────────────────────────────────────
 
 create table if not exists lists (
   id uuid primary key default gen_random_uuid(),
@@ -79,24 +79,10 @@ create table if not exists lists (
   created_at timestamptz not null default now()
 );
 
-create table if not exists categories (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  name text not null,
-  color text not null default 'zinc',
-  created_at timestamptz not null default now()
-);
-
 create table if not exists item_lists (
   item_id uuid not null references items(id) on delete cascade,
   list_id uuid not null references lists(id) on delete cascade,
   primary key (item_id, list_id)
-);
-
-create table if not exists item_categories (
-  item_id uuid not null references items(id) on delete cascade,
-  category_id uuid not null references categories(id) on delete cascade,
-  primary key (item_id, category_id)
 );
 
 -- ── Sharing: members, invites, follows ──────────────────────────────────────
@@ -178,9 +164,7 @@ alter table items enable row level security;
 alter table listings enable row level security;
 alter table notified enable row level security;
 alter table lists enable row level security;
-alter table categories enable row level security;
 alter table item_lists enable row level security;
-alter table item_categories enable row level security;
 alter table list_members enable row level security;
 alter table list_invites enable row level security;
 alter table list_follows enable row level security;
@@ -243,11 +227,6 @@ create policy lists_member_read on lists
     or exists (select 1 from list_members m where m.list_id = lists.id and m.user_id = auth.uid())
   );
 
--- Categories: own only
-drop policy if exists categories_own on categories;
-create policy categories_own on categories
-  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
-
 -- item_lists: item owner manages; list members read
 drop policy if exists item_lists_item_owner on item_lists;
 create policy item_lists_item_owner on item_lists
@@ -261,15 +240,6 @@ drop policy if exists item_lists_member_read on item_lists;
 create policy item_lists_member_read on item_lists
   for select using (
     exists (select 1 from list_members m where m.list_id = item_lists.list_id and m.user_id = auth.uid())
-  );
-
--- item_categories: item owner only
-drop policy if exists item_categories_item_owner on item_categories;
-create policy item_categories_item_owner on item_categories
-  for all using (
-    exists (select 1 from items i where i.id = item_categories.item_id and i.user_id = auth.uid())
-  ) with check (
-    exists (select 1 from items i where i.id = item_categories.item_id and i.user_id = auth.uid())
   );
 
 -- list_members: read own memberships; list owner manages members

@@ -83,7 +83,7 @@ export function Segmented<T extends string>({ options, value, onChange, variant 
 
 // ─── TagToggle ────────────────────────────────────────────────────────────────
 
-/** List/category chip: dashed with a color dot when off, filled color + ink ring when on. */
+/** List chip: dashed with a color dot when off, filled color + ink ring when on. */
 export function TagToggle({ label, color, selected, onClick }: { label: string; color: string; selected: boolean; onClick: () => void }) {
   return (
     <button

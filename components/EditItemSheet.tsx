@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Category, ItemList, ItemWithMeta } from '@/lib/types'
+import type { ItemList, ItemWithMeta } from '@/lib/types'
 import { themeOf } from '@/lib/colors'
 import { Sheet } from './ui/Sheet'
 import { Button } from './ui/Button'
@@ -33,18 +33,15 @@ function EditItemForm({ item, onClose, onSaved, onDeleted }: Omit<Props, 'open'>
   const [minText, setMinText] = useState(toText(item.min_price))
   const [maxText, setMaxText] = useState(toText(item.max_price))
   const [notify, setNotify] = useState(item.notify !== false)
-  const [catIds, setCatIds] = useState<string[]>(() => item.categories.map((c) => c.id))
   const [listIds, setListIds] = useState<string[]>(() => item.lists.map((l) => l.id))
-  const [allCats, setAllCats] = useState<Category[]>([])
   const [allLists, setAllLists] = useState<ItemList[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
-    Promise.all([fetch('/api/categories').then((r) => r.json()), fetch('/api/lists').then((r) => r.json())])
-      .then(([cats, lists]) => {
-        setAllCats(Array.isArray(cats) ? cats : [])
+    fetch('/api/lists').then((r) => r.json())
+      .then((lists) => {
         // /api/lists returns { own, shared }; items can be filed in shared lists you can edit
         const shared = (lists?.shared ?? []).filter((l: { userRole?: string }) => l.userRole !== 'viewer')
         setAllLists([...(lists?.own ?? []), ...shared])
@@ -79,7 +76,7 @@ function EditItemForm({ item, onClose, onSaved, onDeleted }: Omit<Props, 'open'>
       await fetch(`/api/items/${item.id}/associations`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listIds, categoryIds: catIds }),
+        body: JSON.stringify({ listIds }),
       })
       onSaved()
     } catch {
@@ -108,7 +105,6 @@ function EditItemForm({ item, onClose, onSaved, onDeleted }: Omit<Props, 'open'>
         <Input label="Min" value={minText} onChange={(e) => setMinText(e.target.value)} placeholder="Any" suffix="kr" inputMode="numeric" wrapperClassName="flex-1" />
         <Input label="Max" value={maxText} onChange={(e) => setMaxText(e.target.value)} placeholder="No max" suffix="kr" inputMode="numeric" error={rangeError} wrapperClassName="flex-1" />
       </div>
-      {allCats.length > 0 && <div><FieldLabel>Category</FieldLabel>{tags(allCats, catIds, setCatIds)}</div>}
       {allLists.length > 0 && <div><FieldLabel>List</FieldLabel>{tags(allLists, listIds, setListIds)}</div>}
       <Toggle checked={notify} onChange={setNotify} label="Email notifications" description="Daily digest when new listings appear" />
       {error && <p role="alert" className="m-0 text-[13px] text-signal-deep">{error}</p>}

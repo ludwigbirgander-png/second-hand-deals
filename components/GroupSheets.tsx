@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Category, ItemList, ListMember, ListRole } from '@/lib/types'
+import type { ItemList, ListMember, ListRole } from '@/lib/types'
 import { COLORS, THEME, type Color } from '@/lib/colors'
 import { Sheet } from './ui/Sheet'
 import { Button, IconButton } from './ui/Button'
@@ -34,7 +34,7 @@ function ColorSwatches({ value, onChange }: { value: string; onChange: (c: Color
 function DetailsForm({ name, color, kind, onSave, onDelete }: {
   name: string
   color: string
-  kind: 'list' | 'category'
+  kind: 'list'
   onSave: (name: string, color: string) => Promise<string | null>
   onDelete: () => Promise<void>
 }) {
@@ -89,38 +89,6 @@ async function patchJson(url: string, body: object) {
   const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const data = await res.json().catch(() => ({}))
   return res.ok ? { data, error: null } : { data: null, error: (data.error as string) ?? 'Could not save' }
-}
-
-// ─── Category sheet ───────────────────────────────────────────────────────────
-
-export function CategorySheet({ category, onClose, onUpdated, onDeleted }: {
-  category: Category | null
-  onClose: () => void
-  onUpdated: (c: Category) => void
-  onDeleted: (id: string) => void
-}) {
-  return (
-    <Sheet open={!!category} onClose={onClose} title={category?.name ?? 'Category'}>
-      {category && (
-        <DetailsForm
-          key={category.id}
-          kind="category"
-          name={category.name}
-          color={category.color}
-          onSave={async (name, color) => {
-            const { data, error } = await patchJson(`/api/categories/${category.id}`, { name, color })
-            if (data) { onUpdated(data); onClose() }
-            return error
-          }}
-          onDelete={async () => {
-            await fetch(`/api/categories/${category.id}`, { method: 'DELETE' })
-            onDeleted(category.id)
-            onClose()
-          }}
-        />
-      )}
-    </Sheet>
-  )
 }
 
 // ─── List sheet ───────────────────────────────────────────────────────────────
