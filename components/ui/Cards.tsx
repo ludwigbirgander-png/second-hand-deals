@@ -1,69 +1,12 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
-import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import type { Listing } from '@/lib/types'
 import { CONDITION_COLORS } from '@/lib/colors'
 import { IconButton } from './Button'
 import { Pill, SiteBadge } from './Pill'
 import { Badge } from './Badge'
 import { Price } from './Price'
-
-// ─── StackCard ────────────────────────────────────────────────────────────────
-
-interface StackCardProps {
-  href: string
-  label: string
-  color: string
-  leading?: ReactNode
-  badge?: ReactNode
-  eyebrow?: string | null
-  title: string
-  value?: ReactNode
-  /** Mobile only: tapping expands the card to show this instead of navigating */
-  expanded?: boolean
-  onToggle?: () => void
-  details?: ReactNode
-}
-
-/**
- * Full-color rounded card for a watched item. From md up the whole card links to the item;
- * on mobile a tap expands it to reveal `details`.
- */
-export function StackCard({ href, label, color, leading, badge, eyebrow, title, value, expanded = false, onToggle, details }: StackCardProps) {
-  return (
-    <div
-      className="relative flex flex-col min-h-[150px] md:min-h-[168px] rounded-xl px-5 pt-4 pb-5 box-border text-ink origin-top transition-transform duration-[var(--dur-fast)] ease-out has-[.k-hit:active]:scale-[.985] has-[.k-hit:focus-visible]:outline-2 has-[.k-hit:focus-visible]:outline-offset-2 has-[.k-hit:focus-visible]:outline-ink"
-      style={{ background: color }}
-    >
-      <Link href={href} aria-label={label} className="k-hit absolute inset-0 rounded-xl outline-none max-md:hidden" />
-      <button
-        type="button"
-        aria-label={label}
-        aria-expanded={expanded}
-        onClick={onToggle}
-        className="k-hit absolute inset-0 rounded-xl outline-none cursor-pointer md:hidden"
-      />
-      <div className="flex items-start justify-between gap-3 pointer-events-none">
-        {leading ?? <span />}
-        {badge}
-      </div>
-      <div className="flex-1 min-h-4" />
-      {eyebrow && <div className="text-[13px] text-on-color-muted mb-0.5 pointer-events-none">{eyebrow}</div>}
-      <div className="flex items-baseline justify-between gap-3 pointer-events-none">
-        <div className="text-[22px] tracking-[-0.022em] leading-[1.12] min-w-0 truncate">{title}</div>
-        {value && <div className="shrink-0">{value}</div>}
-      </div>
-      {details && (
-        <div className="md:hidden grid transition-[grid-template-rows] duration-[var(--dur-slow)] ease-out" style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}>
-          <div className="overflow-hidden min-h-0">
-            <div className="relative z-10 pt-5" inert={!expanded}>{details}</div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ─── ListingCard ──────────────────────────────────────────────────────────────
 

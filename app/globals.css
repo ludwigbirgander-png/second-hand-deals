@@ -202,6 +202,29 @@ body {
 @keyframes kompi-z { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 20% { opacity: 1; } 80% { opacity: 0; transform: translate(14px, -34px) scale(1); } 100% { opacity: 0; } }
 .kompi-a-follow .p { transition: transform 120ms var(--ease-out); }
 
+/* ─── Watchlist motion ───────────────────────────────────────────────────── */
+
+/* A newly added tile drops into first place */
+@keyframes kompi-drop { from { opacity: 0; transform: translateY(-40px) scale(0.8); } to { opacity: 1; transform: none; } }
+.k-drop-in { animation: kompi-drop 400ms var(--ease-spring) both; }
+
+/* The add/edit card grows out of the floating button and shrinks back into it */
+@keyframes kompi-grow { from { opacity: 0; transform: translateY(12px) scale(0.35, 0.2); } to { opacity: 1; transform: none; } }
+@keyframes kompi-shrink { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(12px) scale(0.35, 0.2); } }
+.k-grow { transform-origin: 50% 100%; animation: kompi-grow var(--dur-slow) var(--ease-spring) both; }
+.k-shrink { transform-origin: 50% 100%; animation: kompi-shrink var(--dur-base) var(--ease-out) both; }
+
+/* Mobile full-screen sheet slides up */
+@keyframes kompi-rise { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes kompi-sink { from { transform: none; } to { transform: translateY(100%); } }
+.k-rise { animation: kompi-rise var(--dur-slow) var(--ease-out) both; }
+.k-sink { animation: kompi-sink var(--dur-base) var(--ease-out) both; }
+
+@keyframes kompi-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes kompi-fade-out { from { opacity: 1; } to { opacity: 0; } }
+.k-fade-in { animation: kompi-fade-in var(--dur-base) var(--ease-out) both; }
+.k-fade-out { animation: kompi-fade-out var(--dur-base) var(--ease-out) both; }
+
 /* Horizontally scrolling chip rows without a visible scrollbar */
 .k-noscroll {
   scrollbar-width: none;
