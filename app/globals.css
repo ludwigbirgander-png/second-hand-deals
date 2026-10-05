@@ -173,6 +173,37 @@ body {
   box-shadow: var(--focus-ring);
 }
 
+/* ─── Eye animations (tokens/brand.css). Apply kompi-a-<name> to the svg; the pupil is .p ── */
+
+.kompi-eye .p, .kompi-eye .l, .kompi-eye .arc, .kompi-eye .lid { transform-box: fill-box; transform-origin: center; }
+.kompi-a-blink .p { animation: kompi-blink 4.2s infinite; }
+@keyframes kompi-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+.kompi-a-look .p { animation: kompi-look 5s infinite var(--ease-out); }
+@keyframes kompi-look { 0%, 14% { transform: translate(8px, -2px); } 22%, 40% { transform: translate(-14px, -2px); } 48%, 64% { transform: translate(2px, -14px); } 72%, 100% { transform: translate(8px, -2px); } }
+.kompi-a-double .p { animation: kompi-double 4s infinite; }
+@keyframes kompi-double { 0%, 78%, 84%, 90%, 100% { transform: scaleY(1); } 81%, 87% { transform: scaleY(0.08); } }
+.kompi-a-roll .p { animation: kompi-roll 4.5s infinite linear; }
+@keyframes kompi-roll { 0%, 40% { transform: translate(14px, 0); } 45% { transform: translate(10px, 10px); } 50% { transform: translate(0, 14px); } 55% { transform: translate(-10px, 10px); } 60% { transform: translate(-14px, 0); } 65% { transform: translate(-10px, -10px); } 70% { transform: translate(0, -14px); } 75% { transform: translate(10px, -10px); } 80%, 100% { transform: translate(14px, 0); } }
+.kompi-a-happy .p { animation: kompi-happy-p 4s infinite var(--ease-out); }
+.kompi-a-happy .arc { animation: kompi-happy-a 4s infinite var(--ease-out); }
+@keyframes kompi-happy-p { 0%, 40%, 90%, 100% { transform: scale(1); opacity: 1; } 48%, 82% { transform: scale(0.2); opacity: 0; } }
+@keyframes kompi-happy-a { 0%, 40%, 90%, 100% { transform: translateY(8px) scale(0.6); opacity: 0; } 48%, 82% { transform: translateY(0) scale(1); opacity: 1; } }
+.kompi-a-wink .p { animation: kompi-wink-p 3.6s infinite; }
+.kompi-a-wink .l { animation: kompi-wink-l 3.6s infinite; }
+@keyframes kompi-wink-p { 0%, 55%, 85%, 100% { transform: scaleY(1); opacity: 1; } 60%, 80% { transform: scaleY(0.1); opacity: 0; } }
+@keyframes kompi-wink-l { 0%, 55%, 85%, 100% { transform: scaleX(0.3); opacity: 0; } 60%, 80% { transform: scaleX(1); opacity: 1; } }
+.kompi-a-surprise .p { animation: kompi-surprise 3.4s infinite var(--ease-spring); }
+@keyframes kompi-surprise { 0%, 55%, 100% { transform: scale(1); } 62% { transform: scale(0.5); } 72%, 88% { transform: scale(1.45); } }
+.kompi-a-drowse .p { animation: kompi-drowse 5.5s infinite; }
+@keyframes kompi-drowse { 0%, 10% { transform: scaleY(1); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6); } 62%, 74% { transform: scaleY(0.12); animation-timing-function: var(--ease-spring); } 80%, 100% { transform: scaleY(1); } }
+.kompi-a-nod .p { animation: kompi-nod 5s infinite; }
+@keyframes kompi-nod { 0%, 8% { transform: translateY(0); animation-timing-function: cubic-bezier(0.45, 0, 0.8, 0.6); } 64% { transform: translateY(15px) scaleY(0.8); } 68% { transform: translateY(-6px); animation-timing-function: var(--ease-spring); } 76%, 100% { transform: translateY(0); } }
+.kompi-a-zzz .z { font-family: var(--font-sans); font-weight: 700; opacity: 0; transform-box: fill-box; transform-origin: center; animation: kompi-z 3.6s infinite var(--ease-out); }
+.kompi-a-zzz .z2 { animation-delay: 1.2s; }
+.kompi-a-zzz .z3 { animation-delay: 2.4s; }
+@keyframes kompi-z { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 20% { opacity: 1; } 80% { opacity: 0; transform: translate(14px, -34px) scale(1); } 100% { opacity: 0; } }
+.kompi-a-follow .p { transition: transform 120ms var(--ease-out); }
+
 /* Horizontally scrolling chip rows without a visible scrollbar */
 .k-noscroll {
   scrollbar-width: none;

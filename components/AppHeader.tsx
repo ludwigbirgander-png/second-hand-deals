@@ -1,38 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { SearchPanel } from './SearchPanel'
+import { Logo } from './brand/Logo'
+import type { EyeAnimation } from './brand/Eye'
 import { SettingsSheet } from './SettingsSheet'
 import { IconButton } from './ui/Button'
 
+/** Fire to make the logo eye wink once (e.g. after an item is added). */
+export const WINK_EVENT = 'kompi:wink'
+
 /**
- * Sticky header: wordmark, search/add panel, settings.
+ * Sticky header: logo on the left, settings on the right. Adding moved to the floating button.
  * Desktop: every screen except Scan. Mobile: the Watchlist only (the item page has its own top bar).
  */
 export function AppHeader({ email }: { email: string }) {
   const pathname = usePathname()
   const [settings, setSettings] = useState(false)
+  const [eye, setEye] = useState<EyeAnimation>('blink')
+
+  // One-off wink (2–3s), then back to Looking
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined
+    const wink = () => {
+      setEye('wink')
+      clearTimeout(t)
+      t = setTimeout(() => setEye('blink'), 2600)
+    }
+    window.addEventListener(WINK_EVENT, wink)
+    return () => { window.removeEventListener(WINK_EVENT, wink); clearTimeout(t) }
+  }, [])
 
   if (/^\/items\/[^/]+\/scan/.test(pathname) || pathname.startsWith('/lists/join') || pathname.startsWith('/reset-password')) return null
   const mobileVisible = pathname === '/watchlist'
 
   return (
     <div className={`sticky top-0 z-20 bg-screen transition-[background] duration-[var(--dur-slow)] ease-out ${mobileVisible ? '' : 'max-md:hidden'}`}>
-      <header className="max-w-[1280px] mx-auto px-4 md:px-5 wide:px-8 md:py-5">
-        <div className="relative flex items-center gap-2.5 md:gap-3 h-14 md:h-11">
-          <Link
-            href="/watchlist"
-            className="shrink-0 pl-1 md:pl-0 text-[22px] md:text-[26px] font-semibold tracking-[-0.04em] md:tracking-[-0.045em] text-ink no-underline"
-          >
-            Kompi
-          </Link>
-          <div className="flex-1 min-w-0 md:mx-4">
-            <SearchPanel />
-          </div>
-          <IconButton icon="gear" label="Settings" onClick={() => setSettings(true)} />
-        </div>
+      <header className="max-w-[1280px] mx-auto flex items-center justify-between px-[14px] py-[10px] md:px-6 md:py-3">
+        <Link href="/watchlist" aria-label="Kompi — watchlist" className="k-press rounded-xs no-underline">
+          <Logo size={19} animation={eye} className="md:hidden" />
+          <Logo size={22} animation={eye} className="max-md:hidden" />
+        </Link>
+        <IconButton icon="gear" label="Settings" variant="plain" onClick={() => setSettings(true)} />
       </header>
       <SettingsSheet open={settings} onClose={() => setSettings(false)} email={email} />
     </div>
