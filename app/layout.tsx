@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Figtree } from 'next/font/google'
 import { AppHeader } from '@/components/AppHeader'
 import { createClient } from '@/lib/supabase/server'
 import './globals.css'
 
-const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
+const figtree = Figtree({ variable: '--font-figtree', subsets: ['latin'], weight: ['400', '500', '600', '700'] })
 
 export const metadata: Metadata = {
   title: 'Kompi',
@@ -16,7 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <html lang="en" className={`${geist.variable} antialiased`}>
+    <html lang="en" className={`${figtree.variable} antialiased`}>
       <body className="min-h-screen flex flex-col font-sans text-ink">
         {user && <AppHeader email={user.email ?? ''} />}
         <main className="flex-1 flex flex-col w-full">{children}</main>

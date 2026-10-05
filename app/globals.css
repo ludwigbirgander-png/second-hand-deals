@@ -1,29 +1,28 @@
 @import "tailwindcss";
 
-/* ─── Kompi design tokens (from design_handoff_kompi_redesign/tokens) ─────── */
+/* ─── Kompi design tokens v2 (from design_handoff_kompi_redesign_v2/tokens) ── */
 
 :root {
   color-scheme: light;
 
-  /* Ink + warm paper neutrals */
-  --ink: #0b0b0a; --ink-2: #262623; --ink-3: #46443f;
-  --paper: #ecebe4; --paper-2: #e2e0d6; --paper-3: #d5d1c1; --chalk: #faf9f5; --white: #ffffff;
-  --grey-600: #5f5d57; --grey-500: #77756e; --grey-400: #a09d94; --grey-300: #c4c1b7;
+  /* Warm light neutrals — the canvas is always light */
+  --ink: #1d1b16; --ink-2: #34312a; --ink-3: #5b574c;
+  --paper: #f6f1e7; --paper-2: #ece5d7; --paper-3: #ddd4c2; --chalk: #fffdf8; --white: #ffffff;
+  --grey-600: #6b665a; --grey-500: #857f72; --grey-400: #aaa498; --grey-300: #cdc7ba;
 
-  /* Pop — vibrant full-bleed screen colors */
-  --mint: #cdf6cf; --mint-deep: #3f8a4d;
-  --lilac: #e0d4fb; --lilac-deep: #7d67b8;
-  --violet: #c67cf7; --violet-deep: #8a3fc2;
-  --signal: #ff2438; --signal-deep: #a8101f;
-  --bubblegum: #ffc6e7; --bubblegum-deep: #b0588b;
-  --lemon: #f1f79c; --lemon-deep: #8b8d2c;
-  --periwinkle: #c7d2fa; --periwinkle-deep: #5a67a8;
-  --grape: #a88bf5; --grape-deep: #5b3fb0;
-  --tangerine: #f5821f; --tangerine-deep: #a44d05;
-
-  /* Earth — muted companions */
-  --sage: #a0b8ab; --clay: #a78c69; --straw: #e9e57c; --brick: #cc3222; --stone: #ababab;
-  --ember: #ee6423; --moss: #6a8558; --khaki: #bdaa76; --olive: #808b6d;
+  /* Pop — carried by chips, tiles, characters and badges; never the page background */
+  --bubblegum: #ff9fd4; --bubblegum-deep: #a13c77;
+  --lime: #dcf35a; --lime-deep: #5d6e0c;
+  --mint: #86dea2; --mint-deep: #23733d;
+  --tangerine: #ff8a3d; --tangerine-deep: #a34708;
+  --periwinkle: #a9bcff; --periwinkle-deep: #3c55b3;
+  --lemon: #ffd84d; --lemon-deep: #8a6a00;
+  --lilac: #d6c0ff; --lilac-deep: #6a45b8;
+  --coral: #ff7b6b; --coral-deep: #b0301f;
+  --aqua: #8fded3; --aqua-deep: #1f6f66;
+  --iris: #9a93ff; --iris-deep: #4a3fc2;
+  --stone: #cdc8bc; --stone-deep: #5b574c;
+  --signal: #ff4a2b; --signal-deep: #b8260c;
 
   /* Semantic */
   --surface-canvas: var(--paper);
@@ -33,26 +32,48 @@
   --text-body: var(--ink-2);
   --text-muted: var(--grey-600);
   --text-faint: var(--grey-400);
-  --on-color-muted: rgba(11, 11, 10, 0.58);
-  --on-color-faint: rgba(11, 11, 10, 0.38);
-  --border-hair: rgba(11, 11, 10, 0.1);
-  --border-soft: rgba(11, 11, 10, 0.16);
-  --border-dashed: rgba(11, 11, 10, 0.28);
-  --fill-veil: rgba(255, 255, 255, 0.55);
-  --fill-veil-strong: rgba(255, 255, 255, 0.82);
-  --fill-shade: rgba(11, 11, 10, 0.08);
+  --on-color-muted: rgba(29, 27, 22, 0.62);
+  --border-hair: rgba(29, 27, 22, 0.09);
+  --border-soft: rgba(29, 27, 22, 0.16);
+  --border-dashed: rgba(29, 27, 22, 0.32);
+  --fill-shade: rgba(29, 27, 22, 0.06);
+  --fill-veil: rgba(255, 253, 248, 0.72);
+  --scrim: rgba(29, 27, 22, 0.28);
+  --state-new: var(--signal);
+  --state-success: var(--mint-deep);
+  --state-danger: var(--signal-deep);
+  --state-star: var(--lemon);
+  --focus-ring: 0 0 0 3px var(--periwinkle);
 
-  /* Marketplace provenance */
+  /* Marketplace provenance — dots only */
   --site-blocket: var(--tangerine);
   --site-tradera: var(--periwinkle-deep);
-  --site-vinted: var(--moss);
-  --site-sellpy: var(--violet);
-  --site-facebook: var(--stone);
+  --site-vinted: var(--aqua-deep);
+  --site-sellpy: var(--lilac-deep);
+  --site-facebook: var(--stone-deep);
 
-  /* Effects */
-  --pattern-hatch: repeating-linear-gradient(135deg, rgba(11, 11, 10, 0.16) 0 2px, transparent 2px 7px);
+  /* List colors — palette H "Crayon box", keyed by the stored color names.
+     --on-list-* is the text color on that fill. */
+  --list-zinc: #d6d6d6; --list-blue: #466fff; --list-green: #14b828; --list-amber: #ffd500; --list-red: #ff1a4f;
+  --list-purple: #9100c2; --list-orange: #ffa500; --list-teal: #00baa6; --list-pink: #ffbdd6; --list-indigo: #0000aa;
+  --on-list-zinc: var(--ink); --on-list-blue: var(--ink); --on-list-green: var(--ink); --on-list-amber: var(--ink); --on-list-red: var(--ink);
+  --on-list-purple: var(--chalk); --on-list-orange: var(--ink); --on-list-teal: var(--ink); --on-list-pink: var(--ink); --on-list-indigo: var(--chalk);
+
+  /* Add item button */
+  --add-bg: #ffbdd6; --add-fg: var(--ink); --add-disc: var(--ink); --add-disc-fg: var(--chalk);
+
+  /* Spacing and controls */
+  --gutter-mobile: 16px; --gutter-desktop: 32px; --content-max: 1280px;
+  --control-sm: 32px; --control-md: 40px; --control-lg: 48px;
+
+  /* Effects: mostly flat; shadows only on things that float above the page */
+  --pattern-hatch: repeating-linear-gradient(135deg, rgba(29, 27, 22, 0.1) 0 2px, transparent 2px 8px);
   --dur-fast: 140ms; --dur-base: 240ms; --dur-slow: 420ms;
-  --press-scale: 0.97;
+  --press-scale: 0.96;
+
+  /* LEGACY v1 palette — still read by lib/colors.ts and the scan screen; removed in step 9 */
+  --grape: #a88bf5; --grape-deep: #5b3fb0; --violet: #c67cf7; --violet-deep: #8a3fc2; --sage: #a0b8ab;
+  --fill-veil-strong: rgba(255, 253, 248, 0.88); --on-color-faint: rgba(29, 27, 22, 0.38);
 
   /* Current screen background — set per page by <ScreenBackground> */
   --screen-bg: var(--paper);
@@ -65,36 +86,40 @@
   --color-current: currentColor;
   --color-white: #ffffff;
 
-  /* Header/page gutters widen from 20px to 32px here (handoff: "20px sides under 900px") */
+  /* Gutters widen from 20px to 32px at 900px */
   --breakpoint-wide: 56.25rem;
 
-  --font-sans: var(--font-geist-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, Menlo, monospace;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
-  --text-mega: 88px; --text-mega--line-height: 0.9; --text-mega--letter-spacing: -0.055em;
-  --text-display: 60px; --text-display--line-height: 0.94; --text-display--letter-spacing: -0.045em;
-  --text-headline: 34px; --text-headline--line-height: 1.02; --text-headline--letter-spacing: -0.032em;
-  --text-title: 24px; --text-title--line-height: 1.1; --text-title--letter-spacing: -0.022em;
-  --text-lead: 20px; --text-lead--line-height: 1.2; --text-lead--letter-spacing: -0.012em;
-  --text-body: 15px; --text-body--line-height: 1.4; --text-body--letter-spacing: -0.005em;
+  --text-mega: 88px; --text-mega--line-height: 0.9; --text-mega--letter-spacing: -0.05em;
+  --text-display: 64px; --text-display--line-height: 0.95; --text-display--letter-spacing: -0.045em;
+  --text-title: 40px; --text-title--line-height: 1; --text-title--letter-spacing: -0.035em;
+  --text-headline: 28px; --text-headline--line-height: 1.05; --text-headline--letter-spacing: -0.025em;
+  --text-subhead: 20px; --text-subhead--line-height: 1.2; --text-subhead--letter-spacing: -0.015em;
+  --text-body: 16px; --text-body--line-height: 1.45; --text-body--letter-spacing: -0.005em;
+  --text-small: 14px; --text-small--line-height: 1.4;
   --text-label: 13px; --text-label--line-height: 1.3;
-  --text-micro: 11px; --text-micro--line-height: 1.2;
+  --text-micro: 11px; --text-micro--letter-spacing: 0.06em;
+  /* LEGACY v1 size still used by Price; removed in step 5 */
+  --text-lead: 20px; --text-lead--line-height: 1.2; --text-lead--letter-spacing: -0.012em;
 
-  --radius-xs: 8px; --radius-sm: 12px; --radius-md: 20px; --radius-lg: 28px; --radius-xl: 36px; --radius-pill: 999px;
+  --radius-xs: 6px; --radius-sm: 10px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-pill: 999px;
 
-  --shadow-sheet: 0 -10px 40px rgba(11, 11, 10, 0.14);
-  --shadow-drawer: -10px 0 40px rgba(11, 11, 10, 0.14);
-  --shadow-panel: 0 16px 40px rgba(11, 11, 10, 0.12);
+  --shadow-float: 0 8px 24px rgba(29, 27, 22, 0.14), 0 1px 3px rgba(29, 27, 22, 0.08);
+  --shadow-panel: 0 24px 64px rgba(29, 27, 22, 0.18), 0 2px 8px rgba(29, 27, 22, 0.06);
+  --shadow-sheet: 0 -10px 40px rgba(29, 27, 22, 0.14);
+  --shadow-drawer: -10px 0 40px rgba(29, 27, 22, 0.14);
 
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-spring: cubic-bezier(0.34, 1.5, 0.64, 1);
 
   --animate-k-spin: k-spin 0.8s linear infinite;
   @keyframes k-spin { to { transform: rotate(360deg); } }
 }
 
 @theme inline {
-  --color-ink: var(--ink); --color-ink-2: var(--ink-2);
+  --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-ink-3: var(--ink-3);
   --color-paper: var(--paper); --color-paper-2: var(--paper-2); --color-paper-3: var(--paper-3);
   --color-chalk: var(--chalk);
   --color-grey-600: var(--grey-600); --color-grey-400: var(--grey-400); --color-grey-300: var(--grey-300);
@@ -106,9 +131,13 @@
   --color-line-dashed: var(--border-dashed);
   --color-shade: var(--fill-shade);
   --color-veil: var(--fill-veil);
-  --color-veil-strong: var(--fill-veil-strong);
+  --color-scrim: var(--scrim);
+  --color-state-new: var(--state-new);
+  --color-state-danger: var(--state-danger);
+  --color-add: var(--add-bg);
   --color-signal: var(--signal); --color-signal-deep: var(--signal-deep);
   --color-mint: var(--mint); --color-mint-deep: var(--mint-deep);
+  --color-lemon: var(--lemon);
   --color-stone: var(--stone);
   --color-screen: var(--screen-bg);
 }
@@ -119,6 +148,7 @@ html,
 body {
   color: var(--text-strong);
   -webkit-font-smoothing: antialiased;
+  font-optical-sizing: auto;
 }
 
 body {
@@ -129,6 +159,19 @@ body {
 
 .k-num {
   font-variant-numeric: tabular-nums;
+}
+
+/* Press feedback for every tappable element */
+.k-press {
+  transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.k-press:active {
+  transform: scale(var(--press-scale));
+}
+.k-press:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 /* Horizontally scrolling chip rows without a visible scrollbar */
