@@ -89,7 +89,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     )
   }
 
-  const [bg, deep] = themeFor(item)
+  const [bg, onBg] = themeFor(item)
   const list = item.lists[0]
   const inRange = listings.filter((l) =>
     l.price != null && (item.min_price == null || l.price >= item.min_price) && (item.max_price == null || l.price <= item.max_price))
@@ -119,7 +119,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
         <div className="flex flex-wrap justify-between items-end gap-y-5 gap-x-8 mt-[18px] md:mt-6 mx-1 md:mx-0 pb-[30px] md:pb-8">
           <div className="min-w-0 max-w-full">
-            <ScreenTitle title={item.name} subtitle={item.brand} subtitleColor={deep} size={[56, 72]} />
+            <ScreenTitle title={item.name} subtitle={item.brand} subtitleColor={onBg} size={[56, 72]} />
             <div className="max-md:hidden flex flex-wrap items-center gap-2 mt-6">
               <Button onClick={refresh} icon={<Icon name="refresh" size={16} />}>Refresh</Button>
               <Button variant="secondary" onClick={() => setShowEdit(true)} icon={<Icon name="pencil" size={15} />}>Edit</Button>

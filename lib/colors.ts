@@ -1,19 +1,11 @@
 export const COLORS = ['zinc', 'blue', 'green', 'amber', 'red', 'purple', 'orange', 'teal', 'pink', 'indigo'] as const
 export type Color = (typeof COLORS)[number]
 
-// [screen/card color, deep tint for subtitles] per stored list/category color name
-export const THEME: Record<Color, [string, string]> = {
-  zinc:   ['var(--stone)', 'var(--grey-600)'],
-  blue:   ['var(--periwinkle)', 'var(--periwinkle-deep)'],
-  green:  ['var(--mint)', 'var(--mint-deep)'],
-  amber:  ['var(--lemon)', 'var(--lemon-deep)'],
-  red:    ['var(--signal)', 'var(--signal-deep)'],
-  purple: ['var(--violet)', 'var(--violet-deep)'],
-  orange: ['var(--tangerine)', 'var(--tangerine-deep)'],
-  teal:   ['var(--sage)', 'rgba(11,11,10,.42)'],
-  pink:   ['var(--bubblegum)', 'var(--bubblegum-deep)'],
-  indigo: ['var(--grape)', 'var(--grape-deep)'],
-}
+// [fill, text on that fill] per stored list color name (palette H "Crayon box").
+// The stored names never change; only their values do.
+export const THEME: Record<Color, [string, string]> = Object.fromEntries(
+  COLORS.map((c) => [c, [`var(--list-${c})`, `var(--on-list-${c})`]]),
+) as Record<Color, [string, string]>
 
 // Colors handed out in turn to newly created lists/categories
 export const NEW_GROUP_PALETTE: Color[] = ['blue', 'amber', 'orange', 'indigo', 'red']

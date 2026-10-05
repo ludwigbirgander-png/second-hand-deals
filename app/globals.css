@@ -71,8 +71,7 @@
   --dur-fast: 140ms; --dur-base: 240ms; --dur-slow: 420ms;
   --press-scale: 0.96;
 
-  /* LEGACY v1 palette — still read by lib/colors.ts and the scan screen; removed in step 9 */
-  --grape: #a88bf5; --grape-deep: #5b3fb0; --violet: #c67cf7; --violet-deep: #8a3fc2; --sage: #a0b8ab;
+  /* LEGACY v1 variables still read by Avatar and ScreenTitle; removed in step 9 */
   --fill-veil-strong: rgba(255, 253, 248, 0.88); --on-color-faint: rgba(29, 27, 22, 0.38);
 
   /* Current screen background — set per page by <ScreenBackground> */
