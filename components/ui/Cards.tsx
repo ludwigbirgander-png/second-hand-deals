@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Listing } from '@/lib/types'
 import { CONDITION_COLORS } from '@/lib/colors'
+import { priceNote } from '@/lib/auction'
 import { IconButton } from './Button'
 import { Pill, SiteBadge } from './Pill'
 import { Badge } from './Badge'
@@ -37,16 +38,21 @@ interface ListingCardProps {
   isNew?: boolean
 }
 
-/** Chalk listing card: photo (with "New"), price + star, title, site, then condition/shipping/auction. Starred adds an ink ring. */
+/**
+ * Chalk listing card: photo (with "New"), price + star, bid note, title, site, then
+ * condition/shipping/auction. Starred adds an ink ring; an ended auction fades its photo.
+ */
 export function ListingCard({ listing: l, starred, onStar, isNew = false }: ListingCardProps) {
   const auction = useAuctionCountdown(l.auction_ends_at)
+  const ended = auction?.text === 'Ended'
+  const note = ended ? null : priceNote(l)
   return (
     <div className={`relative flex flex-col gap-2 min-w-0 p-2 pb-3 rounded-lg bg-chalk ${starred ? 'shadow-[inset_0_0_0_2px_var(--ink)]' : ''}`}>
       <a
         href={l.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="k-press relative block aspect-square rounded-md overflow-hidden bg-paper-2"
+        className={`k-press relative block aspect-square rounded-md overflow-hidden bg-paper-2 ${ended ? 'opacity-55' : ''}`}
         style={l.image_url ? undefined : { backgroundImage: 'var(--pattern-hatch)' }}
       >
         {l.image_url && (
@@ -70,6 +76,7 @@ export function ListingCard({ listing: l, starred, onStar, isNew = false }: List
             className="!w-7 !h-7 relative before:content-[''] before:absolute before:-inset-2"
           />
         </div>
+        {note && <div className="-mt-1 text-[12px] text-muted">{note}</div>}
         <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-[13px] leading-[1.3] text-ink-2 line-clamp-2 no-underline hover:underline">
           {l.title}
         </a>

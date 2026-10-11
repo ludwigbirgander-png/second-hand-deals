@@ -1,0 +1,273 @@
+{
+  "captured_at": 1791745888,
+  "items": [
+    {
+      "id": 5467361,
+      "title": "CHARLES & RAY EAMES, underrede \"Eames Segmented Tables\", 2000-tal.",
+      "url": "https://auctionet.com/en/5467361-charles-ray-eames-base-eames-segmented-tables-21st-century",
+      "currency": "SEK",
+      "state": "published",
+      "hammered": false,
+      "ends_at": 1792169160,
+      "starting_bid_amount": 350,
+      "estimate": 4000,
+      "bids": [
+        {
+          "id": 43229481,
+          "bidder": 1,
+          "amount": 350,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791599373
+        }
+      ],
+      "images": [
+        {
+          "thumb": "https://images.auctionet.com/thumbs/thumb_item_5467361_2c79a171d33ff78d4f6ca64fe9234827.jpg",
+          "mini": "https://images.auctionet.com/thumbs/mini_item_5467361_2c79a171d33ff78d4f6ca64fe9234827.jpg",
+          "w640": "https://images.auctionet.com/thumbs/w640_item_5467361_2c79a171d33ff78d4f6ca64fe9234827.jpg",
+          "hd": "https://images.auctionet.com/thumbs/hd_item_5467361_2c79a171d33ff78d4f6ca64fe9234827.jpg"
+        }
+      ],
+      "location": "Stockholm",
+      "house": "Auktionshuset Kolonn",
+      "type": "online"
+    },
+    {
+      "id": 5453162,
+      "title": "CHARLES & RAY EAMES. Stolar, 6 st, \"Eames plastic chair\", Vitra, 2019.",
+      "url": "https://auctionet.com/en/5453162-charles-ray-eames-chairs-6-pcs-eames-plastic-chair-vitra-2019",
+      "currency": "SEK",
+      "state": "published",
+      "hammered": false,
+      "ends_at": 1791995340,
+      "starting_bid_amount": 300,
+      "estimate": 12000,
+      "bids": [
+        {
+          "id": 43161084,
+          "bidder": 2,
+          "amount": 3000,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791362649
+        },
+        {
+          "id": 43160487,
+          "bidder": 1,
+          "amount": 1126,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791360750
+        }
+      ],
+      "images": [
+        {
+          "thumb": "https://images.auctionet.com/thumbs/thumb_item_5453162_b0654efbb8313a9da2dab198f05d251a.jpg",
+          "mini": "https://images.auctionet.com/thumbs/mini_item_5453162_b0654efbb8313a9da2dab198f05d251a.jpg",
+          "w640": "https://images.auctionet.com/thumbs/w640_item_5453162_b0654efbb8313a9da2dab198f05d251a.jpg",
+          "hd": "https://images.auctionet.com/thumbs/hd_item_5453162_b0654efbb8313a9da2dab198f05d251a.jpg"
+        }
+      ],
+      "location": "Helsingborg",
+      "house": "Stockholms Auktionsverk Helsingborg",
+      "type": "online"
+    },
+    {
+      "id": 5467373,
+      "title": "CHARLES & RAY EAMES, underrede, \"Eames Segmented Tables\", för Vitra, 2000-tal.",
+      "url": "https://auctionet.com/en/5467373-charles-ray-eames-base-eames-segmented-tables-for-vitra-21st-century",
+      "currency": "SEK",
+      "state": "published",
+      "hammered": false,
+      "ends_at": 1792174260,
+      "starting_bid_amount": 350,
+      "estimate": 5000,
+      "bids": [],
+      "images": [
+        {
+          "thumb": "https://images.auctionet.com/thumbs/thumb_item_5467373_595715d47fcf28819d7ca60d25ff169f.jpg",
+          "mini": "https://images.auctionet.com/thumbs/mini_item_5467373_595715d47fcf28819d7ca60d25ff169f.jpg",
+          "w640": "https://images.auctionet.com/thumbs/w640_item_5467373_595715d47fcf28819d7ca60d25ff169f.jpg",
+          "hd": "https://images.auctionet.com/thumbs/hd_item_5467373_595715d47fcf28819d7ca60d25ff169f.jpg"
+        }
+      ],
+      "location": "Stockholm",
+      "house": "Auktionshuset Kolonn",
+      "type": "online"
+    },
+    {
+      "id": 5453001,
+      "title": "CHARLES & RAY EAMES / GEORGE NELSON. Enkelt stol af glasfiber med forsidepolstring, 'La Fonda' fra Herman Miller Collection samt div. skaller og reservedele. (5).",
+      "url": "https://auctionet.com/en/5453001-charles-ray-eames-george-nelson-single-fiberglass-chair-with-front-upholstery-la",
+      "currency": "DKK",
+      "state": "published",
+      "hammered": false,
+      "ends_at": 1791966840,
+      "starting_bid_amount": 300,
+      "estimate": 2000,
+      "bids": [
+        {
+          "id": 43225636,
+          "bidder": 3,
+          "amount": 1000,
+          "your_bid": false,
+          "reserve_met": true,
+          "auto": false,
+          "timestamp": 1791574173
+        },
+        {
+          "id": 43225632,
+          "bidder": 3,
+          "amount": 999,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791574171
+        },
+        {
+          "id": 43225630,
+          "bidder": 3,
+          "amount": 949,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791574169
+        },
+        {
+          "id": 43225629,
+          "bidder": 3,
+          "amount": 899,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791574168
+        },
+        {
+          "id": 43225627,
+          "bidder": 3,
+          "amount": 849,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791574166
+        },
+        {
+          "id": 43225626,
+          "bidder": 3,
+          "amount": 799,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791574165
+        },
+        {
+          "id": 43225625,
+          "bidder": 3,
+          "amount": 749,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791574163
+        },
+        {
+          "id": 43225622,
+          "bidder": 3,
+          "amount": 699,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791574160
+        },
+        {
+          "id": 43183051,
+          "bidder": 2,
+          "amount": 352,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791442283
+        },
+        {
+          "id": 43182605,
+          "bidder": 1,
+          "amount": 300,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791439623
+        }
+      ],
+      "images": [
+        {
+          "thumb": "https://images.auctionet.com/thumbs/thumb_item_5453001_8c1b2bd17d8af98dc90de3ffdb9c6563.jpg",
+          "mini": "https://images.auctionet.com/thumbs/mini_item_5453001_8c1b2bd17d8af98dc90de3ffdb9c6563.jpg",
+          "w640": "https://images.auctionet.com/thumbs/w640_item_5453001_8c1b2bd17d8af98dc90de3ffdb9c6563.jpg",
+          "hd": "https://images.auctionet.com/thumbs/hd_item_5453001_8c1b2bd17d8af98dc90de3ffdb9c6563.jpg"
+        }
+      ],
+      "location": "Copenhagen",
+      "house": "Palsgaard Kunstauktioner",
+      "type": "online"
+    },
+    {
+      "id": 5454404,
+      "title": "RAY & CHARLES EAMES. Vitra/ Herman Miller, Aluchair EA108, Hopsak.",
+      "url": "https://auctionet.com/en/5454404-ray-charles-eames-vitra-herman-miller-aluchair-ea108-hopsak",
+      "currency": "EUR",
+      "state": "published",
+      "hammered": false,
+      "ends_at": 1791970680,
+      "starting_bid_amount": 25,
+      "estimate": 500,
+      "bids": [
+        {
+          "id": 43235739,
+          "bidder": 2,
+          "amount": 220,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791629429
+        },
+        {
+          "id": 43182401,
+          "bidder": 1,
+          "amount": 200,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791437822
+        },
+        {
+          "id": 43182398,
+          "bidder": 1,
+          "amount": 100,
+          "your_bid": false,
+          "reserve_met": false,
+          "auto": false,
+          "timestamp": 1791437814
+        }
+      ],
+      "images": [
+        {
+          "thumb": "https://images.auctionet.com/thumbs/thumb_item_5454404_2005aa17323c7ba18a19759af059a9e2.jpg",
+          "mini": "https://images.auctionet.com/thumbs/mini_item_5454404_2005aa17323c7ba18a19759af059a9e2.jpg",
+          "w640": "https://images.auctionet.com/thumbs/w640_item_5454404_2005aa17323c7ba18a19759af059a9e2.jpg",
+          "hd": "https://images.auctionet.com/thumbs/hd_item_5454404_2005aa17323c7ba18a19759af059a9e2.jpg"
+        }
+      ],
+      "location": "Hamburg",
+      "house": "Stockholms Auktionsverk Hamburg",
+      "type": "online"
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_entries": 22
+  }
+}

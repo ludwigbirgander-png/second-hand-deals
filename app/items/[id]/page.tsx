@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ItemList, ItemWithMeta, Listing, ListMember, ListRole } from '@/lib/types'
 import { NEW_GROUP_PALETTE } from '@/lib/colors'
+import { isEnded } from '@/lib/auction'
 import { ListingGrid } from '@/components/ListingGrid'
 import { AddPanel, type ItemFormValues } from '@/components/AddPanel'
 import { Button, IconButton, buttonClass } from '@/components/ui/Button'
@@ -17,13 +18,15 @@ import { AvatarStack } from '@/components/ui/Avatar'
 interface Loaded {
   itemData: ItemWithMeta | null
   listings: Listing[]
+  /** When the data was fetched; ended auctions are judged against it */
+  loadedAt: number
 }
 
 async function loadItem(id: string): Promise<Loaded> {
   const [itemRes, listingsRes] = await Promise.all([fetch(`/api/items/${id}`), fetch(`/api/items/${id}/listings`)])
   const itemData: ItemWithMeta | null = itemRes.ok ? await itemRes.json() : null
   const { listings } = await listingsRes.json().catch(() => ({ listings: [] }))
-  return { itemData, listings: listings ?? [] }
+  return { itemData, listings: listings ?? [], loadedAt: Date.now() }
 }
 
 async function loadEditableLists(): Promise<ItemList[]> {
@@ -37,6 +40,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const router = useRouter()
   const [item, setItem] = useState<ItemWithMeta | null>(null)
   const [listings, setListings] = useState<Listing[]>([])
+  const [loadedAt, setLoadedAt] = useState(0)
   const [newSince, setNewSince] = useState<string | null>(null)
   const [members, setMembers] = useState<{ name: string }[]>([])
   const [lists, setLists] = useState<ItemList[]>([])
@@ -47,6 +51,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const apply = useCallback((d: Loaded) => {
     setItem(d.itemData)
     setListings(d.listings)
+    setLoadedAt(d.loadedAt)
     setLoading(false)
   }, [])
 
@@ -142,7 +147,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const list = item.lists[0]
   const shared = item.lists.some((l) => l.visibility === 'collaborative')
   const inRange = listings.filter((l) =>
-    l.price != null && (item.min_price == null || l.price >= item.min_price) && (item.max_price == null || l.price <= item.max_price))
+    l.price != null && !isEnded(l, loadedAt) && (item.min_price == null || l.price >= item.min_price) && (item.max_price == null || l.price <= item.max_price))
   const lowest = inRange.length ? Math.min(...inRange.map((l) => l.price!)) : null
   const fmt = (n: number) => n.toLocaleString('sv-SE')
   const range = item.min_price != null || item.max_price != null

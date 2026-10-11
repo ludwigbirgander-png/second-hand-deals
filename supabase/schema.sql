@@ -51,6 +51,8 @@ create table if not exists listings (
   shipping_cost integer,
   auction_ends_at timestamptz,
   location text,
+  price_kind text check (price_kind in ('fixed', 'bid', 'start')),
+  bid_count integer,
   found_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
 );
@@ -120,7 +122,8 @@ create table if not exists site_configs (
   site_name text not null unique,
   enabled boolean not null default true,
   base_url text not null,
-  unreliable boolean not null default false
+  unreliable boolean not null default false,
+  kind text not null default 'marketplace' check (kind in ('marketplace', 'auction'))
 );
 
 create table if not exists user_site_prefs (
@@ -131,12 +134,14 @@ create table if not exists user_site_prefs (
   primary key (user_id, site_config_id)
 );
 
-insert into site_configs (site_name, enabled, base_url, unreliable) values
-  ('Blocket', true, 'https://www.blocket.se', false),
-  ('Tradera', true, 'https://www.tradera.com', false),
-  ('Sellpy', true, 'https://www.sellpy.se', false),
-  ('Vinted', true, 'https://www.vinted.se', false),
-  ('Facebook Marketplace', false, 'https://www.facebook.com/marketplace', true)
+insert into site_configs (site_name, enabled, base_url, unreliable, kind) values
+  ('Blocket', true, 'https://www.blocket.se', false, 'marketplace'),
+  ('Tradera', true, 'https://www.tradera.com', false, 'marketplace'),
+  ('Sellpy', true, 'https://www.sellpy.se', false, 'marketplace'),
+  ('Vinted', true, 'https://www.vinted.se', false, 'marketplace'),
+  ('Facebook Marketplace', false, 'https://www.facebook.com/marketplace', true, 'marketplace'),
+  ('Auctionet', true, 'https://auctionet.com', false, 'auction'),
+  ('Bukowskis', true, 'https://www.bukowskis.com', false, 'auction')
 on conflict (site_name) do nothing;
 
 -- ── RPC: new listings since last view, per item ─────────────────────────────

@@ -25,6 +25,8 @@ export const SITE_COLORS: Record<string, string> = {
   Vinted: 'var(--site-vinted)',
   Sellpy: 'var(--site-sellpy)',
   'Facebook Marketplace': 'var(--site-facebook)',
+  Auctionet: 'var(--site-auctionet)',
+  Bukowskis: 'var(--site-bukowskis)',
 }
 
 export const CONDITION_COLORS: Record<string, string> = {

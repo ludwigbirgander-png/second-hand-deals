@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { SiteConfig } from '@/lib/types'
+import type { SiteConfig, SiteKind } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { SITE_COLORS } from '@/lib/colors'
 import { Sheet, SheetSection } from './ui/Sheet'
 import { Toggle } from './ui/Form'
 import { Button } from './ui/Button'
+
+const SITE_GROUPS: { kind: SiteKind; title: string; hint: string }[] = [
+  { kind: 'marketplace', title: 'Marketplaces', hint: 'Choose which marketplaces to search for deals' },
+  { kind: 'auction', title: 'Auction houses', hint: 'Prices are the current bid, or the starting price before anyone bids' },
+]
 
 export function SettingsSheet({ open, onClose, email }: { open: boolean; onClose: () => void; email: string }) {
   const router = useRouter()
@@ -51,22 +56,28 @@ export function SettingsSheet({ open, onClose, email }: { open: boolean; onClose
         <Button variant="secondary" size="sm" className="mt-4" onClick={signOut}>Sign out</Button>
       </SheetSection>
 
-      <SheetSection title="Sites">
-        <p className="m-0 mb-2 text-[13px] text-muted">Choose which marketplaces to search for deals</p>
-        {sites.map((s) => (
-          <div key={s.id} className="flex items-center gap-3 h-[52px] border-b border-line-hair">
-            <span className="w-[9px] h-[9px] rounded-full" style={{ background: SITE_COLORS[s.site_name] ?? 'var(--stone)' }} />
-            <span className="flex-1 text-[16px] tracking-[-0.01em]">{s.site_name}</span>
-            <Toggle checked={s.enabled} onChange={(v) => toggleSite(s.id, v)} ariaLabel={`Search ${s.site_name}`} />
-          </div>
-        ))}
-        {error && <p role="alert" className="mt-3 text-[13px] text-signal-deep">{error}</p>}
-        {sites.some((s) => s.unreliable) && (
-          <p className="mt-3 mb-0 text-[12.5px] text-muted">
-            <strong className="text-ink font-medium">Facebook Marketplace:</strong> Requires a logged-in browser session — results will always be empty.
-          </p>
-        )}
-      </SheetSection>
+      {SITE_GROUPS.map((g) => {
+        const group = sites.filter((s) => (s.kind ?? 'marketplace') === g.kind)
+        if (group.length === 0) return null
+        return (
+          <SheetSection key={g.kind} title={g.title}>
+            <p className="m-0 mb-2 text-[13px] text-muted">{g.hint}</p>
+            {group.map((s) => (
+              <div key={s.id} className="flex items-center gap-3 h-[52px] border-b border-line-hair">
+                <span className="w-[9px] h-[9px] rounded-full" style={{ background: SITE_COLORS[s.site_name] ?? 'var(--stone)' }} />
+                <span className="flex-1 text-[16px] tracking-[-0.01em]">{s.site_name}</span>
+                <Toggle checked={s.enabled} onChange={(v) => toggleSite(s.id, v)} ariaLabel={`Search ${s.site_name}`} />
+              </div>
+            ))}
+          </SheetSection>
+        )
+      })}
+      {error && <p role="alert" className="mt-3 text-[13px] text-signal-deep">{error}</p>}
+      {sites.some((s) => s.unreliable) && (
+        <p className="mt-3 mb-0 text-[12.5px] text-muted">
+          <strong className="text-ink font-medium">Facebook Marketplace:</strong> Requires a logged-in browser session — results will always be empty.
+        </p>
+      )}
     </Sheet>
   )
 }

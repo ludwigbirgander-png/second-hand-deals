@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
-import { scrapeItem, buildQuery } from '../lib/scrapers/index.js'
+import { scrapeItem, buildQuery, toListingRow } from '../lib/scrapers/index.js'
 import { escapeHtml, safeHref } from '../lib/escapeHtml.js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '')
@@ -74,21 +74,7 @@ async function main() {
 
     // Upsert all enriched results — new ones get inserted, existing ones get enriched fields updated
     const { error: upsertError } = await db.from('listings').upsert(
-      scraped.map((l) => ({
-        item_id: item.id,
-        site: l.site,
-        title: l.title,
-        price: l.price,
-        currency: l.currency,
-        url: l.url,
-        image_url: l.imageUrl,
-        condition: l.condition ?? null,
-        size: l.size ?? null,
-        shipping_cost: l.shippingCost ?? null,
-        auction_ends_at: l.auctionEndsAt ?? null,
-        location: l.location ?? null,
-        last_seen_at: new Date().toISOString(),
-      })),
+      scraped.map((l) => toListingRow(item.id, l)),
       { onConflict: 'item_id,url' }
     )
 

@@ -43,7 +43,11 @@ export interface Listing {
   shipping_cost: number | null
   auction_ends_at: string | null
   location: string | null
+  price_kind: PriceKind | null
+  bid_count: number | null
 }
+
+export type SiteKind = 'marketplace' | 'auction'
 
 export interface SiteConfig {
   id: string
@@ -51,7 +55,11 @@ export interface SiteConfig {
   enabled: boolean
   base_url: string
   unreliable?: boolean
+  kind?: SiteKind
 }
+
+/** What a listing's price means: a fixed asking price, the current highest bid, or the starting price of an auction without bids */
+export type PriceKind = 'fixed' | 'bid' | 'start'
 
 export interface ScrapedListing {
   site: string
@@ -65,6 +73,8 @@ export interface ScrapedListing {
   shippingCost?: number | null
   auctionEndsAt?: string | null
   location?: string | null
+  priceKind?: PriceKind | null
+  bidCount?: number | null
 }
 
 export type ListRole = 'owner' | 'admin' | 'editor' | 'viewer'

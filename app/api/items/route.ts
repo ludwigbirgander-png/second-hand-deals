@@ -39,6 +39,8 @@ export async function GET() {
       .select('id, item_id, price, currency, image_url, url, site, title, found_at')
       .in('item_id', itemIds)
       .not('price', 'is', null)
+      // Ended auctions no longer count
+      .or(`auction_ends_at.is.null,auction_ends_at.gt.${new Date().toISOString()}`)
       .order('price', { ascending: true })
 
     for (const l of priced ?? []) {

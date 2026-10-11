@@ -51,6 +51,8 @@
   --site-vinted: var(--aqua-deep);
   --site-sellpy: var(--lilac-deep);
   --site-facebook: var(--stone-deep);
+  --site-auctionet: var(--mint-deep);
+  --site-bukowskis: var(--iris-deep);
 
   /* List colors — palette H "Crayon box", keyed by the stored color names.
      --on-list-* is the text color on that fill. */

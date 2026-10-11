@@ -2,19 +2,21 @@
 
 import { useState } from 'react'
 import type { Listing } from '@/lib/types'
+import { isEnded } from '@/lib/auction'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
 import { ListingCard } from './ui/Cards'
 import { Chip } from './ui/Chip'
 import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
 
-type SortKey = 'price-asc' | 'price-desc' | 'date-desc' | 'date-asc' | 'platform'
+type SortKey = 'price-asc' | 'price-desc' | 'date-desc' | 'date-asc' | 'ending' | 'platform'
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'price-asc', label: 'Price ↑' },
   { value: 'price-desc', label: 'Price ↓' },
   { value: 'date-desc', label: 'Newest first' },
   { value: 'date-asc', label: 'Oldest first' },
+  { value: 'ending', label: 'Ending soon' },
   { value: 'platform', label: 'Platform' },
 ]
 
@@ -30,18 +32,29 @@ function sortListings(listings: Listing[], key: SortKey): Listing[] {
     case 'price-desc': return arr.sort(byPrice(-1))
     case 'date-desc': return arr.sort((a, b) => new Date(b.found_at).getTime() - new Date(a.found_at).getTime())
     case 'date-asc': return arr.sort((a, b) => new Date(a.found_at).getTime() - new Date(b.found_at).getTime())
+    // Auctions by end time; fixed-price listings after them
+    case 'ending': return arr.sort((a, b) => endTime(a) - endTime(b))
     case 'platform': return arr.sort((a, b) => a.site.localeCompare(b.site))
   }
 }
 
-/** `newSince`: the item's last visit; listings found after it get a "New" badge. */
-export function ListingGrid({ listings, newSince }: { listings: Listing[]; newSince?: string | null }) {
+const endTime = (l: Listing) => (l.auction_ends_at ? new Date(l.auction_ends_at).getTime() : Infinity)
+
+/**
+ * `newSince`: the item's last visit; listings found after it get a "New" badge.
+ * Ended auctions are hidden unless starred.
+ */
+export function ListingGrid({ listings: all, newSince }: { listings: Listing[]; newSince?: string | null }) {
   const desktop = useMediaQuery(DESKTOP)
   // Whole rows: 5 columns on desktop, 2 on mobile
   const pageSize = desktop ? 15 : 6
   const [sortKey, setSortKey] = useState<SortKey>('price-asc')
   const [pages, setPages] = useState(1)
-  const [starredIds, setStarredIds] = useState<Set<string>>(() => new Set(listings.filter((l) => l.starred).map((l) => l.id)))
+  const [starredIds, setStarredIds] = useState<Set<string>>(() => new Set(all.filter((l) => l.starred).map((l) => l.id)))
+  // Fixed when the grid mounts; the page remounts it whenever the listings change
+  const [now] = useState(() => Date.now())
+  const listings = all.filter((l) => starredIds.has(l.id) || !isEnded(l, now))
+  const sortOptions = listings.some((l) => l.auction_ends_at) ? SORT_OPTIONS : SORT_OPTIONS.filter((o) => o.value !== 'ending')
 
   async function toggleStar(id: string) {
     const nowStarred = !starredIds.has(id)
@@ -97,7 +110,7 @@ export function ListingGrid({ listings, newSince }: { listings: Listing[]; newSi
       <div className="flex flex-col items-start gap-3.5 mb-3.5 md:mb-5">
         {heading}
         <div role="group" aria-label="Sort listings" className="flex gap-2 w-[calc(100%_+_32px)] -mx-4 px-4 md:w-auto md:mx-0 md:px-0 md:flex-wrap overflow-x-auto k-noscroll">
-          {SORT_OPTIONS.map((o) => (
+          {sortOptions.map((o) => (
             <Chip key={o.value} size="sm" label={o.label} active={sortKey === o.value} onClick={() => { setSortKey(o.value); setPages(1) }} />
           ))}
         </div>

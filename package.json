@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --test lib/scrapers/*.test.ts",
+    "check:scrapers": "tsx scripts/check-scrapers.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -28,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

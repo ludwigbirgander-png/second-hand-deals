@@ -1,0 +1,61 @@
+{
+  "_note": "Hand-written from the SearchItem fields in Tradera's SOAP WSDL, camelCased as the REST v4 API returns JSON. Replace with a captured response once an app key is set up.",
+  "totalNumberOfItems": 4,
+  "totalNumberOfPages": 1,
+  "items": [
+    {
+      "id": 700000001,
+      "shortDescription": "Eames Lounge Chair, Vitra",
+      "buyItNowPrice": 0,
+      "maxBid": 12500,
+      "nextBid": 12600,
+      "hasBids": true,
+      "bidCount": 7,
+      "isEnded": false,
+      "itemType": "Auction",
+      "endDate": "2026-10-20T19:00:00Z",
+      "itemUrl": "https://www.tradera.com/item/341558/700000001/eames-lounge-chair-vitra",
+      "thumbnailLink": "https://img.tradera.net/thumbs/700000001.jpg"
+    },
+    {
+      "id": 700000002,
+      "shortDescription": "Eames DSW stol",
+      "buyItNowPrice": 900,
+      "maxBid": 0,
+      "nextBid": 300,
+      "hasBids": false,
+      "bidCount": 0,
+      "isEnded": false,
+      "itemType": "Auction",
+      "endDate": "2026-10-18T18:30:00Z",
+      "itemUrl": "https://www.tradera.com/item/341558/700000002/eames-dsw-stol",
+      "imageLinks": [{ "url": "https://img.tradera.net/images/700000002.jpg", "format": "Normal" }]
+    },
+    {
+      "id": 700000003,
+      "shortDescription": "Eames Hang It All, ny",
+      "buyItNowPrice": 1450,
+      "maxBid": 0,
+      "nextBid": 0,
+      "hasBids": false,
+      "bidCount": 0,
+      "isEnded": false,
+      "itemType": "PureBuyItNow",
+      "endDate": "2026-11-30T12:00:00Z",
+      "itemUrl": "https://www.tradera.com/item/341558/700000003/eames-hang-it-all-ny"
+    },
+    {
+      "id": 700000004,
+      "shortDescription": "Eames Elephant, avslutad",
+      "buyItNowPrice": 0,
+      "maxBid": 500,
+      "nextBid": 550,
+      "hasBids": true,
+      "bidCount": 2,
+      "isEnded": true,
+      "itemType": "Auction",
+      "endDate": "2026-10-01T18:00:00Z",
+      "itemUrl": "https://www.tradera.com/item/341558/700000004/eames-elephant"
+    }
+  ]
+}

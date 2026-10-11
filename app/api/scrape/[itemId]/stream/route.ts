@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
 import { getEnabledSiteNamesForUser } from '@/lib/sites'
-import { SCRAPERS, ENRICHERS, enrichBatch, isRelevant, buildQuery } from '@/lib/scrapers'
+import { SCRAPERS, runSite, toListingRow, buildQuery } from '@/lib/scrapers'
 
 export const maxDuration = 60
 
@@ -48,48 +48,27 @@ export async function POST(
       const scrapeStart = new Date().toISOString()
       const succeededSites: string[] = []
 
-      for (const site of siteNames) {
-        const scraper = SCRAPERS[site]
-        if (!scraper) {
+      // All sites at once; each reports back as soon as it finishes
+      await Promise.all(siteNames.map(async (site) => {
+        if (!SCRAPERS[site]) {
           send({ type: 'done', site, count: 0 })
-          continue
+          return
         }
 
         send({ type: 'start', site })
 
         try {
-          const raw = await scraper(query)
-          const relevant = raw.filter((l) => isRelevant(l.title, query))
-
-          const enrichFn = ENRICHERS[site]
-          const enriched = enrichFn ? await enrichBatch(relevant, enrichFn) : relevant
-
-          const seen = new Map<string, typeof enriched[0]>()
-          for (const l of enriched) seen.set(l.url, l)
-          const deduped = Array.from(seen.values())
-          const fresh = deduped.filter((l) => !existingUrls.has(l.url))
+          const listings = await runSite(site, query, { enrich: true })
+          const fresh = listings.filter((l) => !existingUrls.has(l.url))
 
           // Upsert everything (not just new): refreshes price and last_seen_at
           // on existing listings so stale ones can be pruned later
-          if (deduped.length > 0) {
-            await db().from('listings').upsert(
-              deduped.map((l) => ({
-                item_id: itemId,
-                site: l.site,
-                title: l.title,
-                price: l.price,
-                currency: l.currency,
-                url: l.url,
-                image_url: l.imageUrl,
-                condition: l.condition ?? null,
-                size: l.size ?? null,
-                shipping_cost: l.shippingCost ?? null,
-                auction_ends_at: l.auctionEndsAt ?? null,
-                location: l.location ?? null,
-                last_seen_at: new Date().toISOString(),
-              })),
+          if (listings.length > 0) {
+            const { error } = await db().from('listings').upsert(
+              listings.map((l) => toListingRow(itemId, l)),
               { onConflict: 'item_id,url', ignoreDuplicates: false }
             )
+            if (error) throw error
             fresh.forEach((l) => existingUrls.add(l.url))
             total += fresh.length
           }
@@ -99,9 +78,7 @@ export async function POST(
         } catch {
           send({ type: 'done', site, count: 0 })
         }
-
-        await new Promise((r) => setTimeout(r, 800))
-      }
+      }))
 
       // Prune: listings from successfully scraped sites that were NOT returned
       // this run are no longer available — delete them (starred ones are kept).

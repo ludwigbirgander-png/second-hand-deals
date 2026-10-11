@@ -8,26 +8,119 @@ const HEADERS = {
   'Accept-Language': 'sv-SE,sv;q=0.9',
 }
 
+/** The official API is used once TRADERA_APP_ID and TRADERA_APP_KEY are set (https://api.tradera.com/register). */
+export function traderaApiEnabled(): boolean {
+  return Boolean(process.env.TRADERA_APP_ID?.trim() && process.env.TRADERA_APP_KEY?.trim())
+}
+
 export async function scrapeTradera(query: string): Promise<ScrapedListing[]> {
+  if (traderaApiEnabled()) return scrapeTraderaApi(query)
+  return scrapeTraderaHtml(query)
+}
+
+async function scrapeTraderaApi(query: string): Promise<ScrapedListing[]> {
+  const { data } = await axios.get('https://api.tradera.com/v4/search', {
+    params: { query },
+    headers: {
+      'X-App-Id': process.env.TRADERA_APP_ID!.trim(),
+      'X-App-Key': process.env.TRADERA_APP_KEY!.trim(),
+      Accept: 'application/json',
+    },
+    timeout: 10000,
+  })
+  return parseTraderaApi(data)
+}
+
+type ApiRecord = Record<string, unknown>
+
+/** Reads a field in either camelCase (REST v4) or PascalCase (the SOAP field names). */
+function field<T>(obj: ApiRecord, key: string): T | undefined {
+  return (obj[key] ?? obj[key[0].toUpperCase() + key.slice(1)]) as T | undefined
+}
+
+/**
+ * Search result items carry the end date and bids, so API results need no
+ * per-listing enrichment. Auctions show the highest bid, or the opening bid
+ * (nextBid) while there are none; Buy now items show their fixed price.
+ */
+export function parseTraderaApi(data: ApiRecord, now = Date.now()): ScrapedListing[] {
+  const items = field<ApiRecord[]>(data ?? {}, 'items') ?? []
+  const listings: ScrapedListing[] = []
+
+  for (const item of items) {
+    if (field<boolean>(item, 'isEnded')) continue
+    const id = field<number>(item, 'id')
+    const title = field<string>(item, 'shortDescription')?.trim()
+    const url = field<string>(item, 'itemUrl') || (id ? `https://www.tradera.com/item/${id}` : '')
+    if (!title || !url) continue
+
+    const endDate = field<string>(item, 'endDate')
+    const endsAt = endDate ? new Date(endDate).getTime() : NaN
+    if (Number.isFinite(endsAt) && endsAt <= now) continue
+
+    const isAuction = /auction/i.test(field<string>(item, 'itemType') ?? '')
+    const bidCount = field<number>(item, 'bidCount') ?? 0
+    const hasBids = Boolean(field<boolean>(item, 'hasBids')) || bidCount > 0
+    const price = isAuction
+      ? (hasBids ? field<number>(item, 'maxBid') : field<number>(item, 'nextBid')) ?? null
+      : field<number>(item, 'buyItNowPrice') ?? null
+
+    const images = field<ApiRecord[]>(item, 'imageLinks') ?? []
+    listings.push({
+      site: 'Tradera',
+      title,
+      price: price || null,
+      currency: 'SEK',
+      url,
+      imageUrl: field<string>(item, 'thumbnailLink') || (images[0] && field<string>(images[0], 'url')) || null,
+      auctionEndsAt: isAuction && Number.isFinite(endsAt) ? new Date(endsAt).toISOString() : null,
+      priceKind: isAuction ? (hasBids ? 'bid' : 'start') : 'fixed',
+      bidCount: isAuction ? bidCount : null,
+    })
+  }
+
+  return listings.slice(0, 50)
+}
+
+// Fallback without API credentials. Note: Tradera's robots.txt disallows /search.
+async function scrapeTraderaHtml(query: string): Promise<ScrapedListing[]> {
   const url = `https://www.tradera.com/search?q=${encodeURIComponent(query)}&saleType=1`
   const { data } = await axios.get(url, { headers: HEADERS, timeout: 10000 })
 
-  const $ = cheerio.load(data)
+  return parseTraderaHtml(data)
+}
+
+/**
+ * Search result cards. The title comes from the image link's title attribute,
+ * which has outlived several class-name changes. data-item-type is Auction,
+ * AuctionBin or PureBin; auction cards label the price "Ledande bud" (leading
+ * bid) or "Utropspris" (starting price).
+ */
+export function parseTraderaHtml(html: string): ScrapedListing[] {
+  const $ = cheerio.load(html)
   const listings: ScrapedListing[] = []
 
-  $('div[id^="item-card-"]').each((_, el) => {
-    // Title link has class textTruncateOneLine — the first a[href*="/item/"] is the image wrapper (no text)
-    const titleEl = $(el).find('a[class*="textTruncateOneLine"]').first()
-    const title = titleEl.text().trim()
-    const href = titleEl.attr('href') || $(el).find('a[href*="/item/"]').first().attr('href') || ''
+  $('div[data-item-card-id]').each((_, el) => {
+    const card = $(el)
+    const link = card.find('a[href*="/item/"]').first()
+    const title = (link.attr('title') || card.find('a[href*="/item/"][title]').last().text()).trim()
+    const href = link.attr('href') || ''
+    if (!title || !href) return
     const url = href.startsWith('http') ? href : `https://www.tradera.com${href}`
-    const priceText = $(el).find('[data-testid="price"]').first().text().trim()
-    const price = parsePrice(priceText)
-    const imageUrl = $(el).find('img').first().attr('src') || null
 
-    if (title && url && url !== 'https://www.tradera.com') {
-      listings.push({ site: 'Tradera', title, price, currency: 'SEK', url, imageUrl })
-    }
+    const type = card.attr('data-item-type') ?? ''
+    const label = card.find('[data-testid="bids-label"]').first().text().trim()
+    const priceKind = type === 'PureBin' ? 'fixed' : /ledande bud/i.test(label) ? 'bid' : /utropspris/i.test(label) ? 'start' : null
+
+    listings.push({
+      site: 'Tradera',
+      title,
+      price: parsePrice(card.find('[data-testid="price"]').first().text().trim()),
+      currency: 'SEK',
+      url,
+      imageUrl: card.find('img').first().attr('src') || null,
+      priceKind,
+    })
   })
 
   return listings.slice(0, 50)

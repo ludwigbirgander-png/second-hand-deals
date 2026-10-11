@@ -1,8 +1,10 @@
 import { scrapeBlocket, enrich as enrichBlocket } from './blocket'
-import { scrapeTradera, enrich as enrichTradera } from './tradera'
+import { scrapeTradera, enrich as enrichTradera, traderaApiEnabled } from './tradera'
 import { scrapeSellpy } from './sellpy'
 import { scrapeVinted } from './vinted'
 import { scrapeFacebook } from './facebook'
+import { scrapeAuctionet } from './auctionet'
+import { scrapeBukowskis } from './bukowskis'
 import type { ScrapedListing } from '../types'
 
 export const SCRAPERS: Record<string, (q: string) => Promise<ScrapedListing[]>> = {
@@ -11,43 +13,79 @@ export const SCRAPERS: Record<string, (q: string) => Promise<ScrapedListing[]>> 
   Sellpy: scrapeSellpy,
   Vinted: scrapeVinted,
   'Facebook Marketplace': scrapeFacebook,
+  Auctionet: scrapeAuctionet,
+  Bukowskis: scrapeBukowskis,
 }
 
-export const ENRICHERS: Record<string, (url: string) => Promise<Partial<ScrapedListing>>> = {
-  Blocket: enrichBlocket,
-  Tradera: enrichTradera,
+/** Per-listing page fetches for details the search results lack. Tradera's API returns them already. */
+function enricherFor(site: string): ((url: string) => Promise<Partial<ScrapedListing>>) | undefined {
+  if (site === 'Blocket') return enrichBlocket
+  if (site === 'Tradera' && !traderaApiEnabled()) return enrichTradera
+  return undefined
 }
 
+/** One site's time budget, enrichment included. Sites run in parallel inside a 60 s function. */
+export const SITE_TIMEOUT_MS = 45_000
+
+/**
+ * Search one site: scrape, keep relevant titles, enrich, dedupe by URL.
+ * Rejects on error or timeout, so callers can tell a failed site from one with no results.
+ */
+export async function runSite(
+  site: string,
+  query: string,
+  options?: { enrich?: boolean; timeoutMs?: number }
+): Promise<ScrapedListing[]> {
+  const scraper = SCRAPERS[site]
+  if (!scraper) return []
+
+  const work = async () => {
+    const relevant = (await scraper(query)).filter((l) => isRelevant(l.title, query))
+    const enrichFn = options?.enrich ? enricherFor(site) : undefined
+    const enriched = enrichFn ? await enrichBatch(relevant, enrichFn) : relevant
+    return Array.from(new Map(enriched.map((l) => [l.url, l])).values())
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${site} timed out`)), options?.timeoutMs ?? SITE_TIMEOUT_MS)
+  })
+  try {
+    return await Promise.race([work(), timeout])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/** All sites in parallel; a failed site contributes nothing. */
 export async function scrapeItem(
   query: string,
   sites: string[],
   options?: { enrich?: boolean }
 ): Promise<ScrapedListing[]> {
-  const results: ScrapedListing[] = []
+  const settled = await Promise.allSettled(sites.map((site) => runSite(site, query, options)))
+  return settled.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
+}
 
-  for (const site of sites) {
-    const fn = SCRAPERS[site]
-    if (!fn) continue
-    try {
-      const listings = await fn(query)
-      const filtered = listings.filter((l) => isRelevant(l.title, query))
-
-      let enriched = filtered
-      if (options?.enrich) {
-        const enrichFn = ENRICHERS[site]
-        if (enrichFn) {
-          enriched = await enrichBatch(filtered, enrichFn)
-        }
-      }
-
-      results.push(...enriched)
-    } catch {
-      // site unavailable — skip silently
-    }
-    await delay(1000)
+/** A scraped listing as a `listings` row, for upserts on (item_id, url). */
+export function toListingRow(itemId: string, l: ScrapedListing) {
+  return {
+    item_id: itemId,
+    site: l.site,
+    title: l.title,
+    price: l.price,
+    currency: l.currency,
+    url: l.url,
+    image_url: l.imageUrl,
+    condition: l.condition ?? null,
+    size: l.size ?? null,
+    shipping_cost: l.shippingCost ?? null,
+    auction_ends_at: l.auctionEndsAt ?? null,
+    location: l.location ?? null,
+    price_kind: l.priceKind ?? null,
+    bid_count: l.bidCount ?? null,
+    last_seen_at: new Date().toISOString(),
   }
-
-  return results
 }
 
 export async function enrichBatch(
@@ -92,6 +130,7 @@ export function normalize(text: string): string {
     .replace(/å/g, 'a')
     .replace(/é/g, 'e')
     .replace(/ü/g, 'u')
+    .replace(/['’]/g, '') // "Levi's" matches "levis"
 }
 
 export function isRelevant(title: string, query: string): boolean {
