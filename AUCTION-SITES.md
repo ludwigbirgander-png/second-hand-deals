@@ -6,9 +6,21 @@
   - Steps 0–4, 6 and 7, plus Auctionet and Bukowskis.
   - Tradera API support (step 5). It switches on once `TRADERA_APP_ID` and `TRADERA_APP_KEY` are set.
 - **Before deploying:** run `supabase/migrations/20261011_auction_sites.sql` in the Supabase SQL editor.
-- **Tradera API:** register at https://api.tradera.com/register. Add both keys in Vercel and as GitHub Action secrets, then capture a real response to replace the hand-written `__fixtures__/tradera-api-search.json`.
 - **Pantbanken and Klaravik:** left out by choice.
 - **Tests:** `npm test` runs the parser tests on saved responses. `npm run check:scrapers` searches every site live.
+
+### To do later: Tradera API keys
+Put on hold 2026-10-12. Until it's done, Tradera is read from its search page, which works but goes against Tradera's `robots.txt`.
+
+1. Register a developer account at https://api.tradera.com/register. It's separate from a normal Tradera account.
+2. In the Developer Center, create an application to get the **App ID** and **App Key**. Description: "Kompi: a personal watchlist that searches Tradera for second-hand items and alerts the user to new listings. Read-only search, no bidding." Tradera's usage policy allows search and alerts; it forbids automated bidding and sniping.
+3. Add `TRADERA_APP_ID` and `TRADERA_APP_KEY` in three places:
+   - `.env.local`
+   - Vercel (Settings → Environment Variables, then redeploy)
+   - GitHub (Settings → Secrets and variables → Actions)
+4. Run `npm run check:scrapers` to confirm the API answers.
+5. Save a real API response over the hand-written `lib/scrapers/__fixtures__/tradera-api-search.json`, and adjust `parseTraderaApi` if the real field names differ.
+6. Limit: 10,000 calls a day per method. To ask for more, use https://api.tradera.com/contact.
 
 Researched 2026-10-11. There is no public ranking of Swedish auction sites by traffic, so the order below comes from reach, how well the site fits Kompi's items (design, furniture, clothes, electronics, watches) and how easy it is to search from code. Every site was tested with a real search request from a script.
 
