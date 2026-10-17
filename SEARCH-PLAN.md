@@ -46,9 +46,8 @@ Add `lib/categories.ts`, a typed registry. Each category has:
 Nothing about categories is stored in the database except the user's choices. Categories and options can then change in code without migrations.
 
 ### 2. Data model (one migration)
-- `items.category text null`, `items.filters jsonb not null default '{}'`, `items.exclude_words text[] not null default '{}'`.
+- `items.category text null`, `items.filters jsonb not null default '{}'`, (`items.exclude_words` and `listings.removed_at` come earlier, in phase 1.)
 - `listings.attributes jsonb`: normalised details pulled from each site (size, condition grade, storage…), used for filtering and shown on cards.
-- `listings.hidden boolean default false`, for "Not relevant".
 
 ### 3. Search pipeline changes
 - Scrapers become `(query, options) => ScrapedListing[]`, where `options` holds `{ category, filters, minPrice, maxPrice }`. Each scraper maps what it can into native params. The current signature in `SCRAPERS` (`lib/scrapers/index.ts`) and `runSite` stay the entry points.
