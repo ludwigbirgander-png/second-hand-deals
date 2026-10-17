@@ -158,8 +158,26 @@ To build this:
 - "Find more like this" from a listing
 - Search in descriptions (Tradera `SearchInDescription`)
 - Live count while adding an item (skipped 2026-10-17): "14 listings match right now · 6 possible" under the search field, from a `POST /api/search/preview` that runs a quick search without saving anything.
-- Phone push notifications (web push from an installed Kompi web app)
+- Phone push notifications: see the to-do below
 - Alerts for collaborators on shared lists
+
+### To do later: push notifications on mobile
+Saved 2026-10-17. Do this after the email alerts (phase 3) work. It adds a second channel for the same alerts, with no App Store app needed ("web push").
+
+- **How it works for the user:**
+  - **iPhone:** open Kompi in Safari → Share → "Add to Home Screen". Apple only allows push for websites installed this way, and needs iOS 16.4 or later.
+  - **Android:** works in Chrome directly; installing is optional.
+  - In Settings, a "Phone notifications" switch triggers the phone's own "Allow notifications?" question. Each allowed device is saved to the account.
+  - Alerts appear on the lock screen, for example "Under your target: Lilla Åland stol, 1 200 kr". Tapping one opens the listing in Kompi.
+- **To build:**
+  1. Make Kompi installable: a web app manifest with name, icon and colours.
+  2. Add a service worker that receives and shows notifications.
+  3. Create VAPID keys (env vars) and a `push_subscriptions (user_id, endpoint, keys, created_at)` table.
+  4. Send from the alert job with the `web-push` library, next to the email, and delete subscriptions that report as expired.
+  5. Add per-user settings for which alerts go to the phone, email or both.
+- **Trade-offs:**
+  - On iPhone it only works after "Add to Home Screen", so email stays the baseline.
+  - Notifications are only as fast as the alert check, which runs every 3 hours.
 
 ### Later, optional: AI-assisted (small model, e.g. Claude Haiku)
 - Pull structured details out of free-text titles and descriptions (size, storage, model, defects) into `listings.attributes`. This lets filters work on Blocket and Tradera, which have no structured fields.
