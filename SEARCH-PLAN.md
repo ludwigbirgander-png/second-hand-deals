@@ -103,7 +103,7 @@ Decided 2026-10-17. Built before the categories, in the phase order below.
 - **Favourite (★):** the existing star, renamed "Favourite".
   - Favourites stay at the top and are never cleaned up.
   - A "Favourites" filter chip on the item page shows only those.
-  - Favourites get extra alerts (section D).
+  - Favourites get extra alerts (section D, Alerts).
 - **Remove (×):** on every listing card. The listing disappears and Kompi remembers it, so later searches don't bring it back.
   - Stored as a mark on the listing (`listings.removed_at`), not a delete.
   - The automatic clean-up of unseen listings must skip removed ones, or a removed listing could return when it shows up again.
@@ -134,23 +134,7 @@ Decided 2026-10-17. Built before the categories, in the phase order below.
 - Possible matches are saved too (`listings.match = 'possible'`). The item page shows them in a separate "Possible matches" section below the main grid.
 - Counts and the lowest price use only real matches. Alerts never fire on possible matches.
 
-### D. Live count while adding (to try)
-- **What you see:** in the Add/Edit panel, a moment after you stop typing (about 0.7 s), a line under the search field:
-  - "14 listings match right now · 6 possible"
-  - a per-site breakdown
-  - 4 thumbnails
-  It updates whenever the name, brand, price or (later) category options change.
-- **How it works:**
-  - A new `POST /api/search/preview` takes `{ name, brand, minPrice, maxPrice, filters }` and runs `runSite` for the enabled sites. It skips per-listing enrichment and slow sites, and saves nothing.
-  - Results are cached for 10 minutes per query.
-  - The client cancels the previous request when you keep typing.
-  - Saving the item then runs the full search as today.
-- **Limits:**
-  - at most one preview per second per user
-  - an 8 s time limit per site
-  - with no results, a hint: "Try a broader name or a higher max price".
-
-### E. Alerts
+### D. Alerts
 Baseline: **one weekly email** (Monday morning) per user, grouped by item. It only covers real matches that pass removed listings and hidden words. No email in a week with nothing new.
 
 On top of that, a **frequent check every 3 hours** for:
@@ -173,6 +157,7 @@ To build this:
 - Grouping the same item posted on several sites
 - "Find more like this" from a listing
 - Search in descriptions (Tradera `SearchInDescription`)
+- Live count while adding an item (skipped 2026-10-17): "14 listings match right now · 6 possible" under the search field, from a `POST /api/search/preview` that runs a quick search without saving anything.
 - Phone push notifications (web push from an installed Kompi web app)
 - Alerts for collaborators on shared lists
 
@@ -185,12 +170,11 @@ To build this:
 ## Phases
 1. **Remove and favourite listings** (A): migration, × on cards, Undo, "Show removed", Favourites filter, the "hide future listings with this word" prompt.
 2. **Synonyms, fuzzy matching and Possible matches** (B, C).
-3. **Live count while adding** (D).
-4. **Alerts** (E): restart the background job, weekly email, 3-hourly checks for target price, favourite price drops, auctions ending soon and rare finds.
-5. **Category framework, Clothing and Shoes:** `lib/categories.ts`, condition normalisation and sale-type filter.
-6. **Next categories:** Phones & tablets, Computers, Furniture & design, Watches & jewellery, Glass & ceramics.
-7. **Remaining categories.**
-8. **AI-assisted extraction and suggestions** (optional).
+3. **Alerts** (D): restart the background job, weekly email, 3-hourly checks for target price, favourite price drops, auctions ending soon and rare finds.
+4. **Category framework, Clothing and Shoes:** `lib/categories.ts`, condition normalisation and sale-type filter.
+5. **Next categories:** Phones & tablets, Computers, Furniture & design, Watches & jewellery, Glass & ceramics.
+6. **Remaining categories.**
+7. **AI-assisted extraction and suggestions** (optional).
 
 ## Files the later implementation will touch
 - `lib/categories.ts` (new)
