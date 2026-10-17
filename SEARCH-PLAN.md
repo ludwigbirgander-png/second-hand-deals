@@ -1,6 +1,6 @@
 # Kompi search: categories and precision plan
 
-Written 2026-10-17. Nothing here is built yet; pick phases to start.
+Written 2026-10-17. Nothing here is built yet. Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
 
 ## Context
 Today a Kompi item is only a name, an optional brand and a price range (`items` table). Kompi sends the same text query to every site and keeps a listing when every word of 3+ letters appears in its title (`isRelevant` in `lib/scrapers/index.ts`). That causes three problems:
@@ -97,23 +97,85 @@ Every category also gets the **shared options** (section "Beyond categories" lis
 
 Vehicles and property are left out, because they fall outside Kompi's second-hand-goods focus.
 
-## Beyond categories: ideas
-Ordered by value for effort:
-1. **Exclude words** per item, plus built-in ones per category. Cheap, and a big precision win.
-2. **"Not relevant" on a listing.** It hides the listing and suggests an exclude word from its title, for example "skal" (case).
-3. **Synonyms and Swedish ↔ English**, plus brand and spelling aliases. chair ↔ stol, jacket ↔ jacka, "EA117" = "EA 117", "Fritz Hansen" = "Fritz-Hansen". Kompi also sends a Swedish query variant to Swedish-titled sites.
-4. **Better relevance than "all words".** Fuzzy matching (typos), exact matching for model numbers, scored tiers ("Exact match" vs "Possible match") instead of a hard drop.
-5. **Accessory and outlier detection.** Flag listings priced far below the item's median (likely a case or box only), combined with the category's exclude words.
-6. **Price intelligence:**
-   - A median price per item and a "deal" badge (e.g. 30% under median).
-   - Price history with `recharts`, which is already installed.
-   - Sold prices from Auctionet's ended lots and Bukowskis results.
-7. **Duplicate grouping.** Group the same item posted on several sites by title and image similarity.
-8. **Location.** Your postcode in Settings, distance on cards, and a pickup radius for bulky categories.
-9. **Live preview while adding.** "23 listings match right now", so you can tune filters before saving.
-10. **Smarter alerts.** Email only when a new listing matches strict filters or is under a target price, plus "auction ending soon" for starred listings.
-11. **"Find more like this"** from a listing, prefilled from its attributes.
-12. **Search in descriptions** (Tradera `SearchInDescription`), as an opt-in.
+## Beyond categories: decided features
+Decided 2026-10-17. Built before the categories, in the phase order below.
+
+### A. Remove and favourite listings
+- **Favourite (★):** the existing star, renamed "Favourite".
+  - Favourites stay at the top and are never cleaned up.
+  - A "Favourites" filter chip on the item page shows only those.
+  - Favourites get extra alerts (section D).
+- **Remove (×):** on every listing card. The listing disappears and Kompi remembers it, so later searches don't bring it back.
+  - Stored as a mark on the listing (`listings.removed_at`), not a delete.
+  - The automatic clean-up of unseen listings must skip removed ones, or a removed listing could return when it shows up again.
+- **Undo:** a short "Listing removed · Undo" message, plus "Show removed (N)" at the bottom of the item page.
+- **Hide similar listings:** after a removal, Kompi offers words from the removed title that aren't part of the search.
+  - Example: removing "iPhone 13 skal svart" offers `skal` and `svart`. Tapping "Hide future listings with 'skal'" saves the word on the item.
+  - From then on, titles with that word are dropped. Matching ignores case and å/ä/ö and matches the start of words, so `skal` also catches "skalet".
+  - Already-found listings with the word are hidden too, with Undo.
+  - This prompt is the only way to add these words for now. A manual "exclude words" field is a future idea.
+- Data:
+  - `listings.removed_at timestamptz`
+  - `items.exclude_words text[] default '{}'` (filled from the prompt)
+  - A new `PATCH /api/listings/[id]` field for removing and restoring
+
+### B. Swedish ↔ English synonyms and aliases
+- A synonym table in code, `lib/search/synonyms.ts`, grouped by category later:
+  - chair ↔ stol, jacket ↔ jacka, lamp ↔ lampa, table ↔ bord, shoes ↔ skor, glass ↔ glas…
+  - Brand and spelling aliases: "Fritz Hansen" = "Fritz-Hansen", "Levi's" = "Levis".
+  - Model numbers with and without spaces: "EA117" = "EA 117".
+- Synonyms are used in two places:
+  1. **Matching:** a title passes if it has each search word **or one of its synonyms**.
+  2. **Querying:** sites with Swedish titles (Blocket, Tradera, Auctionet, Bukowskis) also get a Swedish variant of the query, so "Eames chair" also searches "Eames stol". Both result sets are merged and de-duplicated by URL.
+
+### C. Fuzzy matching and "Possible match"
+- `isRelevant` in `lib/scrapers/index.ts` becomes a score. It returns `match`, `possible` or `none`, rather than a yes/no.
+  - **match:** every search word (or a synonym) is in the title. Model numbers must match exactly once spaces and dashes are ignored.
+  - **possible:** small typos (edit distance 1 for words of 5+ letters, e.g. "Malmsten" ~ "Malmstén"), or all but one of 3+ words present.
+- Possible matches are saved too (`listings.match = 'possible'`). The item page shows them in a separate "Possible matches" section below the main grid.
+- Counts and the lowest price use only real matches. Alerts never fire on possible matches.
+
+### D. Live count while adding (to try)
+- **What you see:** in the Add/Edit panel, a moment after you stop typing (about 0.7 s), a line under the search field:
+  - "14 listings match right now · 6 possible"
+  - a per-site breakdown
+  - 4 thumbnails
+  It updates whenever the name, brand, price or (later) category options change.
+- **How it works:**
+  - A new `POST /api/search/preview` takes `{ name, brand, minPrice, maxPrice, filters }` and runs `runSite` for the enabled sites. It skips per-listing enrichment and slow sites, and saves nothing.
+  - Results are cached for 10 minutes per query.
+  - The client cancels the previous request when you keep typing.
+  - Saving the item then runs the full search as today.
+- **Limits:**
+  - at most one preview per second per user
+  - an 8 s time limit per site
+  - with no results, a hint: "Try a broader name or a higher max price".
+
+### E. Alerts
+Baseline: **one weekly email** (Monday morning) per user, grouped by item. It only covers real matches that pass removed listings and hidden words. No email in a week with nothing new.
+
+On top of that, a **frequent check every 3 hours** for:
+1. **Target price:** an item setting "Alert me when one is under X kr" (`items.target_price`). Any new or re-priced real match at or under the target sends one email per listing, right away. The watchlist tile shows a bell badge "Under 1 500 kr".
+2. **Price drop on a favourite:** a favourited listing whose price falls below the price it had when last checked. The email shows old → new price.
+3. **Auction ending soon:** a favourited auction ending within the next 3 hours gets one reminder, with the current bid and a link. Kompi never bids.
+4. **Rare find:** an item with no new real match for 7 days or more sends its own alert as soon as one appears, rather than waiting for Monday.
+
+To build this:
+- **Background job:** `scripts/daily-scrape.ts` is restarted and split into a weekly digest run and a 3-hourly check, both on the GitHub Action schedule (`.github/workflows/`). Vercel's free cron can't run every 3 hours.
+- **Price history:** `listings.previous_price`, updated when an upsert changes the price.
+- **No duplicate alerts:** an `alert_log (user_id, listing_id, kind, price, sent_at)` table; a listing alerts again only if its price drops further.
+- **Settings:** per user, the weekly email on or off and alerts on or off; per item, the target price.
+- **Later:** phone push notifications as a second channel next to email (see "Future ideas").
+
+## Future ideas (not planned yet)
+- Manual "exclude words" field per item, plus built-in words per category
+- Deal badges, price history charts and sold prices (skipped for now)
+- Pickup distance and postcode (skipped for now)
+- Grouping the same item posted on several sites
+- "Find more like this" from a listing
+- Search in descriptions (Tradera `SearchInDescription`)
+- Phone push notifications (web push from an installed Kompi web app)
+- Alerts for collaborators on shared lists
 
 ### Later, optional: AI-assisted (small model, e.g. Claude Haiku)
 - Pull structured details out of free-text titles and descriptions (size, storage, model, defects) into `listings.attributes`. This lets filters work on Blocket and Tradera, which have no structured fields.
@@ -122,19 +184,14 @@ Ordered by value for effort:
 - Cost control: only new listings, cached per URL, capped per search.
 
 ## Phases
-1. **Foundation and quick wins:**
-   - Migration
-   - `lib/categories.ts` framework
-   - Exclude words
-   - "Not relevant"
-   - Condition normalisation and filter
-   - Sale-type filter
-2. **First categories:** Clothing and Shoes. Sellpy, Vinted, Tradera and Blocket have the richest native filters for them.
-3. **Next categories:** Phones & tablets, Computers, Furniture & design, Watches & jewellery, Glass & ceramics.
-4. **Remaining categories:** Bags & accessories, Cameras & lenses, Audio & hi-fi, Gaming, Bikes, Sport & outdoor, Kids & baby, Books, music & film, Art & antiques.
-5. **Smarter matching:** synonyms, fuzzy and tiered relevance, outlier detection, duplicates.
-6. **Price intelligence and alerts.**
-7. **AI-assisted extraction and suggestions** (optional).
+1. **Remove and favourite listings** (A): migration, × on cards, Undo, "Show removed", Favourites filter, the "hide future listings with this word" prompt.
+2. **Synonyms, fuzzy matching and Possible matches** (B, C).
+3. **Live count while adding** (D).
+4. **Alerts** (E): restart the background job, weekly email, 3-hourly checks for target price, favourite price drops, auctions ending soon and rare finds.
+5. **Category framework, Clothing and Shoes:** `lib/categories.ts`, condition normalisation and sale-type filter.
+6. **Next categories:** Phones & tablets, Computers, Furniture & design, Watches & jewellery, Glass & ceramics.
+7. **Remaining categories.**
+8. **AI-assisted extraction and suggestions** (optional).
 
 ## Files the later implementation will touch
 - `lib/categories.ts` (new)
