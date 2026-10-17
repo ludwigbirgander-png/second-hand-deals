@@ -147,7 +147,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const list = item.lists[0]
   const shared = item.lists.some((l) => l.visibility === 'collaborative')
   const inRange = listings.filter((l) =>
-    l.price != null && !isEnded(l, loadedAt) && (item.min_price == null || l.price >= item.min_price) && (item.max_price == null || l.price <= item.max_price))
+    l.price != null && !l.removed_at && l.match !== 'possible' && !isEnded(l, loadedAt) && (item.min_price == null || l.price >= item.min_price) && (item.max_price == null || l.price <= item.max_price))
   const lowest = inRange.length ? Math.min(...inRange.map((l) => l.price!)) : null
   const fmt = (n: number) => n.toLocaleString('sv-SE')
   const range = item.min_price != null || item.max_price != null
@@ -198,7 +198,16 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Listings */}
       <section className={`${shell} pt-2`}>
-        <ListingGrid key={listings.map((l) => l.id).join()} listings={listings} newSince={newSince} />
+        <ListingGrid
+          key={listings.map((l) => l.id).join()}
+          itemId={item.id}
+          query={[item.brand, item.name].filter(Boolean).join(' ')}
+          listings={listings}
+          onListingsChange={setListings}
+          excludeWords={item.exclude_words ?? []}
+          onExcludeWordsChange={(words) => setItem((prev) => (prev ? { ...prev, exclude_words: words } : prev))}
+          newSince={newSince}
+        />
       </section>
 
       <FloatingButton ref={fabRef} label="Edit item" icon="pencil" hidden={editOpen} onClick={() => setEditOpen(true)} />

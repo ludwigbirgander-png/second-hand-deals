@@ -6,6 +6,8 @@ export interface Item {
   min_price: number | null
   max_price: number | null
   notify: boolean
+  /** Words that hide a listing; added from the prompt after removing one */
+  exclude_words?: string[]
   created_at: string
 }
 
@@ -45,7 +47,15 @@ export interface Listing {
   location: string | null
   price_kind: PriceKind | null
   bid_count: number | null
+  /** How well the title matched the search; possible matches are listed separately */
+  match: ListingMatch
+  /** Set when the user removed the listing; later searches keep it hidden */
+  removed_at: string | null
+  /** The hidden word that removed it, if it wasn't removed by hand */
+  removed_word: string | null
 }
+
+export type ListingMatch = 'match' | 'possible'
 
 export type SiteKind = 'marketplace' | 'auction'
 
@@ -75,6 +85,7 @@ export interface ScrapedListing {
   location?: string | null
   priceKind?: PriceKind | null
   bidCount?: number | null
+  match?: ListingMatch
 }
 
 export type ListRole = 'owner' | 'admin' | 'editor' | 'viewer'

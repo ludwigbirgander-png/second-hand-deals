@@ -34,15 +34,18 @@ interface ListingCardProps {
   listing: Listing
   starred: boolean
   onStar: () => void
+  /** Hide the listing; Kompi remembers it so it doesn't come back */
+  onRemove?: () => void
   /** Found since the user's last visit */
   isNew?: boolean
 }
 
 /**
- * Chalk listing card: photo (with "New"), price + star, bid note, title, site, then
- * condition/shipping/auction. Starred adds an ink ring; an ended auction fades its photo.
+ * Chalk listing card: photo (with "New" and a remove ×), price + favourite star, bid note,
+ * title, site, then condition/shipping/auction. A favourite adds an ink ring; an ended
+ * auction fades its photo.
  */
-export function ListingCard({ listing: l, starred, onStar, isNew = false }: ListingCardProps) {
+export function ListingCard({ listing: l, starred, onStar, onRemove, isNew = false }: ListingCardProps) {
   const auction = useAuctionCountdown(l.auction_ends_at)
   const ended = auction?.text === 'Ended'
   const note = ended ? null : priceNote(l)
@@ -61,6 +64,16 @@ export function ListingCard({ listing: l, starred, onStar, isNew = false }: List
         )}
         {isNew && <Badge size="sm" className="absolute top-2 left-2">New</Badge>}
       </a>
+      {onRemove && (
+        <IconButton
+          icon="x"
+          size="sm"
+          label="Remove listing"
+          onClick={onRemove}
+          // Sits on the photo, outside the link; 28px visual, 44px hit area
+          className="!absolute top-3.5 right-3.5 !w-7 !h-7 !bg-veil before:content-[''] before:absolute before:-inset-2"
+        />
+      )}
       <div className="flex flex-col gap-1 px-1 min-w-0">
         <div className="flex items-center justify-between gap-1.5">
           <Price value={l.price} size="md" />
@@ -69,7 +82,7 @@ export function ListingCard({ listing: l, starred, onStar, isNew = false }: List
             size="sm"
             variant="star"
             filled={starred}
-            label={starred ? 'Unstar listing' : 'Star listing'}
+            label={starred ? 'Remove from favorites' : 'Add to favorites'}
             aria-pressed={starred}
             onClick={onStar}
             // 28px visual, 44px hit area

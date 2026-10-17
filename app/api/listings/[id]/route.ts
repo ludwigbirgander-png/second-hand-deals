@@ -10,9 +10,18 @@ export async function PATCH(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { starred } = await request.json()
-  if (typeof starred !== 'boolean') {
-    return Response.json({ error: 'starred must be a boolean' }, { status: 400 })
+  // starred: favourite or not. removed: hide it (kept, so later searches don't bring it back) or restore it.
+  const { starred, removed } = await request.json()
+  if (typeof starred !== 'boolean' && typeof removed !== 'boolean') {
+    return Response.json({ error: 'Send starred or removed as a boolean' }, { status: 400 })
+  }
+  const update: { starred?: boolean; removed_at?: string | null; removed_word?: null } = {}
+  if (typeof starred === 'boolean') update.starred = starred
+  if (typeof removed === 'boolean') {
+    update.removed_at = removed ? new Date().toISOString() : null
+    update.removed_word = null
+    // A removed listing is no longer a favourite
+    if (removed) update.starred = false
   }
 
   // Verify the listing belongs to one of the caller's items
@@ -27,7 +36,7 @@ export async function PATCH(
 
   const { data, error } = await supabase
     .from('listings')
-    .update({ starred })
+    .update(update)
     .eq('id', id)
     .select()
     .single()

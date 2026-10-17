@@ -58,8 +58,10 @@ export async function POST(
         send({ type: 'start', site })
 
         try {
-          const listings = await runSite(site, query, { enrich: true })
+          const listings = await runSite(site, query, { enrich: true, excludeWords: item.exclude_words ?? [] })
           const fresh = listings.filter((l) => !existingUrls.has(l.url))
+          // Possible matches are saved but not counted as new finds
+          const freshMatches = fresh.filter((l) => l.match !== 'possible')
 
           // Upsert everything (not just new): refreshes price and last_seen_at
           // on existing listings so stale ones can be pruned later
@@ -70,11 +72,11 @@ export async function POST(
             )
             if (error) throw error
             fresh.forEach((l) => existingUrls.add(l.url))
-            total += fresh.length
+            total += freshMatches.length
           }
 
           succeededSites.push(site)
-          send({ type: 'done', site, count: fresh.length })
+          send({ type: 'done', site, count: freshMatches.length })
         } catch {
           send({ type: 'done', site, count: 0 })
         }
@@ -82,7 +84,8 @@ export async function POST(
 
       // Prune: listings from successfully scraped sites that were NOT returned
       // this run are no longer available — delete them (starred ones are kept).
-      // Sites that errored or are disabled are left untouched.
+      // Sites that errored or are disabled are left untouched, and removed
+      // listings are kept so they stay hidden if they show up again.
       let pruned = 0
       if (succeededSites.length > 0) {
         const { count } = await db()
@@ -90,6 +93,7 @@ export async function POST(
           .delete({ count: 'exact' })
           .eq('item_id', itemId)
           .eq('starred', false)
+          .is('removed_at', null)
           .in('site', succeededSites)
           .lt('last_seen_at', scrapeStart)
         pruned = count ?? 0

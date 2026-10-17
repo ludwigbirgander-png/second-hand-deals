@@ -1,6 +1,7 @@
 // Live health check: one known query per site, so a site that changed its
 // markup or API shows up as "0" or an error. Run: npm run check:scrapers
-import { SCRAPERS, isRelevant } from '../lib/scrapers/index.js'
+import { SCRAPERS } from '../lib/scrapers/index.js'
+import { matchQuality } from '../lib/search/match.js'
 
 // Queries that every site normally has results for
 const QUERIES: Record<string, string> = {
@@ -22,7 +23,7 @@ async function main() {
     const started = Date.now()
     try {
       const listings = await SCRAPERS[site](query)
-      const relevant = listings.filter((l) => isRelevant(l.title, query))
+      const relevant = listings.filter((l) => matchQuality(l.title, query) !== 'none')
       const priced = listings.filter((l) => l.price != null)
       return { site, query, ok: listings.length > 0, found: listings.length, relevant: relevant.length, priced: priced.length, ms: Date.now() - started, error: '' }
     } catch (err) {

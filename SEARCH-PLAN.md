@@ -1,6 +1,6 @@
 # Kompi search: categories and precision plan
 
-Written 2026-10-17. Nothing here is built yet. Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
+Written 2026-10-17. **Status:** phases 1 and 2 built on branch `search-phase-1-2` (needs `supabase/migrations/20261018_remove_and_match.sql`). Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
 
 ## Context
 Today a Kompi item is only a name, an optional brand and a price range (`items` table). Kompi sends the same text query to every site and keeps a listing when every word of 3+ letters appears in its title (`isRelevant` in `lib/scrapers/index.ts`). That causes three problems:
@@ -100,7 +100,7 @@ Vehicles and property are left out, because they fall outside Kompi's second-han
 Decided 2026-10-17. Built before the categories, in the phase order below.
 
 ### A. Remove and favourite listings
-- **Favourite (★):** the existing star, renamed "Favourite".
+- **Favorite (★):** the existing star, labelled "Favorite" in the app.
   - Favourites stay at the top and are never cleaned up.
   - A "Favourites" filter chip on the item page shows only those.
   - Favourites get extra alerts (section D, Alerts).
@@ -110,7 +110,7 @@ Decided 2026-10-17. Built before the categories, in the phase order below.
 - **Undo:** a short "Listing removed · Undo" message, plus "Show removed (N)" at the bottom of the item page.
 - **Hide similar listings:** after a removal, Kompi offers words from the removed title that aren't part of the search.
   - Example: removing "iPhone 13 skal svart" offers `skal` and `svart`. Tapping "Hide future listings with 'skal'" saves the word on the item.
-  - From then on, titles with that word are dropped. Matching ignores case and å/ä/ö and matches the start of words, so `skal` also catches "skalet".
+  - From then on, titles with that word are dropped. Matching ignores case and matches the start of words, so `skal` also catches "skalet". It keeps å/ä/ö, so `skal` (case) never hides `skål` (bowl).
   - Already-found listings with the word are hidden too, with Undo.
   - This prompt is the only way to add these words for now. A manual "exclude words" field is a future idea.
 - Data:

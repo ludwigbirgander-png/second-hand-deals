@@ -18,7 +18,7 @@ async function main() {
 
   const { data: items, error: itemsError } = await db
     .from('items')
-    .select('id, user_id, name, brand, notify')
+    .select('id, user_id, name, brand, notify, exclude_words')
 
   if (itemsError) {
     console.error('Failed to fetch items:', itemsError.message)
@@ -61,7 +61,7 @@ async function main() {
 
     let scraped: Awaited<ReturnType<typeof scrapeItem>> = []
     try {
-      scraped = await scrapeItem(query, siteNames, { enrich: true })
+      scraped = await scrapeItem(query, siteNames, { enrich: true, excludeWords: item.exclude_words ?? [] })
     } catch (err) {
       console.error(`  Scrape failed for ${item.id}:`, err)
       continue
@@ -84,18 +84,20 @@ async function main() {
     }
 
     // Prune stale listings: unstarred and not seen by any scrape for 14 days
-    // (sold/removed listings stop being returned by the marketplaces)
+    // (sold listings stop being returned). Removed ones are kept so they stay hidden.
     const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
     const { error: pruneError, count: pruned } = await db
       .from('listings')
       .delete({ count: 'exact' })
       .eq('item_id', item.id)
       .eq('starred', false)
+      .is('removed_at', null)
       .lt('last_seen_at', cutoff)
     if (pruneError) console.error(`  Prune failed:`, pruneError.message)
     else if (pruned) console.log(`  Pruned ${pruned} stale listings`)
 
-    const fresh = scraped.filter((l) => !existingUrls.has(l.url))
+    // Only real matches count as new; possible matches are saved but not emailed
+    const fresh = scraped.filter((l) => !existingUrls.has(l.url) && l.match !== 'possible')
     console.log(`  ${scraped.length} relevant (${fresh.length} new)`)
 
     if (fresh.length === 0 || item.notify === false) continue

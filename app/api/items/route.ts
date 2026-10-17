@@ -39,6 +39,8 @@ export async function GET() {
       .select('id, item_id, price, currency, image_url, url, site, title, found_at')
       .in('item_id', itemIds)
       .not('price', 'is', null)
+      .is('removed_at', null)
+      .eq('match', 'match')
       // Ended auctions no longer count
       .or(`auction_ends_at.is.null,auction_ends_at.gt.${new Date().toISOString()}`)
       .order('price', { ascending: true })
@@ -52,11 +54,12 @@ export async function GET() {
     }
   }
 
-  // Total listings per item. Exact head counts (no rows transferred) rather than
+  // Listings per item (real matches, not removed). Exact head counts (no rows transferred) rather than
   // counting fetched rows, which PostgREST caps at 1000 per request.
   const totals = await Promise.all(
     itemIds.map(async (id: string) => {
-      const { count } = await supabase.from('listings').select('id', { count: 'exact', head: true }).eq('item_id', id)
+      const { count } = await supabase.from('listings').select('id', { count: 'exact', head: true })
+        .eq('item_id', id).is('removed_at', null).eq('match', 'match')
       return [id, count ?? 0] as const
     })
   )

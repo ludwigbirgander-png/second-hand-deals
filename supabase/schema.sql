@@ -28,6 +28,7 @@ create table if not exists items (
   min_price integer,
   max_price integer,
   notify boolean not null default true,
+  exclude_words text[] not null default '{}',
   last_viewed_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -53,6 +54,9 @@ create table if not exists listings (
   location text,
   price_kind text check (price_kind in ('fixed', 'bid', 'start')),
   bid_count integer,
+  match text not null default 'match' check (match in ('match', 'possible')),
+  removed_at timestamptz,
+  removed_word text,
   found_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
 );
@@ -156,6 +160,8 @@ as $$
   join listings l on l.item_id = i.id
   where i.user_id = p_user_id
     and (i.last_viewed_at is null or l.found_at > i.last_viewed_at)
+    and l.removed_at is null
+    and l.match = 'match'
   group by i.id;
 $$;
 

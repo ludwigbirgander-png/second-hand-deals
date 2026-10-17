@@ -6,6 +6,7 @@ import { scrapeFacebook } from './facebook'
 import { scrapeAuctionet } from './auctionet'
 import { scrapeBukowskis } from './bukowskis'
 import type { ScrapedListing } from '../types'
+import { matchQuality, swedishVariant, hasExcludedWord } from '../search/match'
 
 export const SCRAPERS: Record<string, (q: string) => Promise<ScrapedListing[]>> = {
   Blocket: scrapeBlocket,
@@ -27,23 +28,44 @@ function enricherFor(site: string): ((url: string) => Promise<Partial<ScrapedLis
 /** One site's time budget, enrichment included. Sites run in parallel inside a 60 s function. */
 export const SITE_TIMEOUT_MS = 45_000
 
+// Sites with Swedish titles also get a Swedish version of the query ("Eames chair" → "Eames stol")
+const SWEDISH_TITLE_SITES = new Set(['Blocket', 'Tradera', 'Auctionet', 'Bukowskis'])
+
+export interface RunOptions {
+  enrich?: boolean
+  timeoutMs?: number
+  /** Titles with a word starting with one of these are dropped */
+  excludeWords?: string[]
+}
+
 /**
- * Search one site: scrape, keep relevant titles, enrich, dedupe by URL.
+ * Search one site: scrape (plus a Swedish query variant where useful), dedupe
+ * by URL, keep matches and possible matches, drop hidden words, enrich.
  * Rejects on error or timeout, so callers can tell a failed site from one with no results.
  */
-export async function runSite(
-  site: string,
-  query: string,
-  options?: { enrich?: boolean; timeoutMs?: number }
-): Promise<ScrapedListing[]> {
+export async function runSite(site: string, query: string, options?: RunOptions): Promise<ScrapedListing[]> {
   const scraper = SCRAPERS[site]
   if (!scraper) return []
 
   const work = async () => {
-    const relevant = (await scraper(query)).filter((l) => isRelevant(l.title, query))
+    const variant = SWEDISH_TITLE_SITES.has(site) ? swedishVariant(query) : null
+    const raw = await scraper(query)
+    if (variant) raw.push(...(await scraper(variant).catch(() => [])))
+
+    const byUrl = new Map<string, ScrapedListing>()
+    for (const l of raw) {
+      if (byUrl.has(l.url)) continue
+      const match = matchQuality(l.title, query)
+      if (match === 'none' || hasExcludedWord(l.title, options?.excludeWords ?? [])) continue
+      byUrl.set(l.url, { ...l, match })
+    }
+    // Real matches first, then cap: two queries can return up to 100, and enrichment is slow
+    const kept = Array.from(byUrl.values())
+      .sort((a, b) => (a.match === b.match ? 0 : a.match === 'match' ? -1 : 1))
+      .slice(0, 50)
+
     const enrichFn = options?.enrich ? enricherFor(site) : undefined
-    const enriched = enrichFn ? await enrichBatch(relevant, enrichFn) : relevant
-    return Array.from(new Map(enriched.map((l) => [l.url, l])).values())
+    return enrichFn ? enrichBatch(kept, enrichFn) : kept
   }
 
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -61,7 +83,7 @@ export async function runSite(
 export async function scrapeItem(
   query: string,
   sites: string[],
-  options?: { enrich?: boolean }
+  options?: RunOptions
 ): Promise<ScrapedListing[]> {
   const settled = await Promise.allSettled(sites.map((site) => runSite(site, query, options)))
   return settled.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
@@ -84,6 +106,7 @@ export function toListingRow(itemId: string, l: ScrapedListing) {
     location: l.location ?? null,
     price_kind: l.priceKind ?? null,
     bid_count: l.bidCount ?? null,
+    match: l.match ?? 'match',
     last_seen_at: new Date().toISOString(),
   }
 }
@@ -122,28 +145,12 @@ export function buildQuery(brand: string | null, name: string): string {
   return [brand, name].filter(Boolean).join(' ')
 }
 
-export function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/ä/g, 'a')
-    .replace(/ö/g, 'o')
-    .replace(/å/g, 'a')
-    .replace(/é/g, 'e')
-    .replace(/ü/g, 'u')
-    .replace(/['’]/g, '') // "Levi's" matches "levis"
-}
-
+/** True if the title is a real match for the query (not just a possible one). */
 export function isRelevant(title: string, query: string): boolean {
-  const normTitle = normalize(title)
-  const words = normalize(query)
-    .split(/\s+/)
-    .filter((w) => w.length >= 3)
-
-  // If the query is very short (all words < 3 chars), skip filtering
-  if (words.length === 0) return true
-
-  return words.every((word) => normTitle.includes(word))
+  return matchQuality(title, query) === 'match'
 }
+
+export { normalize } from '../search/match'
 
 function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms))
