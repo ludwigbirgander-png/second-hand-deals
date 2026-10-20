@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/Icon'
 import { Badge } from '@/components/ui/Badge'
 import { Price } from '@/components/ui/Price'
 import { AvatarStack } from '@/components/ui/Avatar'
+import { describeFilters, sanitizeFilters } from '@/lib/categories'
 
 interface Loaded {
   itemData: ItemWithMeta | null
@@ -83,11 +84,16 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   }
 
   async function save(v: ItemFormValues): Promise<string | null> {
+    // A new search (name, brand, category or filters) needs a refresh to apply
+    const searchKey = (name: string, brand: string | null, category: unknown, filters: unknown) =>
+      JSON.stringify([name, brand ?? null, sanitizeFilters(category, filters)])
+    const searchChanged = !!item &&
+      searchKey(v.name, v.brand, v.category, v.filters) !== searchKey(item.name, item.brand, item.category, item.filters)
     try {
       const res = await fetch(`/api/items/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify, target_price: v.target_price }),
+        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify, target_price: v.target_price, category: v.category, filters: v.filters }),
       })
       const json = await res.json()
       if (!res.ok) return json.error ?? 'Could not save'
@@ -98,6 +104,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       })
       apply(await loadItem(id))
       closeEdit()
+      if (searchChanged) router.push(`/items/${id}/scan`)
       return null
     } catch {
       return 'Network error — please try again'
@@ -154,6 +161,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     ? `${item.min_price != null ? fmt(item.min_price) : 'Any'} — ${item.max_price != null ? `${fmt(item.max_price)} kr` : 'no max'}`
     : null
   const refresh = () => router.push(`/items/${id}/scan`)
+  const filterChips = describeFilters(item.category, item.filters)
 
   return (
     <div className="flex-1 w-full pb-32">
@@ -176,6 +184,16 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           <div className="min-w-0">
             {item.brand && <p className="m-0 text-[16px] md:text-[22px] font-medium text-muted tracking-[-0.01em]">{item.brand}</p>}
             <h1 className="m-0 text-[34px] md:text-[52px] font-bold leading-[1.02] tracking-[-0.035em] [overflow-wrap:anywhere]">{item.name}</h1>
+            {filterChips.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                aria-label={`Filters: ${filterChips.join(', ')}. Edit`}
+                className="flex flex-wrap gap-1.5 mt-3 text-left cursor-pointer"
+              >
+                {filterChips.map((label) => <Badge key={label} variant="outline" size="sm">{label}</Badge>)}
+              </button>
+            )}
             <div className="max-md:hidden flex flex-wrap items-center gap-2.5 mt-4">
               <Button size="sm" onClick={refresh} icon={<Icon name="refresh" size={15} strokeWidth={2} />}>Refresh</Button>
               {shared && (
@@ -223,6 +241,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           max_price: item.max_price,
           notify: item.notify,
           target_price: item.target_price ?? null,
+          category: item.category ?? null,
+          filters: item.filters ?? {},
           listIds: item.lists.map((l) => l.id),
         }}
         onSubmit={save}

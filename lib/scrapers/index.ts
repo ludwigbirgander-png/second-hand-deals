@@ -7,8 +7,12 @@ import { scrapeAuctionet } from './auctionet'
 import { scrapeBukowskis } from './bukowskis'
 import type { ScrapedListing } from '../types'
 import { matchQuality, swedishVariant, hasExcludedWord } from '../search/match'
+import { getCategory, type CategoryId, type ItemFilters } from '../categories'
+import { extractAttributes } from '../categories/attributes'
+import { checkListing, hasNegativeWord } from '../categories/filter'
+import { siteExcluded, type SearchOptions } from '../categories/native'
 
-export const SCRAPERS: Record<string, (q: string) => Promise<ScrapedListing[]>> = {
+export const SCRAPERS: Record<string, (q: string, opts?: SearchOptions) => Promise<ScrapedListing[]>> = {
   Blocket: scrapeBlocket,
   Tradera: scrapeTradera,
   Sellpy: scrapeSellpy,
@@ -36,27 +40,40 @@ export interface RunOptions {
   timeoutMs?: number
   /** Titles with a word starting with one of these are dropped */
   excludeWords?: string[]
+  /** The item's category: native site filters, built-in junk words and category options */
+  category?: CategoryId | null
+  filters?: ItemFilters | null
 }
 
 /**
  * Search one site: scrape (plus a Swedish query variant where useful), dedupe
- * by URL, keep matches and possible matches, drop hidden words, enrich.
+ * by URL, keep matches and possible matches, drop hidden and built-in junk words,
+ * check the item's filters, enrich, then check the filters again with what
+ * enrichment added. Each kept listing carries its normalised `attributes`.
  * Rejects on error or timeout, so callers can tell a failed site from one with no results.
  */
 export async function runSite(site: string, query: string, options?: RunOptions): Promise<ScrapedListing[]> {
   const scraper = SCRAPERS[site]
   if (!scraper) return []
+  const category = getCategory(options?.category)
+  const filters = options?.filters ?? {}
+  if (siteExcluded(site, filters)) return []
+  const search: SearchOptions = { category, filters }
 
   const work = async () => {
     const variant = SWEDISH_TITLE_SITES.has(site) ? swedishVariant(query) : null
-    const raw = await scraper(query)
-    if (variant) raw.push(...(await scraper(variant).catch(() => [])))
+    const raw = await scraper(query, search)
+    if (variant) raw.push(...(await scraper(variant, search).catch(() => [])))
 
     const byUrl = new Map<string, ScrapedListing>()
     for (const l of raw) {
       if (byUrl.has(l.url)) continue
       const match = matchQuality(l.title, query)
       if (match === 'none' || hasExcludedWord(l.title, options?.excludeWords ?? [])) continue
+      if (hasNegativeWord(l.title, query, category)) continue
+      const attributes = extractAttributes(l, category)
+      // First pass: drop listings that contradict a filter; strictness waits for enrichment
+      if (!checkListing({ ...l, attributes }, filters, category, { final: false }).keep) continue
       byUrl.set(l.url, { ...l, match })
     }
     // Real matches first, then cap: two queries can return up to 100, and enrichment is slow
@@ -65,7 +82,14 @@ export async function runSite(site: string, query: string, options?: RunOptions)
       .slice(0, 50)
 
     const enrichFn = options?.enrich ? enricherFor(site) : undefined
-    return enrichFn ? enrichBatch(kept, enrichFn) : kept
+    const enriched = enrichFn ? await enrichBatch(kept, enrichFn) : kept
+
+    return enriched.flatMap((l) => {
+      const attributes = extractAttributes(l, category)
+      const { keep, unstated } = checkListing({ ...l, attributes }, filters, category)
+      if (!keep) return []
+      return [{ ...l, attributes: unstated.length ? { ...attributes, unstated } : attributes }]
+    })
   }
 
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -107,6 +131,7 @@ export function toListingRow(itemId: string, l: ScrapedListing) {
     price_kind: l.priceKind ?? null,
     bid_count: l.bidCount ?? null,
     match: l.match ?? 'match',
+    attributes: l.attributes ?? {},
     last_seen_at: new Date().toISOString(),
   }
 }

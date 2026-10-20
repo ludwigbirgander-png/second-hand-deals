@@ -1,0 +1,227 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { getCategory, suggestCategory, sanitizeFilters, sitesForCategory, describeFilters } from './index'
+import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes } from './attributes'
+import { checkListing, hasNegativeWord } from './filter'
+import { sellpyFilters, sellpyAttributes, vintedParams, blocketParams, siteExcluded } from './native'
+import { parseVintedCardTitle } from '../scrapers/vinted'
+import type { ItemFilters } from './types'
+
+const clothing = getCategory('clothing')!
+const shoes = getCategory('shoes')!
+
+test('suggests a category from the item name', () => {
+  assert.equal(suggestCategory('Acne läderjacka'), 'clothing')
+  assert.equal(suggestCategory("Levi's 501 jeans"), 'clothing')
+  assert.equal(suggestCategory('Nike Air Max 90'), 'shoes')
+  assert.equal(suggestCategory('Dr Martens 1460'), 'shoes')
+  assert.equal(suggestCategory('vinterkängor'), 'shoes')
+  assert.equal(suggestCategory('Eames chair'), null)
+  assert.equal(suggestCategory('iPhone 13'), null)
+})
+
+test('condition: site wordings on one scale', () => {
+  assert.equal(normalizeCondition('Ny med prislapp'), 'new_with_tags')
+  assert.equal(normalizeCondition('Ny utan prislapp'), 'new')
+  assert.equal(normalizeCondition('Mycket bra'), 'like_new')
+  assert.equal(normalizeCondition('Bra'), 'good')
+  assert.equal(normalizeCondition('Hyfsat'), 'fair')
+  assert.equal(normalizeCondition('Acceptabelt'), 'fair')
+  assert.equal(normalizeCondition('Very good'), 'like_new', 'the old Sellpy English label')
+  assert.equal(normalizeCondition('Skick: Bra'), 'good')
+  assert.equal(normalizeCondition('Something else'), undefined)
+})
+
+test('condition: a few title phrases, never a guess', () => {
+  assert.equal(conditionFromTitle('Acne jacka med lappar kvar'), 'new_with_tags')
+  assert.equal(conditionFromTitle('Oanvänd Fjällräven Kånken'), 'new')
+  assert.equal(conditionFromTitle('Hästens säng i nyskick'), 'like_new')
+  assert.equal(conditionFromTitle('Nike skor, trasig sula'), 'parts')
+  assert.equal(conditionFromTitle('Nike sneakers stl 42 vita'), undefined)
+})
+
+test('size: Sellpy codes', () => {
+  assert.deepEqual(parseSize('WMN-INT-M', '', false), { letter: ['M'] })
+  assert.deepEqual(parseSize('WMN-INT-S/M', '', false), { letter: ['S', 'M'] })
+  assert.deepEqual(parseSize('MEN-EU-48', '', false), { eu: 48 })
+  assert.deepEqual(parseSize('PANTS-INCH-32', '', false), { waist: 32 })
+  assert.deepEqual(parseSize('CHILD-CM-140', '', false), { kids: 140 })
+  assert.deepEqual(parseSize('SHOES-EU-38.5', '', true), { eu: 38.5 })
+})
+
+test('size: Vinted size field', () => {
+  assert.deepEqual(parseSize('48 | W32', '', false), { eu: 48, waist: 32 })
+  assert.deepEqual(parseSize('L', '', false), { letter: ['L'] })
+  assert.deepEqual(parseSize('42', '', true), { eu: 42 })
+})
+
+test('size: from titles', () => {
+  assert.deepEqual(parseSize(null, 'Lexington jacka XS svart dam', false), { letter: ['XS'] })
+  assert.deepEqual(parseSize(null, 'Lindex quiltad jacka M svart dam', false), { letter: ['M'] })
+  assert.deepEqual(parseSize(null, 'Jacka storlek M', false), { letter: ['M'] })
+  assert.deepEqual(parseSize(null, 'St Martins jacka stl 34 flerfärgad', false), { eu: 34 })
+  assert.deepEqual(parseSize(null, "Levi's 501 W32 L34", false), { waist: 32, length: 34 })
+  assert.deepEqual(parseSize(null, 'Overall stl 140 cl', false), { kids: 140 })
+  assert.deepEqual(parseSize(null, "Levi's 501 vintage 31/34", false), { waist: 31, length: 34 })
+  assert.deepEqual(parseSize(null, 'Levis 501 32/32', false), { waist: 32, length: 32 })
+  assert.deepEqual(parseSize(null, 'Levis 501 Rolled shorts - storlek 34', false), { waist: 34 })
+  assert.deepEqual(parseSize(null, 'Klänning stl 38/40', false), { eu: 38 }, 'outside trousers, 38/40 means either size')
+  assert.deepEqual(parseSize(null, 'Nike sneakers svart stl 44', true), { eu: 44 })
+  assert.deepEqual(parseSize(null, 'Nike ”vinter-sneakers” storlek 38,5', true), { eu: 38.5 })
+  assert.deepEqual(parseSize(null, 'Adidas Samba EU 42 2/3', true), { eu: 42.67 })
+  assert.deepEqual(parseSize(null, 'jacka i fint skick, m', false), {}, 'a lone lowercase s/m/l is not a size')
+  assert.deepEqual(parseSize(null, 'Jacka 2 fickor', false), {}, 'a plain number without "stl" is not a size')
+})
+
+test('size: Vinted size "Annat" means not stated', () => {
+  assert.deepEqual(parseVintedCardTitle("Levi’s 501 CT, Varumärke: Levi's, Skick: Mycket bra, Storlek: Annat, 200.00 kr, 217.50 kr"),
+    { title: 'Levi’s 501 CT', brand: "Levi's", condition: 'Mycket bra', size: null })
+  assert.deepEqual(parseVintedCardTitle('Levis herr jeans, W32, Varumärke: Levi\'s, Skick: Ny utan prislapp, Storlek: 48 | W32, 250.00 kr, 270.00 kr'),
+    { title: 'Levis herr jeans, W32', brand: "Levi's", condition: 'Ny utan prislapp', size: '48 | W32' })
+})
+
+test('attributes: options found in titles', () => {
+  const a = extractAttributes({ title: 'Svart läderjacka dam stl 38, nyskick' }, clothing)
+  assert.equal(a.department, 'women')
+  assert.deepEqual(a.type, ['jacket'])
+  assert.deepEqual(a.color, ['black'])
+  assert.deepEqual(a.material, ['leather'])
+  assert.deepEqual(a.size, { eu: 38 })
+  assert.equal(a.condition, 'like_new')
+  // Without a category, only the condition
+  assert.deepEqual(extractAttributes({ title: 'Svart läderjacka dam stl 38, nyskick' }), { condition: 'like_new' })
+})
+
+test('attributes: what the site states wins over the title', () => {
+  const a = extractAttributes({ title: 'Jacka', attributes: { color: ['blue'], department: 'men' } }, clothing)
+  assert.deepEqual(a.color, ['blue'])
+  assert.equal(a.department, 'men')
+})
+
+test('built-in junk words, unless part of the search', () => {
+  assert.equal(hasNegativeWord('Nike Air Max endast kartong', 'Nike Air Max', shoes), true)
+  assert.equal(hasNegativeWord('Nike skosnören vita', 'Nike Air Max', shoes), true)
+  assert.equal(hasNegativeWord('Nike skosnören vita', 'Nike skosnören', shoes), false)
+  assert.equal(hasNegativeWord('Grå Nike sneakers med svart sula', 'Nike sneakers', shoes), false)
+  assert.equal(hasNegativeWord('Acne jacka med fläck på ärmen', 'Acne jacka', clothing), true)
+  assert.equal(hasNegativeWord('Acne jacka, endast använd en gång', 'Acne jacka', clothing), false)
+  assert.equal(hasNegativeWord('Acne jacka endast kartong', 'Acne jacka', undefined), false)
+})
+
+const listing = (title: string, attrs: object = {}, extra: object = {}) => {
+  const attributes = { ...extractAttributes({ title }, clothing), ...attrs }
+  return { title, attributes, ...extra }
+}
+
+test('filters: a contradicting detail drops the listing, a missing one is kept and noted', () => {
+  const f: ItemFilters = { size: { system: 'letter', values: ['M', 'L'] }, color: ['black'] }
+  assert.deepEqual(checkListing(listing('Svart jacka stl M'), f, clothing), { keep: true, unstated: [] })
+  assert.equal(checkListing(listing('Svart jacka stl S'), f, clothing).keep, false)
+  assert.equal(checkListing(listing('Blå jacka stl M'), f, clothing).keep, false)
+  assert.deepEqual(checkListing(listing('Jacka'), f, clothing), { keep: true, unstated: ['color', 'size'] })
+})
+
+test('filters: strict drops listings that don\'t state a detail, but only on the final check', () => {
+  const f: ItemFilters = { size: { system: 'letter', values: ['M'] }, strict: true }
+  assert.equal(checkListing(listing('Jacka'), f, clothing).keep, false)
+  assert.equal(checkListing(listing('Jacka'), f, clothing, { final: false }).keep, true)
+})
+
+test('filters: minimum condition', () => {
+  const f: ItemFilters = { condition: 'like_new' }
+  assert.equal(checkListing(listing('Jacka', { condition: 'new' }), f, clothing).keep, true)
+  assert.equal(checkListing(listing('Jacka', { condition: 'like_new' }), f, clothing).keep, true)
+  assert.equal(checkListing(listing('Jacka', { condition: 'good' }), f, clothing).keep, false)
+  assert.deepEqual(checkListing(listing('Jacka'), f, undefined).unstated, ['condition'])
+})
+
+test('filters: sale type', () => {
+  const auction = listing('Jacka', {}, { priceKind: 'bid' })
+  const fixed = listing('Jacka', {}, { priceKind: 'fixed' })
+  const unknown = listing('Jacka')
+  assert.equal(checkListing(auction, { saleType: 'auction' }, undefined).keep, true)
+  assert.equal(checkListing(fixed, { saleType: 'auction' }, undefined).keep, false)
+  assert.equal(checkListing(unknown, { saleType: 'fixed' }, undefined).keep, true, 'marketplace listings are fixed price')
+  assert.equal(checkListing(listing('Jacka', {}, { auctionEndsAt: '2026-11-01T12:00:00Z' }), { saleType: 'fixed' }, undefined).keep, false)
+})
+
+test('filters: department, unisex counts for women and men', () => {
+  const f: ItemFilters = { department: ['women'] }
+  assert.equal(checkListing(listing('Jacka dam'), f, clothing).keep, true)
+  assert.equal(checkListing(listing('Jacka herr'), f, clothing).keep, false)
+  assert.equal(checkListing(listing('Jacka unisex'), f, clothing).keep, true)
+})
+
+test('filters: shoe sizes count half and third sizes as the whole size', () => {
+  const f: ItemFilters = { size: { system: 'eu', values: [42] } }
+  const shoe = (title: string) => ({ title, attributes: extractAttributes({ title }, shoes) })
+  assert.equal(checkListing(shoe('Nike stl 42'), f, shoes).keep, true)
+  assert.equal(checkListing(shoe('Nike stl 42,5'), f, shoes).keep, true)
+  assert.equal(checkListing(shoe('Adidas EU 42 2/3'), f, shoes).keep, true)
+  assert.equal(checkListing(shoe('Nike stl 43'), f, shoes).keep, false)
+})
+
+test('filters: jeans waist and length', () => {
+  const f: ItemFilters = { size: { system: 'jeans', waist: [32], length: [32, 34] } }
+  assert.equal(checkListing(listing("Levi's 501 W32 L34"), f, clothing).keep, true)
+  assert.equal(checkListing(listing("Levi's 501 W33 L34"), f, clothing).keep, false)
+  assert.deepEqual(checkListing(listing("Levi's 501 W32"), f, clothing).unstated, ['size'])
+})
+
+test('Sellpy: filters go into the search', () => {
+  const f = sellpyFilters({ category: clothing, filters: {
+    department: ['men'], type: ['jacket'], size: { system: 'letter', values: ['M'] }, color: ['black'], condition: 'like_new',
+  } })!
+  assert.match(f, /^price_SE\.amount > 0/)
+  assert.match(f, /metadata\.condition:"Nytt" OR metadata\.condition:"Mycket bra"\)/)
+  assert.match(f, /categories\.lvl2:"Man > Kläder > Jackor & Ytterkläder"/)
+  assert.match(f, /metadata\.demography:"Man"/)
+  assert.match(f, /metadata\.color:"Svart"/)
+  assert.match(f, /metadata\.size:"MEN-INT-M" OR metadata\.size:"MEN-INT-S\/M" OR metadata\.size:"MEN-INT-M\/L"/)
+  assert.doesNotMatch(f, /WMN/)
+
+  const s = sellpyFilters({ category: shoes, filters: { size: { system: 'eu', values: [42] } } })!
+  assert.match(s, /categories\.lvl1:"Kvinna > Skor" OR categories\.lvl1:"Man > Skor" OR categories\.lvl1:"Barn > Skor"/)
+  assert.match(s, /SHOES-EU-42" OR .*SHOES-EU-42\.5"/)
+
+  assert.equal(sellpyFilters({ filters: { saleType: 'auction' } }), null, 'Sellpy has no auctions')
+  assert.equal(sellpyFilters({ filters: { condition: 'new_with_tags' } }), null)
+  assert.equal(sellpyFilters({}), 'price_SE.amount > 0')
+})
+
+test('Sellpy: hit metadata as option ids', () => {
+  const a = sellpyAttributes(
+    { condition: 'Mycket bra', color: ['Brun'], material: ['Akryl', 'Ull'], demography: 'Kvinna' },
+    'clothing', 'Kvinna > Kläder > Jackor & Ytterkläder', { eu: 42 })
+  assert.deepEqual(a, { condition: 'like_new', size: { eu: 42 }, department: 'women', color: ['brown'], material: ['wool'], type: ['jacket'] })
+})
+
+test('Vinted and Blocket parameters', () => {
+  assert.deepEqual(vintedParams({ filters: { condition: 'like_new' } }), ['status_ids[]=6', 'status_ids[]=1', 'status_ids[]=2'])
+  assert.deepEqual(vintedParams({}), [])
+  assert.equal(vintedParams({ filters: { saleType: 'auction' } }), null)
+  assert.deepEqual(blocketParams({ category: clothing }), ['category=0.71'])
+  assert.deepEqual(blocketParams({}), [])
+})
+
+test('sites: the category narrows them, the sale type can rule some out', () => {
+  assert.deepEqual(sitesForCategory(['Blocket', 'Auctionet', 'Sellpy', 'Bukowskis'], 'clothing'), ['Blocket', 'Sellpy'])
+  assert.deepEqual(sitesForCategory(['Blocket', 'Auctionet'], null), ['Blocket', 'Auctionet'])
+  assert.equal(siteExcluded('Sellpy', { saleType: 'auction' }), true)
+  assert.equal(siteExcluded('Tradera', { saleType: 'auction' }), false)
+  assert.equal(siteExcluded('Auctionet', { saleType: 'fixed' }), true)
+})
+
+test('sanitizeFilters keeps only valid choices', () => {
+  assert.deepEqual(sanitizeFilters('clothing', {
+    color: ['black', 'plaid'], size: { system: 'letter', values: ['M', 'Q'] }, condition: 'good', saleType: 'barter', strict: 'yes', bogus: 1,
+  }), { category: 'clothing', filters: { condition: 'good', color: ['black'], size: { system: 'letter', values: ['M'] } } })
+  assert.deepEqual(sanitizeFilters('cars', { color: ['black'], condition: 'new' }), { category: null, filters: { condition: 'new' } })
+  assert.deepEqual(sanitizeFilters('shoes', { size: { system: 'letter', values: ['M'] } }), { category: 'shoes', filters: {} }, 'shoes have EU sizes only')
+})
+
+test('describeFilters: chips for the item page', () => {
+  assert.deepEqual(describeFilters('clothing', { department: ['men'], size: { system: 'jeans', waist: [32], length: [34] }, condition: 'good', strict: true }),
+    ['Clothing', 'Men', 'Size W32 L34', 'Good or better', 'Strict'])
+  assert.deepEqual(describeFilters(null, {}), [])
+})

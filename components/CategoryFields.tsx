@@ -1,0 +1,191 @@
+'use client'
+
+import { useState } from 'react'
+import {
+  CATEGORIES, CONDITIONS, LETTER_SIZES, SALE_TYPES, SIZE_SYSTEM_LABELS, SIZE_VALUES, getCategory,
+  type CategoryField, type CategoryId, type ConditionGrade, type ItemFilters, type SaleType, type SizeFilter, type SizeSystem,
+} from '@/lib/categories'
+import { Chip } from './ui/Chip'
+import { FieldLabel, Segmented, Toggle } from './ui/Form'
+
+interface Props {
+  category: CategoryId | null
+  filters: ItemFilters
+  onChange: (category: CategoryId | null, filters: ItemFilters) => void
+  /** Shown under the chips when the category was picked from the item name */
+  suggested?: boolean
+}
+
+const toggle = <T,>(list: T[] | undefined, v: T) => (list?.includes(v) ? list.filter((x) => x !== v) : [...(list ?? []), v])
+
+/** Category chips; picking one reveals its options. Condition and sale type work for any category. */
+export function CategoryFields({ category, filters, onChange, suggested }: Props) {
+  const c = getCategory(category)
+  const [moreOpen, setMoreOpen] = useState(!!(filters.condition || filters.saleType))
+  const set = (patch: Partial<ItemFilters>) => onChange(category, { ...filters, ...patch })
+  const active = Object.keys(filters).filter((k) => k !== 'strict').length > 0
+
+  function pickCategory(id: CategoryId | null) {
+    if (id === category) return
+    // Category options don't carry over; condition and sale type do
+    onChange(id, { condition: filters.condition, saleType: filters.saleType, strict: filters.strict })
+  }
+
+  const shared = (
+    <>
+      <div>
+        <FieldLabel>Condition, at least</FieldLabel>
+        <div className="flex flex-wrap gap-2">
+          <Chip size="sm" label="Any" active={!filters.condition} onClick={() => set({ condition: undefined })} />
+          {CONDITIONS.filter((x) => x.id !== 'parts').map((x) => (
+            <Chip key={x.id} size="sm" label={x.label} active={filters.condition === x.id} onClick={() => set({ condition: x.id as ConditionGrade })} />
+          ))}
+        </div>
+      </div>
+      <div>
+        <FieldLabel>Sale type</FieldLabel>
+        <Segmented
+          size="sm"
+          label="Sale type"
+          value={filters.saleType ?? 'any'}
+          options={[{ value: 'any', label: 'Both' }, ...SALE_TYPES.map((s) => ({ value: s.id, label: s.id === 'fixed' ? 'Fixed price' : 'Auctions' }))]}
+          onChange={(v) => set({ saleType: v === 'any' ? undefined : (v as SaleType) })}
+        />
+      </div>
+    </>
+  )
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <FieldLabel>Category</FieldLabel>
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip size="sm" label="Any" active={!c} onClick={() => pickCategory(null)} />
+          {CATEGORIES.map((x) => (
+            <Chip key={x.id} size="sm" label={x.label} active={category === x.id} onClick={() => pickCategory(x.id)} />
+          ))}
+          {suggested && c && <span className="text-[12px] text-muted">Suggested from the name</span>}
+        </div>
+      </div>
+
+      {c && (
+        <div className="flex flex-col gap-4 pl-3 border-l-2 border-line-hair">
+          {c.fields.map((field) =>
+            field.key === 'size' ? (
+              <SizeField key="size" field={field} shoes={c.id === 'shoes'} kids={!!filters.department?.includes('kids')} value={filters.size} onChange={(size) => set({ size })} />
+            ) : (
+              <div key={field.key}>
+                <FieldLabel>{field.label}</FieldLabel>
+                <div className="flex flex-wrap gap-2">
+                  {field.options!.map((o) => {
+                    const list = filters[field.key] as string[] | undefined
+                    return (
+                      <Chip
+                        key={o.id}
+                        size="sm"
+                        label={o.label}
+                        active={!!list?.includes(o.id)}
+                        onClick={() => {
+                          const next = toggle(list, o.id)
+                          set({ [field.key]: next.length ? next : undefined })
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            ),
+          )}
+          {shared}
+        </div>
+      )}
+
+      {!c && (moreOpen ? (
+        <div className="flex flex-col gap-4">{shared}</div>
+      ) : (
+        <button type="button" onClick={() => setMoreOpen(true)} className="self-start text-[13px] font-medium text-ink underline underline-offset-2 cursor-pointer">
+          Condition and sale type
+        </button>
+      ))}
+
+      {active && (
+        <Toggle
+          checked={!!filters.strict}
+          onChange={(v) => set({ strict: v || undefined })}
+          label="Only listings that state these details"
+          description="Off: listings that don't say their size, colour… are kept and marked"
+        />
+      )}
+    </div>
+  )
+}
+
+function SizeField({ field, shoes, kids, value, onChange }: {
+  field: CategoryField
+  shoes: boolean
+  kids: boolean
+  value: SizeFilter | undefined
+  onChange: (v: SizeFilter | undefined) => void
+}) {
+  const systems = field.sizeSystems ?? []
+  const [system, setSystem] = useState<SizeSystem>(value?.system ?? systems[0])
+
+  const chips = (values: (string | number)[], selected: (string | number)[], pick: (v: string | number) => void, suffix = '') => (
+    <div className="flex flex-wrap gap-1.5">
+      {values.map((v) => (
+        <Chip key={v} size="sm" label={`${v}${suffix}`} active={selected.includes(v)} onClick={() => pick(v)} className="tabular-nums" />
+      ))}
+    </div>
+  )
+
+  const current = value?.system === system ? value : undefined
+  let body
+  if (system === 'jeans') {
+    const j = current?.system === 'jeans' ? current : { system: 'jeans' as const, waist: [], length: [] }
+    const update = (patch: Partial<typeof j>) => {
+      const next = { ...j, ...patch }
+      onChange(next.waist.length || next.length.length ? next : undefined)
+    }
+    body = (
+      <div className="flex flex-col gap-2">
+        <span className="text-[12px] text-muted">Waist</span>
+        {chips(SIZE_VALUES.jeansWaist, j.waist, (v) => update({ waist: toggle(j.waist, v as number).sort((a, b) => a - b) }))}
+        <span className="text-[12px] text-muted">Length</span>
+        {chips(SIZE_VALUES.jeansLength, j.length, (v) => update({ length: toggle(j.length, v as number).sort((a, b) => a - b) }))}
+      </div>
+    )
+  } else {
+    const values: (string | number)[] =
+      system === 'letter' ? LETTER_SIZES
+        : system === 'kids' ? SIZE_VALUES.kids
+          : shoes ? (kids ? SIZE_VALUES.shoesKids : SIZE_VALUES.shoesAdult)
+            : SIZE_VALUES.clothingEu
+    const selected: (string | number)[] = current && current.system !== 'jeans' ? current.values : []
+    body = chips(values, selected, (v) => {
+      const next = toggle(selected, v)
+      onChange(next.length ? ({ system, values: next } as SizeFilter) : undefined)
+    })
+  }
+
+  return (
+    <div>
+      <FieldLabel>{field.label}</FieldLabel>
+      {systems.length > 1 && (
+        <Segmented
+          size="sm"
+          label="Size system"
+          className="mb-2.5 max-w-full overflow-x-auto"
+          value={system}
+          options={systems.map((s) => ({ value: s, label: SIZE_SYSTEM_LABELS[s] }))}
+          onChange={(s) => {
+            setSystem(s)
+            // One size system at a time
+            if (value && value.system !== s) onChange(undefined)
+          }}
+        />
+      )}
+      {body}
+      {shoes && <p className="m-0 mt-1.5 text-[12px] text-muted">Half sizes count as the size below: 42 includes 42½.</p>}
+    </div>
+  )
+}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { suggestCategory } from '@/lib/categories'
 import type { ItemWithMeta, ItemList, ListMember, ListRole } from '@/lib/types'
 import { NEW_GROUP_PALETTE, themeOf } from '@/lib/colors'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
@@ -206,7 +207,7 @@ export default function WatchlistPage() {
       const res = await fetch('/api/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify, target_price: v.target_price }),
+        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify, target_price: v.target_price, category: v.category, filters: v.filters }),
       })
       const created = await res.json()
       if (!res.ok) return created.error ?? 'Could not add the item'
@@ -371,7 +372,7 @@ export default function WatchlistPage() {
       )}
 
       {!loading && (empty
-        ? desktop && <AddDock onSubmit={(name) => addItem({ name, brand: null, min_price: null, max_price: null, notify: true, target_price: null, listIds: [] })} />
+        ? desktop && <AddDock onSubmit={(name) => addItem({ name, brand: null, min_price: null, max_price: null, notify: true, target_price: null, category: suggestCategory(name), filters: {}, listIds: [] })} />
         : <FloatingButton ref={fabRef} label="Add item" hint="or press /" hidden={addOpen} onClick={() => openAdd()} />)}
 
       <AddPanel

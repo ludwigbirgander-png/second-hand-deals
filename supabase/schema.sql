@@ -33,6 +33,8 @@ create table if not exists items (
   notify boolean not null default true,
   exclude_words text[] not null default '{}',
   target_price integer check (target_price is null or target_price >= 0),
+  category text,
+  filters jsonb not null default '{}',
   last_viewed_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -62,6 +64,7 @@ create table if not exists listings (
   removed_at timestamptz,
   removed_word text,
   previous_price integer,
+  attributes jsonb not null default '{}',
   found_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
 );

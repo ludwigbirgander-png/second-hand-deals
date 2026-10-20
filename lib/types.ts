@@ -1,3 +1,5 @@
+import type { CategoryId, ItemFilters, ListingAttributes } from './categories/types'
+
 export interface Item {
   id: string
   user_id: string
@@ -8,6 +10,10 @@ export interface Item {
   notify: boolean
   /** "Alert me when one is under X kr"; checked every 3 hours */
   target_price?: number | null
+  /** Category id (lib/categories); null for "Any" */
+  category?: CategoryId | null
+  /** Category options, condition, sale type, strict */
+  filters?: ItemFilters | null
   /** Words that hide a listing; added from the prompt after removing one */
   exclude_words?: string[]
   created_at: string
@@ -57,6 +63,8 @@ export interface Listing {
   removed_word: string | null
   /** The price before the last price change; used for price-drop alerts */
   previous_price?: number | null
+  /** Normalised details (condition on one scale, size, colour…); null on listings saved before categories */
+  attributes?: ListingAttributes | null
 }
 
 export type ListingMatch = 'match' | 'possible'
@@ -90,6 +98,8 @@ export interface ScrapedListing {
   priceKind?: PriceKind | null
   bidCount?: number | null
   match?: ListingMatch
+  /** Normalised details. Scrapers may fill in what the site states; runSite completes it. */
+  attributes?: ListingAttributes
 }
 
 export type ListRole = 'owner' | 'admin' | 'editor' | 'viewer'

@@ -1,6 +1,6 @@
 # Kompi search: categories and precision plan
 
-Written 2026-10-17. **Status:** phases 1 and 2 built on branch `search-phase-1-2` (needs `supabase/migrations/20261018_remove_and_match.sql`). Phase 3 built on `search-phase-3`, on top of it (needs `supabase/migrations/20261020_alerts.sql`). Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
+Written 2026-10-17. **Status:** phases 1 and 2 built on branch `search-phase-1-2` (needs `supabase/migrations/20261018_remove_and_match.sql`). Phase 3 built on `search-phase-3`, on top of it (needs `supabase/migrations/20261020_alerts.sql`). Phases 1–3 merged into `main` 2026-10-20. Phase 4 built on `search-phase-4` (needs `supabase/migrations/20261021_categories.sql`); see "Phase 4 as built". Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
 
 ## Context
 Today a Kompi item is only a name, an optional brand and a price range (`items` table). Kompi sends the same text query to every site and keeps a listing when every word of 3+ letters appears in its title (`isRelevant` in `lib/scrapers/index.ts`). That causes three problems:
@@ -176,6 +176,19 @@ To build this:
 5. **Next categories:** Phones & tablets, Computers, Furniture & design, Watches & jewellery, Glass & ceramics.
 6. **Remaining categories.**
 7. **AI-assisted extraction and suggestions** (optional).
+
+## Phase 4 as built
+- `lib/categories/`: the registry (`index.ts`), title and size parsing with condition normalisation (`attributes.ts`), the post-filter (`filter.ts`), native site filters (`native.ts`), tests.
+- Native filters, checked live 2026-10-20:
+  - Sellpy: category, department, type, size, colour, material and condition all go into the Algolia `filters`.
+  - Vinted: condition via `status_ids[]` (6 new with tags, 1 new, 2 very good, 3 good, 4 satisfactory).
+  - Blocket: `category=0.71` (clothes, which includes shoes).
+  - Tradera: nothing yet (the HTML search); Kompi's own check does it all.
+- Strict/lenient is one switch per item ("Only listings that state these details"), not per filter.
+- Not built yet: measurements in cm and season (Sellpy-only details).
+- Built-in junk words: plain "endast" was left out, because "endast använd en gång" means "worn only once".
+- Fixed on the way: the Vinted scraper saved "Varumärke: …" as the size; Sellpy titles showed raw size codes.
+- Changing an item's category or filters refreshes its search; listings from sites the category rules out are pruned on that refresh (favourites and removed ones stay).
 
 ## Files the later implementation will touch
 - `lib/categories.ts` (new)

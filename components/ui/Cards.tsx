@@ -4,12 +4,25 @@ import { useEffect, useState } from 'react'
 import type { Listing } from '@/lib/types'
 import { CONDITION_COLORS } from '@/lib/colors'
 import { priceNote } from '@/lib/auction'
+import { conditionLabel, type FilterKey } from '@/lib/categories'
+import { sizeLabel } from '@/lib/categories/attributes'
 import { IconButton } from './Button'
 import { Pill, SiteBadge } from './Pill'
 import { Badge } from './Badge'
 import { Price } from './Price'
 
 // ─── ListingCard ──────────────────────────────────────────────────────────────
+
+const DETAIL_NAMES: Record<FilterKey, string> = {
+  size: 'Size', condition: 'Condition', color: 'Colour', material: 'Material', department: 'Department', type: 'Type',
+}
+
+/** "Size not stated", "Size, colour not stated" */
+function notStated(keys: FilterKey[] | undefined): string | null {
+  if (!keys?.length) return null
+  const names = keys.map((k, i) => (i === 0 ? DETAIL_NAMES[k] : DETAIL_NAMES[k].toLowerCase()))
+  return `${names.join(', ')} not stated`
+}
 
 function useAuctionCountdown(endsAt: string | null) {
   const [state, setState] = useState<{ text: string; urgent: boolean } | null>(null)
@@ -49,6 +62,10 @@ export function ListingCard({ listing: l, starred, onStar, onRemove, isNew = fal
   const auction = useAuctionCountdown(l.auction_ends_at)
   const ended = auction?.text === 'Ended'
   const note = ended ? null : priceNote(l)
+  // Normalised details win; older listings only have the site's own wording
+  const condition = l.attributes?.condition ? conditionLabel(l.attributes.condition) : l.condition
+  const size = sizeLabel(l.attributes?.size) ?? l.size
+  const unstated = notStated(l.attributes?.unstated)
   return (
     <div className={`relative flex flex-col gap-2 min-w-0 p-2 pb-3 rounded-lg bg-chalk ${starred ? 'shadow-[inset_0_0_0_2px_var(--ink)]' : ''}`}>
       <a
@@ -94,10 +111,11 @@ export function ListingCard({ listing: l, starred, onStar, onRemove, isNew = fal
           {l.title}
         </a>
         <SiteBadge site={l.site} />
-        {(l.condition || l.size || l.location || l.shipping_cost != null || auction) && (
+        {(condition || size || unstated || l.location || l.shipping_cost != null || auction) && (
           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-0.5 text-[12px] text-muted">
-            {l.condition && <Pill variant="solid" size="sm" color={CONDITION_COLORS[l.condition] ?? 'var(--paper-2)'}>{l.condition}</Pill>}
-            {l.size && <span>{l.size}</span>}
+            {condition && <Pill variant="solid" size="sm" color={CONDITION_COLORS[condition] ?? 'var(--paper-2)'}>{condition}</Pill>}
+            {size && <span>{size}</span>}
+            {unstated && <span className="italic" title="Kept because the item isn't set to strict">{unstated}</span>}
             {l.location && <span>{l.location}</span>}
             {l.shipping_cost != null && <span>{l.shipping_cost === 0 ? 'Free shipping' : `+${l.shipping_cost} kr shipping`}</span>}
             {auction && <span className={`tabular-nums ${auction.urgent ? 'text-state-danger font-semibold' : ''}`}>{auction.text}</span>}

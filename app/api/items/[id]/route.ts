@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { parseTargetPrice } from '@/lib/alerts/targetPrice'
+import { sanitizeFilters } from '@/lib/categories'
 
 export async function GET(
   _request: Request,
@@ -37,7 +38,7 @@ export async function PATCH(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { name, brand, min_price, max_price, notify, target_price } = await request.json()
+  const { name, brand, min_price, max_price, notify, target_price, category, filters } = await request.json()
 
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
@@ -56,6 +57,8 @@ export async function PATCH(
       max_price: max_price ?? null,
       ...(notify !== undefined && { notify }),
       ...(target !== undefined && { target_price: target }),
+      // Both or neither: filters only make sense for their category
+      ...(category !== undefined && sanitizeFilters(category, filters)),
     })
     .eq('id', id)
     .eq('user_id', user.id)

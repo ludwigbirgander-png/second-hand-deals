@@ -2,6 +2,8 @@ import { db } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
 import { getEnabledSiteNamesForUser } from '@/lib/sites'
 import { SCRAPERS, runSite, toListingRow, buildQuery } from '@/lib/scrapers'
+import { sitesForCategory } from '@/lib/categories'
+import { siteExcluded } from '@/lib/categories/native'
 
 export const maxDuration = 60
 
@@ -27,7 +29,10 @@ export async function POST(
     return Response.json({ error: 'Item not found' }, { status: 404 })
   }
 
-  const siteNames = await getEnabledSiteNamesForUser(user.id)
+  // Only the sites the category is relevant on, and that can match the sale type
+  const enabledSites = await getEnabledSiteNamesForUser(user.id)
+  const siteNames = sitesForCategory(enabledSites, item.category).filter((s) => !siteExcluded(s, item.filters ?? {}))
+  const skippedSites = enabledSites.filter((s) => !siteNames.includes(s))
   const query = buildQuery(item.brand, item.name)
   const encoder = new TextEncoder()
 
@@ -58,7 +63,12 @@ export async function POST(
         send({ type: 'start', site })
 
         try {
-          const listings = await runSite(site, query, { enrich: true, excludeWords: item.exclude_words ?? [] })
+          const listings = await runSite(site, query, {
+            enrich: true,
+            excludeWords: item.exclude_words ?? [],
+            category: item.category,
+            filters: item.filters,
+          })
           const fresh = listings.filter((l) => !existingUrls.has(l.url))
           // Possible matches are saved but not counted as new finds
           const freshMatches = fresh.filter((l) => l.match !== 'possible')
@@ -97,6 +107,18 @@ export async function POST(
           .in('site', succeededSites)
           .lt('last_seen_at', scrapeStart)
         pruned = count ?? 0
+      }
+
+      // Listings from sites the category or sale type now rules out (favourites and removed ones stay)
+      if (skippedSites.length > 0) {
+        const { count } = await db()
+          .from('listings')
+          .delete({ count: 'exact' })
+          .eq('item_id', itemId)
+          .eq('starred', false)
+          .is('removed_at', null)
+          .in('site', skippedSites)
+        pruned += count ?? 0
       }
 
       send({ type: 'complete', total, pruned })

@@ -1,5 +1,7 @@
 import axios from 'axios'
 import type { ScrapedListing } from '../types'
+import { sellpyFilters, sellpyAttributes, type SearchOptions } from '../categories/native'
+import { parseSize, sizeLabel } from '../categories/attributes'
 
 const APP_ID = 'M6WNFR0LVI'
 const API_KEY = '313e09c3b00b6e2da5dbe382cd1c8f4b'
@@ -20,14 +22,17 @@ const CONDITION_MAP: Record<string, string> = {
   acceptabelt_skick: 'Satisfactory',
 }
 
-export async function scrapeSellpy(query: string): Promise<ScrapedListing[]> {
+export async function scrapeSellpy(query: string, opts: SearchOptions = {}): Promise<ScrapedListing[]> {
+  // Category, size, colour, condition… go straight into Sellpy's own search
+  const filters = sellpyFilters(opts)
+  if (filters == null) return []
   const { data } = await axios.post(
     URL,
     JSON.stringify({
       requests: [{
         indexName: INDEX,
         query,
-        filters: 'price_SE.amount > 0',
+        filters,
         hitsPerPage: 50,
       }],
     }),
@@ -45,9 +50,16 @@ export async function scrapeSellpy(query: string): Promise<ScrapedListing[]> {
 
   return hits
     .map((hit): ScrapedListing => {
+      // Size: Sellpy's code ("WMN-INT-M", "SHOES-EU-38.5") as a readable label
+      const sizeCode: string | null =
+        hit.metadata?.size ?? hit.metadata?.itemSize ?? hit.metadata?.storlek ?? null
+      const parsed = sizeCode ? parseSize(sizeCode, '', /^SHOES/i.test(sizeCode)) : undefined
+      const size = sizeLabel(parsed) ?? sizeCode
+
+      // Title from Sellpy's parts (brand, type, size), with the size code as its label
       const titleParts: string[] = (hit.titleOutputOrder ?? [])
-        .map((key: string) => hit.metadata?.[key])
-        .filter(Boolean)
+        .map((key: string) => (key === 'size' ? size : hit.metadata?.[key]))
+        .filter((v: unknown) => typeof v === 'string' && v)
       const title = titleParts.join(' ')
       const price = hit.price_SE?.amount != null ? Math.round(hit.price_SE.amount / 100) : null
 
@@ -58,9 +70,6 @@ export async function scrapeSellpy(query: string): Promise<ScrapedListing[]> {
         ? (CONDITION_MAP[rawCondition.toLowerCase().replace(/\s+/g, '_')] ?? rawCondition)
         : null
 
-      // Size — try common metadata keys
-      const size: string | null =
-        hit.metadata?.size ?? hit.metadata?.itemSize ?? hit.metadata?.storlek ?? null
 
       return {
         site: 'Sellpy',
@@ -71,6 +80,7 @@ export async function scrapeSellpy(query: string): Promise<ScrapedListing[]> {
         imageUrl: hit.images?.[0] ?? null,
         condition,
         size,
+        attributes: sellpyAttributes(hit.metadata, opts.category?.id, hit.categories?.lvl2?.[0], parsed),
       }
     })
     .filter((l) => l.title && l.url)

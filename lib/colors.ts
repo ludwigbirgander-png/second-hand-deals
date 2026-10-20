@@ -31,8 +31,13 @@ export const SITE_COLORS: Record<string, string> = {
 
 export const CONDITION_COLORS: Record<string, string> = {
   'New with tags': 'var(--mint)',
+  New: 'var(--mint)',
+  'Like new': 'var(--periwinkle)',
+  Good: 'var(--paper-2)',
+  Fair: 'var(--lemon)',
+  'For parts': 'var(--lemon)',
+  // Labels on listings saved before conditions were normalised
   'New without tags': 'var(--mint)',
   'Very good': 'var(--periwinkle)',
-  Good: 'var(--paper-2)',
   Satisfactory: 'var(--lemon)',
 }

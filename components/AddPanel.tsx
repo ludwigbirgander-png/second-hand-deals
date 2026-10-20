@@ -8,6 +8,8 @@ import { Icon } from './ui/Icon'
 import { Button } from './ui/Button'
 import { Chip } from './ui/Chip'
 import { FieldLabel, Input, PriceRange, Toggle, parsePrice, priceRangeError } from './ui/Form'
+import { CategoryFields } from './CategoryFields'
+import { suggestCategory, type CategoryId, type ItemFilters } from '@/lib/categories'
 
 export interface ItemFormValues {
   name: string
@@ -16,6 +18,8 @@ export interface ItemFormValues {
   max_price: number | null
   notify: boolean
   target_price: number | null
+  category: CategoryId | null
+  filters: ItemFilters
   listIds: string[]
 }
 
@@ -26,6 +30,8 @@ export interface ItemFormInitial {
   max_price?: number | null
   notify?: boolean
   target_price?: number | null
+  category?: CategoryId | null
+  filters?: ItemFilters | null
   listIds?: string[]
 }
 
@@ -82,6 +88,13 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
   const [listIds, setListIds] = useState<string[]>(initial?.listIds ?? [])
   const [notify, setNotify] = useState(initial?.notify !== false)
   const [target, setTarget] = useState(initial?.target_price != null ? String(initial.target_price) : '')
+  // Adding: the category follows the name until the user picks one. Editing: it's already chosen.
+  const [pickedCategory, setPickedCategory] = useState<{ category: CategoryId | null; filters: ItemFilters } | null>(
+    edit ? { category: initial?.category ?? null, filters: initial?.filters ?? {} } : null,
+  )
+  const suggested = suggestCategory(name)
+  const category = pickedCategory ? pickedCategory.category : suggested
+  const filters = pickedCategory?.filters ?? {}
   const [creating, setCreating] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -104,6 +117,8 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
       max_price: parsePrice(range.max) || null,
       notify,
       target_price: parsePrice(target) || null,
+      category,
+      filters,
       listIds,
     })
     if (err) { setError(err); setSaving(false) }
@@ -141,6 +156,12 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
         <Input label="Brand (optional)" placeholder="e.g. Sony" value={brand} onChange={(e) => setBrand(e.target.value)} />
         <PriceRange min={range.min} max={range.max} onChange={setRange} />
       </div>
+      <CategoryFields
+        category={category}
+        filters={filters}
+        suggested={!pickedCategory && !!suggested}
+        onChange={(c, f) => setPickedCategory({ category: c, filters: f })}
+      />
       <div>
         <FieldLabel>List</FieldLabel>
         <div className="flex flex-wrap items-center gap-2">
@@ -239,7 +260,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
         className="absolute left-1/2 -translate-x-1/2 bottom-7 w-[min(760px,calc(100%_-_32px))]"
       >
         <div className={`bg-chalk rounded-[18px] shadow-panel overflow-hidden ${closing ? 'k-shrink' : 'k-grow'}`}>
-          <div className="flex flex-col gap-[18px] px-6 py-5">
+          <div className="flex flex-col gap-[18px] px-6 py-5 max-h-[min(62vh,620px)] overflow-y-auto">
             {edit && (
               <div className="flex items-center justify-between">
                 <span className="text-[18px] font-bold tracking-[-0.02em]">Edit item</span>

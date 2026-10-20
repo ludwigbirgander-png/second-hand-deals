@@ -7,12 +7,14 @@ import { scrapeItem, buildQuery, toListingRow } from '../lib/scrapers/index.js'
 import { alertsForItem, type Alert, type AlertItem, type AlertListing, type SentAlert } from '../lib/alerts/rules.js'
 import { listingAlertEmail, rareFindEmail } from '../lib/alerts/email.js'
 import { db, appUrl, canSend, sendEmail, emailFor, loadSettings, fetchAll } from './jobs.js'
+import { sitesForCategory, type CategoryId, type ItemFilters } from '../lib/categories/index.js'
+import { siteExcluded } from '../lib/categories/native.js'
 
-const ITEM_COLUMNS = 'id, user_id, name, brand, notify, min_price, target_price, created_at, exclude_words'
+const ITEM_COLUMNS = 'id, user_id, name, brand, notify, min_price, target_price, created_at, exclude_words, category, filters'
 const LISTING_COLUMNS =
   'id, item_id, site, title, price, previous_price, currency, url, image_url, price_kind, bid_count, auction_ends_at, starred, match, removed_at, found_at'
 
-type JobItem = AlertItem & { exclude_words: string[] | null }
+type JobItem = AlertItem & { exclude_words: string[] | null; category: CategoryId | null; filters: ItemFilters | null }
 
 async function main() {
   const items = await fetchAll<JobItem>(() => db.from('items').select(ITEM_COLUMNS).order('created_at'))
@@ -41,12 +43,17 @@ async function scrapeAll(items: JobItem[]) {
 
   for (const item of items) {
     const query = buildQuery(item.brand, item.name)
-    const sites = sitesForUser(item.user_id)
+    const sites = sitesForCategory(sitesForUser(item.user_id), item.category).filter((s) => !siteExcluded(s, item.filters ?? {}))
     console.log(`Scraping "${query}" (${item.id}) on ${sites.length} sites…`)
 
     let scraped: Awaited<ReturnType<typeof scrapeItem>> = []
     try {
-      scraped = await scrapeItem(query, sites, { enrich: true, excludeWords: item.exclude_words ?? [] })
+      scraped = await scrapeItem(query, sites, {
+        enrich: true,
+        excludeWords: item.exclude_words ?? [],
+        category: item.category,
+        filters: item.filters,
+      })
     } catch (err) {
       console.error(`  Scrape failed:`, err)
       continue

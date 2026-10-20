@@ -1,6 +1,7 @@
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 import type { ScrapedListing } from '../types'
+import { blocketParams, type SearchOptions } from '../categories/native'
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -8,8 +9,10 @@ const HEADERS = {
   'Accept-Language': 'sv-SE,sv;q=0.9,en;q=0.8',
 }
 
-export async function scrapeBlocket(query: string): Promise<ScrapedListing[]> {
-  const url = `https://www.blocket.se/recommerce/forsale/search?q=${encodeURIComponent(query)}`
+export async function scrapeBlocket(query: string, opts: SearchOptions = {}): Promise<ScrapedListing[]> {
+  const extra = blocketParams(opts)
+  if (extra == null) return []
+  const url = [`https://www.blocket.se/recommerce/forsale/search?q=${encodeURIComponent(query)}`, ...extra].join('&')
   const { data } = await axios.get(url, { headers: HEADERS, timeout: 10000 })
 
   const $ = cheerio.load(data)

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { parseTargetPrice } from '@/lib/alerts/targetPrice'
+import { sanitizeFilters } from '@/lib/categories'
 
 export async function GET() {
   const supabase = await createClient()
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, brand, min_price, max_price, notify, target_price } = await request.json()
+  const { name, brand, min_price, max_price, notify, target_price, category, filters } = await request.json()
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
   }
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
       max_price: max_price ?? null,
       notify: notify !== false,
       target_price: target ?? null,
+      ...sanitizeFilters(category, filters),
       user_id: user.id,
     })
     .select()
