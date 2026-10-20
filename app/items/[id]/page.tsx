@@ -220,6 +220,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           key={listings.map((l) => l.id).join()}
           itemId={item.id}
           query={nameWithBrand(item.brand, item.name)}
+          category={item.category}
           listings={listings}
           onListingsChange={setListings}
           excludeWords={item.exclude_words ?? []}

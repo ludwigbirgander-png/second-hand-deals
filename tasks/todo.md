@@ -79,7 +79,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `lib/categories/index.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Tasks 5, 6
 
-- [ ] **Task 8: UI for new field kinds, scrolling chips, card details**
+- [x] **Task 8: UI for new field kinds, scrolling chips, card details**
   - Acceptance:
     - `CategoryFields` renders `min` (number + unit), `range` (two numbers, like `PriceRange`) and `toggle` with existing `Form.tsx` parts, and respects `visibleFields`.
     - The category chip row scrolls sideways in one line at 375 px, with no wrap and no page overflow.

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { Listing } from '@/lib/types'
+import type { CategoryId } from '@/lib/categories'
 import { isEnded } from '@/lib/auction'
 import { suggestExcludeWords } from '@/lib/search/match'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
@@ -51,8 +52,10 @@ type Toast =
 
 interface Props {
   itemId: string
-  /** Brand + name, used to suggest words to hide */
+  /** The item's name, used to suggest words to hide */
   query: string
+  /** The item's category, for the short details on each card ("256 GB · Battery 88 %") */
+  category?: CategoryId | null
   /** Every listing for the item, removed and possible ones included */
   listings: Listing[]
   onListingsChange: (update: (prev: Listing[]) => Listing[]) => void
@@ -76,7 +79,7 @@ const wordRequest = (itemId: string, method: 'POST' | 'DELETE', word: string) =>
  * The item's listings: real matches (favourites first), then "Possible matches",
  * then removed listings and hidden words. Ended auctions are hidden unless favourited.
  */
-export function ListingGrid({ itemId, query, listings, onListingsChange, excludeWords, onExcludeWordsChange, newSince }: Props) {
+export function ListingGrid({ itemId, query, category, listings, onListingsChange, excludeWords, onExcludeWordsChange, newSince }: Props) {
   const desktop = useMediaQuery(DESKTOP)
   // Whole rows: 5 columns on desktop, 2 on mobile
   const pageSize = desktop ? 15 : 6
@@ -157,7 +160,7 @@ export function ListingGrid({ itemId, query, listings, onListingsChange, exclude
   const ordered = [...sorted.filter((l) => l.starred), ...sorted.filter((l) => !l.starred)]
   const visible = pages * pageSize
   const card = (l: Listing) => (
-    <ListingCard key={l.id} listing={l} isNew={isNew(l)} starred={l.starred} onStar={() => toggleStar(l)} onRemove={() => remove(l)} />
+    <ListingCard key={l.id} listing={l} category={category} isNew={isNew(l)} starred={l.starred} onStar={() => toggleStar(l)} onRemove={() => remove(l)} />
   )
   const grid = 'grid grid-cols-2 gap-x-2.5 gap-y-3.5 md:grid-cols-5 md:gap-x-3.5 md:gap-y-4'
 

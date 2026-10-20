@@ -41,7 +41,7 @@ See `tasks/todo.md` for acceptance criteria, verification and files per task.
 
 ### Part B2: Categories (vertical slices)
 - [x] Task 7: Phones & tablets
-- [ ] Task 8: UI for the new field kinds, scrolling chips, card details
+- [x] Task 8: UI for the new field kinds, scrolling chips, card details
 - [ ] Checkpoint B2: add a phone item end to end in the dev app
 - [ ] Task 9: Computers
 - [ ] Task 10: Furniture & design

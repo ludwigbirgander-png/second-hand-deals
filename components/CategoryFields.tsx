@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import {
-  CATEGORIES, CONDITIONS, LETTER_SIZES, SALE_TYPES, SIZE_SYSTEM_LABELS, SIZE_VALUES, getCategory,
-  type CategoryField, type CategoryId, type ConditionGrade, type ItemFilters, type SaleType, type SizeFilter, type SizeSystem,
+  CATEGORIES, CONDITIONS, LETTER_SIZES, SALE_TYPES, SIZE_SYSTEM_LABELS, SIZE_VALUES, getCategory, visibleFields,
+  type CategoryField, type CategoryId, type ConditionGrade, type ItemFilters, type NumberRange, type SaleType, type SizeFilter, type SizeSystem,
 } from '@/lib/categories'
 import { Chip } from './ui/Chip'
-import { FieldLabel, Segmented, Toggle } from './ui/Form'
+import { FieldLabel, Input, Segmented, Toggle } from './ui/Form'
 
 interface Props {
   category: CategoryId | null
@@ -59,43 +59,42 @@ export function CategoryFields({ category, filters, onChange, suggested }: Props
     <div className="flex flex-col gap-4">
       <div>
         <FieldLabel>Category</FieldLabel>
-        <div className="flex flex-wrap items-center gap-2">
-          <Chip size="sm" label="Any" active={!c} onClick={() => pickCategory(null)} />
+        {/* One scrolling row on phones, wrapping on wider screens */}
+        <div className="flex items-center gap-2 max-md:overflow-x-auto max-md:-mx-4 max-md:px-4 max-md:pb-1 md:flex-wrap [scrollbar-width:none]">
+          <Chip size="sm" label="Any" active={!c} onClick={() => pickCategory(null)} className="shrink-0" />
           {CATEGORIES.map((x) => (
-            <Chip key={x.id} size="sm" label={x.label} active={category === x.id} onClick={() => pickCategory(x.id)} />
+            <Chip key={x.id} size="sm" label={x.short ?? x.label} active={category === x.id} onClick={() => pickCategory(x.id)} className="shrink-0" />
           ))}
-          {suggested && c && <span className="text-[12px] text-muted">Suggested from the name</span>}
         </div>
+        {suggested && c && <p className="m-0 mt-1.5 text-[12px] text-muted">Suggested from the name</p>}
       </div>
 
       {c && (
         <div className="flex flex-col gap-4 pl-3 border-l-2 border-line-hair">
-          {c.fields.map((field) =>
-            field.key === 'size' ? (
-              <SizeField key="size" field={field} shoes={c.id === 'shoes'} kids={!!filters.department?.includes('kids')} value={filters.size} onChange={(size) => set({ size })} />
-            ) : (
-              <div key={field.key}>
-                <FieldLabel>{field.label}</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {field.options!.map((o) => {
-                    const list = filters[field.key] as string[] | undefined
-                    return (
-                      <Chip
-                        key={o.id}
-                        size="sm"
-                        label={o.label}
-                        active={!!list?.includes(o.id)}
-                        onClick={() => {
-                          const next = toggle(list, o.id)
-                          set({ [field.key]: next.length ? next : undefined })
-                        }}
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            ),
-          )}
+          {visibleFields(c, filters).map((field) => {
+            const value = filters[field.key]
+            const setValue = (v: ItemFilters[string]) => set({ [field.key]: v })
+            switch (field.kind) {
+              case 'size':
+                return <SizeField key={field.key} field={field} shoes={c.id === 'shoes'} kids={!!filters.department?.includes('kids')} value={filters.size} onChange={(size) => set({ size })} />
+              case 'options':
+                return <OptionsField key={field.key} field={field} value={value as string[] | undefined} onChange={setValue} />
+              case 'min':
+                return <MinField key={field.key} field={field} value={value as number | undefined} onChange={setValue} />
+              case 'range':
+                return <RangeField key={field.key} field={field} value={value as NumberRange | undefined} onChange={setValue} />
+              case 'toggle':
+                return (
+                  <Toggle
+                    key={field.key}
+                    checked={value === true}
+                    onChange={(on) => setValue(on || undefined)}
+                    label={field.label}
+                    description={field.description}
+                  />
+                )
+            }
+          })}
           {shared}
         </div>
       )}
@@ -116,6 +115,88 @@ export function CategoryFields({ category, filters, onChange, suggested }: Props
           description="Off: listings that don't say their size, colour… are kept and marked"
         />
       )}
+    </div>
+  )
+}
+
+function OptionsField({ field, value, onChange }: {
+  field: CategoryField
+  value: string[] | undefined
+  onChange: (v: string[] | undefined) => void
+}) {
+  return (
+    <div>
+      <FieldLabel>{field.label}</FieldLabel>
+      <div className="flex flex-wrap gap-2">
+        {field.options!.map((o) => (
+          <Chip
+            key={o.id}
+            size="sm"
+            label={o.label}
+            active={!!value?.includes(o.id)}
+            onClick={() => {
+              const next = toggle(value, o.id)
+              onChange(next.length ? next : undefined)
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Whole numbers only; empty means "not set" */
+const parseWhole = (text: string) => {
+  const digits = text.replace(/\D/g, '')
+  return digits ? Number(digits) : undefined
+}
+
+/** "50–100 %", or an error when outside the field's bounds (it wouldn't be saved) */
+function boundsError(field: CategoryField, n: number | undefined) {
+  if (n == null || !field.bounds) return null
+  const [lo, hi] = field.bounds
+  return n < lo || n > hi ? `Between ${lo} and ${hi}${field.unit ? ` ${field.unit}` : ''}` : null
+}
+
+function MinField({ field, value, onChange }: {
+  field: CategoryField
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+}) {
+  return (
+    <Input
+      label={`${field.label}, at least`}
+      inputSize="sm"
+      inputMode="numeric"
+      placeholder="Any"
+      suffix={field.unit}
+      value={value ?? ''}
+      error={boundsError(field, value)}
+      wrapperClassName="max-w-[180px]"
+      onChange={(e) => onChange(parseWhole(e.target.value))}
+    />
+  )
+}
+
+function RangeField({ field, value, onChange }: {
+  field: CategoryField
+  value: NumberRange | undefined
+  onChange: (v: NumberRange | undefined) => void
+}) {
+  const update = (patch: NumberRange) => {
+    const next = { ...value, ...patch }
+    onChange(next.from == null && next.to == null ? undefined : next)
+  }
+  return (
+    <div className="flex flex-col gap-1.5 max-w-[320px]">
+      <span className="text-[13px] font-medium leading-[1.3] text-muted">{field.label}</span>
+      <div className="flex items-start gap-2">
+        <Input aria-label={`${field.label} from`} inputSize="sm" inputMode="numeric" placeholder="Any" suffix={field.unit} value={value?.from ?? ''}
+          error={boundsError(field, value?.from)} wrapperClassName="flex-1" onChange={(e) => update({ from: parseWhole(e.target.value) })} />
+        <span className="leading-9 text-faint">–</span>
+        <Input aria-label={`${field.label} to`} inputSize="sm" inputMode="numeric" placeholder="Any" suffix={field.unit} value={value?.to ?? ''}
+          error={boundsError(field, value?.to)} wrapperClassName="flex-1" onChange={(e) => update({ to: parseWhole(e.target.value) })} />
+      </div>
     </div>
   )
 }

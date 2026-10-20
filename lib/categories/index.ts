@@ -209,6 +209,7 @@ export const CATEGORIES: Category[] = [
   {
     id: 'phones',
     label: 'Phones & tablets',
+    short: 'Phones',
     hints: [...PHONE_WORDS, ...TABLET_WORDS, ...SMARTWATCH_WORDS],
     fields: [
       {

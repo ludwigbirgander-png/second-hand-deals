@@ -116,6 +116,8 @@ export interface CategoryField {
    * 'allow' (off, the default: listings that say so are hidden, e.g. second sort)
    */
   toggle?: 'require' | 'allow'
+  /** A line under a toggle, explaining what on and off do */
+  description?: string
   /** Only shown, saved and checked when the item's type includes one of these, or no type is picked */
   showWhen?: { type: string[] }
   /**
@@ -128,6 +130,8 @@ export interface CategoryField {
 export interface Category {
   id: CategoryId
   label: string
+  /** A shorter label for the category chip ("Phones" for "Phones & tablets") */
+  short?: string
   /** Words in an item's name that suggest this category ("iPhone 13" → Phones) */
   hints: string[]
   fields: CategoryField[]
