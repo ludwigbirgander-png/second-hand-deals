@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs'
 import { parseAuctionet } from './auctionet'
 import { parseBukowskis } from './bukowskis'
 import { parseTraderaApi, parseTraderaHtml } from './tradera'
-import { isRelevant } from './index'
+import { buildQuery, isRelevant } from './index'
+import { nameWithBrand } from '../itemName'
 
 // Saved responses (see __fixtures__). Run from the repo root: npm test
 const fixture = (name: string) => readFileSync(`lib/scrapers/__fixtures__/${name}`, 'utf8')
@@ -99,4 +100,14 @@ test('isRelevant matches auction-house titles', () => {
   assert.ok(isRelevant('Josef Frank, spegel, Firma Svenskt Tenn', 'josef frank svenskt tenn'))
   assert.ok(isRelevant("Levi's 501 jeans", 'levis 501'))
   assert.ok(!isRelevant('Bruno Mathsson, fåtölj "Eva"', 'Eames'))
+})
+
+test('brand merge: the brand moves into the name, and the search stays the same', () => {
+  assert.equal(nameWithBrand('Sony', 'WH-1000XM4'), 'Sony WH-1000XM4')
+  assert.equal(nameWithBrand(null, 'Eames chair'), 'Eames chair')
+  assert.equal(nameWithBrand('  ', 'Eames chair'), 'Eames chair')
+  // Already in the name: not doubled
+  assert.equal(nameWithBrand('Acne', 'Acne läderjacka'), 'Acne läderjacka')
+  assert.equal(nameWithBrand('acne', 'Acne läderjacka'), 'Acne läderjacka')
+  assert.equal(buildQuery(null, nameWithBrand('Sony', 'WH-1000XM4')), buildQuery('Sony', 'WH-1000XM4'))
 })

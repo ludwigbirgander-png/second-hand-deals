@@ -9,6 +9,7 @@ import { Button } from './ui/Button'
 import { Chip } from './ui/Chip'
 import { FieldLabel, Input, PriceRange, Toggle, parsePrice, priceRangeError } from './ui/Form'
 import { CategoryFields } from './CategoryFields'
+import { nameWithBrand } from '@/lib/itemName'
 import { suggestCategory, type CategoryId, type ItemFilters } from '@/lib/categories'
 
 export interface ItemFormValues {
@@ -79,8 +80,8 @@ export function AddPanel({ open, ...rest }: Props) {
 
 function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, onCreateList, closing, desktop }: Omit<Props, 'open'> & { closing: boolean; desktop: boolean }) {
   const edit = mode === 'edit'
-  const [name, setName] = useState(initial?.name ?? '')
-  const [brand, setBrand] = useState(initial?.brand ?? '')
+  // An item saved before the Brand field was removed gets its brand back in the name
+  const [name, setName] = useState(nameWithBrand(initial?.brand, initial?.name ?? ''))
   const [range, setRange] = useState({
     min: initial?.min_price ? String(initial.min_price) : '',
     max: initial?.max_price ? String(initial.max_price) : '',
@@ -112,7 +113,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
     setError(null)
     const err = await onSubmit({
       name: name.trim(),
-      brand: brand.trim() || null,
+      brand: null,
       min_price: parsePrice(range.min) || null,
       max_price: parsePrice(range.max) || null,
       notify,
@@ -153,7 +154,6 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
   const fields = (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 md:gap-5">
-        <Input label="Brand (optional)" placeholder="e.g. Sony" value={brand} onChange={(e) => setBrand(e.target.value)} />
         <PriceRange min={range.min} max={range.max} onChange={setRange} />
       </div>
       <CategoryFields
