@@ -206,7 +206,7 @@ export default function WatchlistPage() {
       const res = await fetch('/api/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify }),
+        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify, target_price: v.target_price }),
       })
       const created = await res.json()
       if (!res.ok) return created.error ?? 'Could not add the item'
@@ -371,7 +371,7 @@ export default function WatchlistPage() {
       )}
 
       {!loading && (empty
-        ? desktop && <AddDock onSubmit={(name) => addItem({ name, brand: null, min_price: null, max_price: null, notify: true, listIds: [] })} />
+        ? desktop && <AddDock onSubmit={(name) => addItem({ name, brand: null, min_price: null, max_price: null, notify: true, target_price: null, listIds: [] })} />
         : <FloatingButton ref={fabRef} label="Add item" hint="or press /" hidden={addOpen} onClick={() => openAdd()} />)}
 
       <AddPanel

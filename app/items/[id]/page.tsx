@@ -87,7 +87,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       const res = await fetch(`/api/items/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify }),
+        body: JSON.stringify({ name: v.name, brand: v.brand, min_price: v.min_price, max_price: v.max_price, notify: v.notify, target_price: v.target_price }),
       })
       const json = await res.json()
       if (!res.ok) return json.error ?? 'Could not save'
@@ -222,6 +222,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           min_price: item.min_price,
           max_price: item.max_price,
           notify: item.notify,
+          target_price: item.target_price ?? null,
           listIds: item.lists.map((l) => l.id),
         }}
         onSubmit={save}

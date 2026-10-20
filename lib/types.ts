@@ -6,6 +6,8 @@ export interface Item {
   min_price: number | null
   max_price: number | null
   notify: boolean
+  /** "Alert me when one is under X kr"; checked every 3 hours */
+  target_price?: number | null
   /** Words that hide a listing; added from the prompt after removing one */
   exclude_words?: string[]
   created_at: string
@@ -53,6 +55,8 @@ export interface Listing {
   removed_at: string | null
   /** The hidden word that removed it, if it wasn't removed by hand */
   removed_word: string | null
+  /** The price before the last price change; used for price-drop alerts */
+  previous_price?: number | null
 }
 
 export type ListingMatch = 'match' | 'possible'

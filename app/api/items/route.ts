@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { parseTargetPrice } from '@/lib/alerts/targetPrice'
 
 export async function GET() {
   const supabase = await createClient()
@@ -80,9 +81,13 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, brand, min_price, max_price, notify } = await request.json()
+  const { name, brand, min_price, max_price, notify, target_price } = await request.json()
   if (!name?.trim()) {
     return Response.json({ error: 'Name is required' }, { status: 400 })
+  }
+  const target = parseTargetPrice(target_price)
+  if (target_price != null && target_price !== '' && target === undefined) {
+    return Response.json({ error: 'Target price must be a whole number of kronor' }, { status: 400 })
   }
 
   const { data: item, error } = await supabase
@@ -93,6 +98,7 @@ export async function POST(request: Request) {
       min_price: min_price ?? null,
       max_price: max_price ?? null,
       notify: notify !== false,
+      target_price: target ?? null,
       user_id: user.id,
     })
     .select()

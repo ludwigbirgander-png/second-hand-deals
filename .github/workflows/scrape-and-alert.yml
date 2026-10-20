@@ -1,14 +1,21 @@
-name: Daily Scrape
+name: Scrape and alert
 
+# Every 3 hours: search every item, then email target-price, price-drop,
+# auction-ending and rare-find alerts. The weekly email is weekly-digest.yml.
 on:
-  # Schedule paused 2026-06-12 — re-enable by uncommenting:
-  # schedule:
-  #   - cron: '0 7 * * *'  # 8am CET (UTC+1)
+  schedule:
+    - cron: '0 */3 * * *'
   workflow_dispatch:      # manual trigger for testing
+
+# Never run two at once (a slow run must not overlap the next one)
+concurrency:
+  group: scrape-and-alert
+  cancel-in-progress: false
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +26,7 @@ jobs:
 
       - run: npm ci
 
-      - run: npx tsx scripts/daily-scrape.ts
+      - run: npx tsx scripts/scrape-and-alert.ts
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

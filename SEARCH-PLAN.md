@@ -1,6 +1,6 @@
 # Kompi search: categories and precision plan
 
-Written 2026-10-17. **Status:** phases 1 and 2 built on branch `search-phase-1-2` (needs `supabase/migrations/20261018_remove_and_match.sql`). Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
+Written 2026-10-17. **Status:** phases 1 and 2 built on branch `search-phase-1-2` (needs `supabase/migrations/20261018_remove_and_match.sql`). Phase 3 built on `search-phase-3`, on top of it (needs `supabase/migrations/20261020_alerts.sql`). Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
 
 ## Context
 Today a Kompi item is only a name, an optional brand and a price range (`items` table). Kompi sends the same text query to every site and keeps a listing when every word of 3+ letters appears in its title (`isRelevant` in `lib/scrapers/index.ts`). That causes three problems:
@@ -145,6 +145,9 @@ On top of that, a **frequent check every 3 hours** for:
 
 To build this:
 - **Background job:** `scripts/daily-scrape.ts` is restarted and split into a weekly digest run and a 3-hourly check, both on the GitHub Action schedule (`.github/workflows/`). Vercel's free cron can't run every 3 hours.
+  - Built as `scripts/scrape-and-alert.ts` (every 3 hours: scrape, then alerts) and `scripts/weekly-digest.ts` (Mondays 06:00 UTC). The rules are in `lib/alerts/rules.ts`, with tests.
+  - Price alerts (target price, price drops) skip auction bids, since bids keep rising. Auction alerts are the "ending soon" reminder.
+  - The per-item "notify" switch now means "Email me about this item": the weekly email and rare finds. Target price alerts follow the target price alone.
 - **Price history:** `listings.previous_price`, updated when an upsert changes the price.
 - **No duplicate alerts:** an `alert_log (user_id, listing_id, kind, price, sent_at)` table; a listing alerts again only if its price drops further.
 - **Settings:** per user, the weekly email on or off and alerts on or off; per item, the target price.

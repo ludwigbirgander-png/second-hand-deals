@@ -9,6 +9,11 @@ import { Sheet, SheetSection } from './ui/Sheet'
 import { Toggle } from './ui/Form'
 import { Button } from './ui/Button'
 
+interface EmailSettings {
+  weekly_email: boolean
+  alerts_enabled: boolean
+}
+
 const SITE_GROUPS: { kind: SiteKind; title: string; hint: string }[] = [
   { kind: 'marketplace', title: 'Marketplaces', hint: 'Choose which marketplaces to search for deals' },
   { kind: 'auction', title: 'Auction houses', hint: 'Prices are the current bid, or the starting price before anyone bids' },
@@ -17,6 +22,7 @@ const SITE_GROUPS: { kind: SiteKind; title: string; hint: string }[] = [
 export function SettingsSheet({ open, onClose, email }: { open: boolean; onClose: () => void; email: string }) {
   const router = useRouter()
   const [sites, setSites] = useState<SiteConfig[]>([])
+  const [emails, setEmails] = useState<EmailSettings | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -25,7 +31,25 @@ export function SettingsSheet({ open, onClose, email }: { open: boolean; onClose
       .then((r) => r.json())
       .then((data) => setSites(Array.isArray(data) ? data : []))
       .catch(() => setSites([]))
+    fetch('/api/profile/notifications')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setEmails(data))
+      .catch(() => setEmails(null))
   }, [open])
+
+  async function toggleEmail(key: keyof EmailSettings, value: boolean) {
+    setError(null)
+    setEmails((prev) => (prev ? { ...prev, [key]: value } : prev))
+    const res = await fetch('/api/profile/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [key]: value }),
+    }).catch(() => null)
+    if (!res?.ok) {
+      setEmails((prev) => (prev ? { ...prev, [key]: !value } : prev))
+      setError('Could not save — please try again')
+    }
+  }
 
   async function toggleSite(id: string, enabled: boolean) {
     setError(null)
@@ -55,6 +79,25 @@ export function SettingsSheet({ open, onClose, email }: { open: boolean; onClose
         <div className="text-[16px] mt-0.5 break-all">{email || '—'}</div>
         <Button variant="secondary" size="sm" className="mt-4" onClick={signOut}>Sign out</Button>
       </SheetSection>
+
+      {emails && (
+        <SheetSection title="Email">
+          <div className="flex flex-col gap-4 mt-2">
+            <Toggle
+              checked={emails.weekly_email}
+              onChange={(v) => toggleEmail('weekly_email', v)}
+              label="Weekly email"
+              description="Monday morning, with the week's new listings"
+            />
+            <Toggle
+              checked={emails.alerts_enabled}
+              onChange={(v) => toggleEmail('alerts_enabled', v)}
+              label="Alerts"
+              description="Right away for target prices, price drops on favourites, auctions ending soon and rare finds"
+            />
+          </div>
+        </SheetSection>
+      )}
 
       {SITE_GROUPS.map((g) => {
         const group = sites.filter((s) => (s.kind ?? 'marketplace') === g.kind)

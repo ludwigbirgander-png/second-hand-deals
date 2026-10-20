@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { ItemWithMeta } from '@/lib/types'
 import { themeFor } from '@/lib/colors'
 import { Badge } from './Badge'
+import { Icon } from './Icon'
 import type { ReactNode } from 'react'
 
 interface Props {
@@ -37,6 +38,12 @@ export function ItemTile({ item, placeholder, className }: Props) {
         {newCount > 0 && (
           <Badge size="sm" className="absolute top-2 left-2" title={`${newCount} new listing${newCount === 1 ? '' : 's'} since your last visit`}>
             {newCount} new
+          </Badge>
+        )}
+        {item.target_price != null && (
+          <Badge variant="soft" size="sm" className="absolute bottom-2 left-2 !bg-chalk/90" title="Kompi emails you as soon as a listing is at or under this price">
+            <Icon name="bell" size={11} strokeWidth={2} />
+            Under {item.target_price.toLocaleString('sv-SE')} kr
           </Badge>
         )}
       </span>

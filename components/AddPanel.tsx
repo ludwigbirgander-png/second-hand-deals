@@ -15,6 +15,7 @@ export interface ItemFormValues {
   min_price: number | null
   max_price: number | null
   notify: boolean
+  target_price: number | null
   listIds: string[]
 }
 
@@ -24,6 +25,7 @@ export interface ItemFormInitial {
   min_price?: number | null
   max_price?: number | null
   notify?: boolean
+  target_price?: number | null
   listIds?: string[]
 }
 
@@ -79,6 +81,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
   })
   const [listIds, setListIds] = useState<string[]>(initial?.listIds ?? [])
   const [notify, setNotify] = useState(initial?.notify !== false)
+  const [target, setTarget] = useState(initial?.target_price != null ? String(initial.target_price) : '')
   const [creating, setCreating] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -100,6 +103,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
       min_price: parsePrice(range.min) || null,
       max_price: parsePrice(range.max) || null,
       notify,
+      target_price: parsePrice(target) || null,
       listIds,
     })
     if (err) { setError(err); setSaving(false) }
@@ -165,7 +169,18 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
           )}
         </div>
       </div>
-      <Toggle checked={notify} onChange={setNotify} label="Email notifications" description="Daily digest when new listings appear" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 md:gap-5 md:items-center">
+        <Input
+          label="Alert me under (optional)"
+          placeholder="e.g. 1 500"
+          suffix="kr"
+          inputMode="numeric"
+          value={target}
+          hint="Email as soon as a listing is at or under this price"
+          onChange={(e) => setTarget(e.target.value)}
+        />
+        <Toggle checked={notify} onChange={setNotify} label="Email me about this item" description="In the weekly email, and when a rare find turns up" />
+      </div>
       {confirmDelete && <p className="m-0 text-[13px] text-muted">This removes the item and all its listings. Press again to confirm.</p>}
     </>
   )

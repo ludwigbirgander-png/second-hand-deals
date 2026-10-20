@@ -15,6 +15,9 @@ create extension if not exists "pgcrypto";
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
+  weekly_email boolean not null default true,
+  alerts_enabled boolean not null default true,
+  last_digest_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -29,6 +32,7 @@ create table if not exists items (
   max_price integer,
   notify boolean not null default true,
   exclude_words text[] not null default '{}',
+  target_price integer check (target_price is null or target_price >= 0),
   last_viewed_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -57,6 +61,7 @@ create table if not exists listings (
   match text not null default 'match' check (match in ('match', 'possible')),
   removed_at timestamptz,
   removed_word text,
+  previous_price integer,
   found_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
 );
@@ -66,6 +71,36 @@ create index if not exists listings_found_at_idx on listings(found_at);
 create index if not exists listings_last_seen_at_idx on listings(last_seen_at);
 -- Required by upsert(..., { onConflict: 'item_id,url' }) in the scrape paths
 create unique index if not exists listings_item_id_url_key on listings(item_id, url);
+
+-- Keeps listings.previous_price for price-drop alerts
+create or replace function listings_track_price()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.price is distinct from old.price and old.price is not null then
+    new.previous_price := old.price;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists listings_track_price on listings;
+create trigger listings_track_price
+  before update of price on listings
+  for each row execute function listings_track_price();
+
+-- Alert emails sent, so the same alert isn't sent twice
+create table if not exists alert_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  listing_id uuid not null references listings(id) on delete cascade,
+  kind text not null check (kind in ('target_price', 'price_drop', 'auction_ending', 'rare_find')),
+  price integer,
+  sent_at timestamptz not null default now()
+);
+
+create index if not exists alert_log_listing_kind_idx on alert_log(listing_id, kind);
 
 create table if not exists notified (
   id uuid primary key default gen_random_uuid(),
@@ -174,6 +209,7 @@ alter table profiles enable row level security;
 alter table items enable row level security;
 alter table listings enable row level security;
 alter table notified enable row level security;
+alter table alert_log enable row level security;
 alter table lists enable row level security;
 alter table item_lists enable row level security;
 alter table list_members enable row level security;
@@ -224,7 +260,7 @@ create policy listings_shared_read on listings
     exists (select 1 from items i where i.id = listings.item_id)
   );
 
--- Notified: service-role only (no user policies)
+-- Notified and alert_log: service-role only (no user policies)
 
 -- Lists: owner full access; members read; public lists readable
 drop policy if exists lists_own on lists;
