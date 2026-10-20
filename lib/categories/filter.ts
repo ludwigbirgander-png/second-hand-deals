@@ -1,6 +1,6 @@
 // Does a listing pass an item's filters? Runs after the title match, for whatever a site couldn't filter itself.
-import type { Category, FilterKey, ItemFilters, ListingAttributes, ParsedSize, SizeFilter } from './types'
-import { conditionRank } from './index'
+import type { Category, FilterKey, ItemFilters, ListingAttributes, NumberRange, ParsedSize, SizeFilter } from './types'
+import { conditionRank, visibleFields } from './index'
 import { hasPattern, tokens } from './words'
 
 export interface FilterInput {
@@ -75,21 +75,48 @@ export function checkListing(
   }
 
   if (category) {
-    if (filters.department?.length) {
-      if (!a.department) unstated.push('department')
-      else {
-        const ok = filters.department.includes(a.department) ||
-          (a.department === 'unisex' && filters.department.some((d) => d === 'women' || d === 'men'))
-        if (!ok) return drop
+    for (const field of visibleFields(category, filters)) {
+      const want = filters[field.key]
+      const have = a[field.key]
+      switch (field.kind) {
+        case 'size':
+          break // checked last, below
+        case 'options': {
+          const wanted = want as string[] | undefined
+          if (!wanted?.length) break
+          if (field.key === 'department') {
+            if (!a.department) { unstated.push('department'); break }
+            const ok = wanted.includes(a.department) ||
+              (a.department === 'unisex' && wanted.some((d) => d === 'women' || d === 'men'))
+            if (!ok) return drop
+            break
+          }
+          const found = have as string[] | undefined
+          if (!found?.length) unstated.push(field.key)
+          else if (!found.some((v) => wanted.includes(v))) return drop
+          break
+        }
+        case 'min':
+          if (typeof want !== 'number') break
+          if (typeof have !== 'number') unstated.push(field.key)
+          else if (have < want) return drop
+          break
+        case 'range': {
+          if (!want || typeof want !== 'object') break
+          const { from, to } = want as NumberRange
+          if (typeof have !== 'number') unstated.push(field.key)
+          else if ((from != null && have < from) || (to != null && have > to)) return drop
+          break
+        }
+        case 'toggle':
+          // 'allow': off hides listings that say so (second sort). 'require': on needs the listing to say so.
+          if (field.toggle === 'allow') {
+            if (want !== true && have === true) return drop
+          } else if (want === true && have !== true) {
+            unstated.push(field.key)
+          }
+          break
       }
-    }
-
-    for (const key of ['type', 'color', 'material'] as const) {
-      const wanted = filters[key]
-      if (!wanted?.length) continue
-      const found = a[key]
-      if (!found?.length) unstated.push(key)
-      else if (!found.some((v) => wanted.includes(v))) return drop
     }
 
     if (filters.size) {

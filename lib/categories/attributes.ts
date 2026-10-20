@@ -1,5 +1,5 @@
 // Normalised details of a listing: condition on one scale, sizes, and category options found in the title.
-import type { Category, ConditionGrade, ListingAttributes, ParsedSize } from './types'
+import type { Category, ConditionGrade, Department, ListingAttributes, ParsedSize } from './types'
 import { hasPattern, tokens } from './words'
 
 // ─── Condition ───────────────────────────────────────────────────────────────
@@ -234,16 +234,17 @@ export function extractAttributes(l: AttributeSource, category?: Category): List
 
   const words = tokens(l.title)
   for (const field of category.fields) {
-    if (field.key === 'size' || !field.options) continue
+    if (field.kind === 'size') continue
     const fromSite = site[field.key]
     if (fromSite != null && (!Array.isArray(fromSite) || fromSite.length)) {
-      ;(out as Record<string, unknown>)[field.key] = fromSite
+      out[field.key] = fromSite
       continue
     }
-    const found = field.options.filter((o) => hasPattern(words, o.words)).map((o) => o.id)
-    if (!found.length) continue
-    if (field.key === 'department') out.department = found[0] as ListingAttributes['department']
-    else (out as Record<string, unknown>)[field.key] = found
+    let value = field.parse?.(l.title)
+    if (value == null && field.options) value = field.options.filter((o) => hasPattern(words, o.words)).map((o) => o.id)
+    if (value == null || value === false || (Array.isArray(value) && !value.length)) continue
+    if (field.key === 'department') out.department = (value as string[])[0] as Department
+    else out[field.key] = value
   }
 
   const size = hasSize(site.size) ? site.size! : parseSize(l.size, l.title, category.id === 'shoes')

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
 import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes } from './attributes'
 import { checkListing, hasNegativeWord } from './filter'
+import { decades, numbersWithUnit, percentNear, quantity } from './parse'
 import { sellpyFilters, sellpyAttributes, vintedParams, blocketParams, siteExcluded } from './native'
 import { parseVintedCardTitle } from '../scrapers/vinted'
 import type { Category, ItemFilters } from './types'
@@ -276,4 +277,107 @@ test('describe: chips for the new field kinds', () => {
   assert.deepEqual(describeFiltersFor(gadget, { caseSize: { from: 40 } }), ['Gadget', 'Case 40 mm or more'])
   assert.deepEqual(describeFiltersFor(gadget, { caseSize: { to: 40 } }), ['Gadget', 'Case up to 40 mm'])
   assert.deepEqual(describeFiltersFor(gadget, { unlocked: true, secondSort: true }), ['Gadget', 'Unlocked', 'Second sort OK'])
+})
+
+// ─── Phase 5: reading numbers from titles ────────────────────────────────────
+
+test('parse: numbers with a unit, never bare numbers', () => {
+  assert.deepEqual(numbersWithUnit('iPhone 13 128GB svart', ['gb']), [128])
+  assert.deepEqual(numbersWithUnit('MacBook Air M2 8 GB / 256 GB', ['gb']), [8, 256])
+  assert.deepEqual(numbersWithUnit('Samsung S23 1 TB', ['tb']), [1])
+  assert.deepEqual(numbersWithUnit('Omega Seamaster 41 mm', ['mm']), [41])
+  assert.deepEqual(numbersWithUnit('Omega 41mm automatic', ['mm']), [41])
+  assert.deepEqual(numbersWithUnit('MacBook Pro 13" 2019', ['"', '″', 'tum']), [13])
+  assert.deepEqual(numbersWithUnit('MacBook Pro 13,3 tum', ['"', '″', 'tum']), [13.3])
+  assert.deepEqual(numbersWithUnit('MacBook Pro 16-tum', ['"', '″', 'tum']), [16])
+  assert.deepEqual(numbersWithUnit('iPhone 13 Pro', ['"', '″', 'tum']), [])
+  assert.deepEqual(numbersWithUnit('iPhone 13 Pro', ['gb']), [])
+})
+
+test('parse: percent next to a keyword', () => {
+  const battery = ['batterihälsa', 'batteri', 'battery', 'bh']
+  assert.equal(percentNear('iPhone 13 128 GB batterihälsa 89%', battery), 89)
+  assert.equal(percentNear('iPhone 13, 86% batterihälsa!', battery), 86)
+  assert.equal(percentNear('iPhone 12 Batteri: 91 %', battery), 91)
+  assert.equal(percentNear('iPhone 12 BH 100%', battery), 100)
+  assert.equal(percentNear('iPhone 12 -20% rea', battery), undefined)
+  assert.equal(percentNear('iPhone 12', battery), undefined)
+})
+
+test('parse: quantity', () => {
+  assert.equal(quantity('Lilla Åland stolar 4 st'), 4)
+  assert.equal(quantity('4st tallrikar Mon Amie'), 4)
+  assert.equal(quantity('Arne Jacobsen stolar, 6 st, Sjuan'), 6)
+  assert.equal(quantity('Stolar, ett par, rokoko'), 2)
+  assert.equal(quantity('Ett par fåtöljer'), 2)
+  assert.equal(quantity('Set om 6 glas Iittala'), 6)
+  assert.equal(quantity('Sex tallrikar Ostindia', ['tallrikar']), 6)
+  assert.equal(quantity('6 tallrikar Mon Amie', ['tallrikar']), 6)
+  assert.equal(quantity('Mon Amie tallrik 25 cm'), undefined)
+  assert.equal(quantity('Matgrupp 1960-tal'), undefined)
+  assert.equal(quantity('iPhone 13 Pro'), undefined)
+})
+
+test('parse: decades', () => {
+  assert.deepEqual(decades('60-tals teakbord'), [1960])
+  assert.deepEqual(decades('Fåtölj 1950-tal'), [1950])
+  assert.deepEqual(decades('Byrå, 1960-talet'), [1960])
+  assert.deepEqual(decades('Sideboard 1950/60-tal'), [1950, 1960])
+  assert.deepEqual(decades('Ilmari Tapiovaara stolar 1950-60-tal'), [1950, 1960])
+  assert.deepEqual(decades('Vintage lamp 1970s'), [1970])
+  assert.deepEqual(decades('Mid century chair'), [1950, 1960])
+  assert.deepEqual(decades('Stolar 1800-talets första hälft'), [])
+  assert.deepEqual(decades('Stol 1900-tal'), [])
+  assert.deepEqual(decades('Bord 120 cm'), [])
+})
+
+// ─── Phase 5: details and checks by field kind ───────────────────────────────
+
+const parsed: Category = {
+  ...gadget,
+  fields: gadget.fields.map((f) => ({
+    ...f,
+    parse: {
+      battery: (t: string) => percentNear(t, ['batterihälsa', 'batteri']),
+      caseSize: (t: string) => numbersWithUnit(t, ['mm'])[0],
+      unlocked: (t: string) => /olåst/i.test(t) || undefined,
+      secondSort: (t: string) => /2:a sortering/i.test(t) || undefined,
+    }[f.key],
+  })),
+}
+const gadgetListing = (title: string) => ({ title, attributes: extractAttributes({ title }, parsed) })
+
+test('attributes: each field kind read from the title', () => {
+  assert.deepEqual(extractAttributes({ title: 'Klocka 41 mm, batteri 88%, olåst' }, parsed), { type: ['watch'], battery: 88, caseSize: 41, unlocked: true })
+  assert.deepEqual(extractAttributes({ title: 'Tallrik 2:a sortering' }, parsed), { secondSort: true })
+  // What the site states wins
+  assert.deepEqual(extractAttributes({ title: 'Klocka batteri 88%', attributes: { battery: 95 } }, parsed).battery, 95)
+})
+
+test('filters: min, range and toggle', () => {
+  const check = (title: string, f: ItemFilters) => checkListing(gadgetListing(title), f, parsed)
+  assert.deepEqual(check('Klocka batteri 90%', { battery: 85 }), { keep: true, unstated: [] })
+  assert.deepEqual(check('Klocka batteri 85%', { battery: 85 }), { keep: true, unstated: [] })
+  assert.equal(check('Klocka batteri 80%', { battery: 85 }).keep, false)
+  assert.deepEqual(check('Klocka', { battery: 85 }), { keep: true, unstated: ['battery'] })
+  assert.equal(check('Klocka', { battery: 85, strict: true }).keep, false)
+
+  assert.equal(check('Klocka 40 mm', { caseSize: { from: 38, to: 41 } }).keep, true)
+  assert.equal(check('Klocka 42 mm', { caseSize: { from: 38, to: 41 } }).keep, false)
+  assert.equal(check('Klocka 36 mm', { caseSize: { from: 38 } }).keep, false)
+  assert.equal(check('Klocka 44 mm', { caseSize: { from: 38 } }).keep, true)
+  assert.deepEqual(check('Klocka', { caseSize: { to: 40 } }), { keep: true, unstated: ['caseSize'] })
+
+  assert.deepEqual(check('Telefon olåst', { unlocked: true }), { keep: true, unstated: [] })
+  assert.deepEqual(check('Telefon', { unlocked: true }), { keep: true, unstated: ['unlocked'] })
+
+  // 'allow' toggles: off hides listings that say so; nothing is "not stated"
+  assert.equal(check('Tallrik 2:a sortering', {}).keep, false)
+  assert.equal(check('Tallrik 2:a sortering', { secondSort: true }).keep, true)
+  assert.deepEqual(check('Tallrik', {}), { keep: true, unstated: [] })
+})
+
+test('filters: a field hidden by the type never filters', () => {
+  assert.equal(checkListing(gadgetListing('Ring 50 mm'), { type: ['ring'], caseSize: { to: 40 } }, parsed).keep, true)
+  assert.equal(checkListing(gadgetListing('Klocka 50 mm'), { type: ['watch'], caseSize: { to: 40 } }, parsed).keep, false)
 })
