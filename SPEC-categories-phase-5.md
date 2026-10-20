@@ -28,7 +28,7 @@ Kompi now has two categories, Clothing and Shoes. Phase 5 adds the five where no
 4. **Stored data stays flat.** New filter keys sit next to the old ones in `items.filters` (jsonb), and new details in `listings.attributes`. No migration.
 5. **One spec, one branch (`search-phase-5`).** The work goes in two steps (see Build order), not as five separate specs. The framework change is shared, and each category after it is small, declarative code.
 6. **Left out of v1:** a Manufacturer / designer filter (maybe later), dimensions in cm, pickup radius, year of manufacture, phone "grade", charger/box included, Tradera API filters (keys still on hold).
-7. **Every relevant site is always searched.** A category's site list includes every site that sells that kind of thing, not just the best ones. Sites marked *(verify)* are added if a live check in the plan step finds the category there.
+7. **Every relevant site is always searched.** A category's site list includes every site that sells that kind of thing, not just the best ones. Checked live 2026-10-20: Sellpy and Vinted carry all five categories (see `tasks/plan.md`).
 
 ## Also in this phase: remove the Brand field
 People type the brand into the name anyway ("Acne läderjacka", "Omega Seamaster"), and the quick-add dock already saves `brand: null`. Today the brand is only glued in front of the name to make the search (`buildQuery`), and shown in muted text above the name on the tile and item page.
@@ -49,7 +49,7 @@ Shared options for every category stay the same: condition, sale type, strict/le
 - **Battery health:** a minimum % (`min` field; "batterihälsa 89%", "batteri 91 %", "BH 88%")
 - **Unlocked:** a toggle ("olåst", "unlocked", "öppen för alla operatörer")
 - **Built-in junk words:** `skal`, `*skal`, `fodral*`, `skärmskydd*`, `case`, `laddare`, `kabel`, `trasig*`, `sprucken`, `spräckt*`, `reservdel*`, `icloud låst`, `icloudlåst`, `låst till operatör*`, `endast kartong*`, `kartong`, `dummy`
-- **Sites:** Blocket, Tradera, Facebook Marketplace, Vinted *(verify)*, Sellpy *(verify)*
+- **Sites:** Blocket, Tradera, Facebook Marketplace, Vinted, Sellpy
 
 ### Computers (`computers`)
 - **Type:** Laptop, Desktop
@@ -59,7 +59,7 @@ Shared options for every category stay the same: condition, sale type, strict/le
 - **Screen size:** 13 / 14 / 15 / 16 inch (from `13"`, "13 tum", "13-tum", "13,3"; never from a bare "13")
 - **Swedish keyboard:** a toggle ("svenskt tangentbord", "svensk layout", "nordiskt tangentbord")
 - **Junk words:** `laddare`, `adapter`, `skal`, `fodral`, `väska`, `sleeve`, `trasig*`, `delar`, `reservdel*`, `moderkort`, `skärm till`, `tangentbord till`, `icloud låst`, `mdm`, `bios låst`
-- **Sites:** Blocket, Tradera, Facebook Marketplace, Vinted *(verify)*, Sellpy *(verify)*
+- **Sites:** Blocket, Tradera, Facebook Marketplace, Vinted, Sellpy
 
 ### Furniture & design (`furniture`)
 - **Type:** Chair, Armchair, Sofa, Table, Desk, Shelf & storage, Lamp, Bed, Rug, Mirror
@@ -68,7 +68,7 @@ Shared options for every category stay the same: condition, sale type, strict/le
 - **Quantity:** Single, Pair, Set of 4 or more ("2 st", "ett par", "4 st", "set om 6", "6 stolar")
 - **Decade:** 1940s–1990s ("60-tal", "1960-tal", "60-talet", "1960s", "mid century" → 1950s and 1960s)
 - **Junk words:** `ritning*`, `miniatyr*`, `dockskåp*`, `vitra miniatures`, `affisch*`, `poster`, `katalog*`, `bok`, `dyna`, `dynor`, `överdrag*`, `klädsel till`, `reservdel*`
-- **Sites:** Blocket, Tradera, Auctionet, Bukowskis, Facebook Marketplace, Sellpy *(verify: lamps, mirrors, small furniture)*, Vinted *(verify: home)*
+- **Sites:** Blocket, Tradera, Auctionet, Bukowskis, Facebook Marketplace, Sellpy, Vinted
 
 ### Watches & jewellery (`watches`)
 - **Type:** Watch, Smartwatch, Ring, Necklace, Bracelet, Earrings, Brooch
@@ -85,7 +85,7 @@ Shared options for every category stay the same: condition, sale type, strict/le
 - **Quantity:** Single, Pair, Set of 4 or more, Set of 6 or more ("6 st", "sex st", "set om 6", "6 tallrikar")
 - **Second sort OK:** a toggle. Off (the default): listings marked "2:a sortering", "andra sortering" or "sekunda" are hidden. On: they're kept.
 - **Junk words:** `skadad*`, `nagg*`, `naggad*`, `kantstött*`, `spricka`, `sprucken`, `limmad*`, `lagad*`, `krakelerad*` (crazed glaze), `bild på`, `affisch*`
-- **Sites:** Tradera, Auctionet, Blocket, Bukowskis, Facebook Marketplace, Sellpy, Vinted *(verify: home)*
+- **Sites:** Tradera, Auctionet, Blocket, Bukowskis, Facebook Marketplace, Sellpy, Vinted
 
 Word lists above are the starting point. The plan step fixes the exact patterns against real titles from `npm run check:scrapers`.
 

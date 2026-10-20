@@ -5,7 +5,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 
 ## Part A: Remove the Brand field
 
-- [ ] **Task 1: Merge brands into names and remove the Brand input**
+- [x] **Task 1: Merge brands into names and remove the Brand input**
   - Acceptance:
     - `supabase/migrations/20261022_merge_brand.sql` sets `name = brand || ' ' || name` and `brand = null` where brand is set and the name doesn't already start with it (case-insensitive); `supabase/schema.sql` notes the column is unused.
     - The add/edit panel has no Brand input; saving sends `brand: null`.
@@ -14,7 +14,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `supabase/migrations/20261022_merge_brand.sql`, `supabase/schema.sql`, `components/AddPanel.tsx`, `lib/scrapers/scrapers.test.ts`
   - Size: S · Depends on: none
 
-- [ ] **Task 2: Remove brand from display and copy**
+- [x] **Task 2: Remove brand from display and copy**
   - Acceptance:
     - No brand line on the watchlist tile, item page header or scan page title (the name now carries it).
     - The empty-state hint no longer mentions the brand.
@@ -27,7 +27,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 
 ## Part B1: Framework
 
-- [ ] **Task 3: Live site check**
+- [x] **Task 3: Live site check**
   - Acceptance:
     - For each new category, a yes/no per *(verify)* site (Sellpy, Vinted) with the query used and the hit counts.
     - The Sellpy category path (`categories.lvl1`) for watches, jewellery, glass/ceramics, and electronics/home if they exist.

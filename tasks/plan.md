@@ -10,7 +10,11 @@ Two parts. **Part A** removes the Brand field and merges existing brands into it
 |---|---|---|
 | Auctionet | `category_id` works on `api/v2/items.json`, **one id per request** (`6,9` returns 0). Top-level ids: Möbler **16** (chairs **18** inside it), Belysning & lampor **1**, Speglar **42**, Mattor & textil **35**, Klockor & ur **31**, Smycken & ädelstenar **13**, Glas **6**, Keramik & porslin **9**. Tested: "stol" 2,838 → 2,024 (16); "omega" 111 → 106 (31); "iittala" 97 → 81 (6); "rörstrand" 380 → 367 (9); "ring" 8,517 → 2,624 (13). | Send an id only when one id covers the item's choices: Furniture → 16, or 1 if the type is only Lamp; Watches → 31 for watch types, 13 for jewellery types, none for a mix; Glass → none (glass and ceramics are split). |
 | Blocket | Top-level `category`: Elektronik och vitvaror **0.93**, Möbler och inredning **0.78**, Kläder, kosmetika och accessoarer **0.71**, Konst och antikt **0.76**. Sub-categories still unknown. | Phones and Computers → 0.93, Furniture → 0.78. Watches and Glass: none for now (they're split across 0.71/0.76 and 0.78/0.76). Sub-categories are checked in Task 3. |
-| Sellpy, Vinted, Bukowskis, Tradera HTML | Not checked yet | Task 3 |
+| Sellpy | Algolia facets (query with `facets: ['categories.lvl2']`). All five are there: phones `Prylar > Hemelektronik > Mobil & Wearables` ("iphone" 201 hits); computers `Prylar > Hemelektronik > Datorer & Tillbehör` ("macbook" 49); watches `{Kvinna,Man,Barn} > Accessoarer > Armbandsur` ("klocka" 2,798 + 904 + 142); jewellery `{Kvinna,Man,Barn} > Accessoarer > Smycken` ("ring guld" 555 + 79); glass & ceramics `Prylar > Hushåll > Porslin`, `Prylar > Hushåll > Koppar & Glas`, `Prylar > Inredning > Vaser & Krukor` ("rörstrand" 227 + 84); furniture `Prylar > Inredning > Möbler`, lamps `Prylar > Inredning > Belysning` ("lampa" 5,721). Smartwatches also sit under Mobil & Wearables. | Sellpy goes in **all five**. Send an OR of the `categories.lvl2` paths (these paths replace `sellpyGroup` for the new categories). Phones: the Mobil & Wearables path only, so the 725 "Mobilaccessoarer" (cases) are never fetched. |
+| Vinted | Plain search returns relevant listings for all five ("iPhone 13, 86% batterihälsa", "MacBook Air 2025 (M4)", "Omega Seamaster 600 vintage", "Nuran guldring (14 karat)", "4 st assietter Isolde från Rörstrand", "Teak stol"). Some are Polish or Danish listings, as today. | Vinted goes in **all five**; no native category for now. |
+| Blocket sub-categories | Under 0.93: Telefoner och tillbehör **1.93.3217**, Datorer **1.93.3215**. Under 0.78: Bord och stolar **1.78.5196**, Soffor och fåtöljer **1.78.7756**, Hyllor och byråer **1.78.8345**, Sängar **1.78.5197**, Lampor **1.78.5181**, Mattor **1.78.5180**, Köksutrustning och porslin **1.78.5223**, Dekoration **1.78.5222**. | v1 sends the top level only (0.93, 0.78): the sub-categories split phones from tablets and glass from antiques in ways we can't map safely yet. Recorded for later. |
+| Bukowskis | `/sv/lots?query=` has no category parameter in its links. | No native filter; Kompi's own check. |
+| Tradera HTML | Categories are URL paths (`/category/<id>`), not a search parameter. | No native filter in v1 (the API keys are still on hold). |
 
 ## Architecture decisions
 - **Field kinds on `CategoryField`** (`options`, `size`, `min`, `range`, `toggle`) rather than one-off code per category. Every later category is then declarative data, with an optional `parse` for anything word patterns can't read.
@@ -24,12 +28,12 @@ Two parts. **Part A** removes the Brand field and merges existing brands into it
 See `tasks/todo.md` for acceptance criteria, verification and files per task.
 
 ### Part A: Remove the Brand field (ships alone)
-- [ ] Task 1: Merge brands into names and remove the Brand input
-- [ ] Task 2: Remove brand from display and copy
+- [x] Task 1: Merge brands into names and remove the Brand input
+- [x] Task 2: Remove brand from display and copy
 - [ ] Checkpoint A: tests, lint, build; manual add/edit; merge after review
 
 ### Part B1: Framework
-- [ ] Task 3: Live site check for Sellpy, Vinted, Bukowskis, Tradera and Blocket sub-categories
+- [x] Task 3: Live site check for Sellpy, Vinted, Bukowskis, Tradera and Blocket sub-categories
 - [ ] Task 4: Field kinds, widened types, sanitize/describe, `visibleFields`
 - [ ] Task 5: Parsers and `checkListing` by field kind
 - [ ] Task 6: Registry and native plumbing (priority order, optional `sellpyGroup`, `cardFields`, Auctionet/Bukowskis options)
