@@ -215,7 +215,7 @@ export function sizeLabel(s: ParsedSize | undefined): string | null {
 // ─── Everything at once ──────────────────────────────────────────────────────
 
 /** Details a scraper read from the site's own fields; they win over what the title suggests */
-export type SiteAttributes = Omit<ListingAttributes, 'unstated'>
+export type SiteAttributes = ListingAttributes
 
 export interface AttributeSource {
   title: string

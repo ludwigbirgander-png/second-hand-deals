@@ -1,7 +1,7 @@
 // The category registry. Categories live in code, so they can change without migrations;
 // the database only stores each item's choice (items.category, items.filters).
 import type {
-  Category, CategoryId, ConditionGrade, Department, FieldOption, ItemFilters, SaleType, SizeFilter, SizeSystem,
+  Category, CategoryField, CategoryId, ConditionGrade, Department, FieldOption, ItemFilters, NumberRange, SaleType, SizeFilter, SizeSystem,
 } from './types'
 import { hasPattern, tokens } from './words'
 
@@ -83,10 +83,11 @@ export const CATEGORIES: Category[] = [
       'blus', 'blouse', 't shirt', 'tshirt', 'blazer', 'kavaj', 'kostym', 'suit', '*väst', 'overall',
     ],
     fields: [
-      { key: 'department', label: 'Department', options: DEPARTMENTS },
+      { key: 'department', label: 'Department', kind: 'options', options: DEPARTMENTS },
       {
         key: 'type',
         label: 'Type',
+        kind: 'options',
         options: [
           { id: 'jacket', label: 'Jackets & coats', words: ['*jacka', '*jackor', 'jacket*', '*jacket', 'kappa', '*kappa', 'kappor', 'coat', '*coat', 'parka*', '*parkas', 'anorak*', 'trench*'], sellpy: ['Jackor & Ytterkläder'] },
           { id: 'blazer', label: 'Blazers & suits', words: ['blazer*', 'kavaj*', '*kavaj', 'kostym*', '*kostym', 'suit'], sellpy: ['Kavajer & Kostymer'] },
@@ -100,11 +101,12 @@ export const CATEGORIES: Category[] = [
           { id: 'shorts', label: 'Shorts', words: ['*shorts'], sellpy: ['Shorts'] },
         ],
       },
-      { key: 'size', label: 'Size', sizeSystems: ['letter', 'eu', 'jeans', 'kids'] },
-      { key: 'color', label: 'Colour', options: COLORS },
+      { key: 'size', label: 'Size', kind: 'size', sizeSystems: ['letter', 'eu', 'jeans', 'kids'] },
+      { key: 'color', label: 'Colour', kind: 'options', options: COLORS },
       {
         key: 'material',
         label: 'Material',
+        kind: 'options',
         options: [
           { id: 'wool', label: 'Wool', words: ['ull*', '*merinoull', 'lammull*', 'wool*', 'merino*', 'ylle', 'mohair', 'alpack*'], sellpy: ['Ull', 'Merinoull', 'Alpackaull', 'Mohair', 'Angora'] },
           { id: 'cashmere', label: 'Cashmere', words: ['kashmir*', 'cashmere'], sellpy: ['Kashmir'] },
@@ -131,10 +133,11 @@ export const CATEGORIES: Category[] = [
       'loafers', 'heels', 'pumps', 'klackskor', 'dr martens', 'converse', 'air max', 'air force', 'yeezy',
     ],
     fields: [
-      { key: 'department', label: 'Department', options: DEPARTMENTS },
+      { key: 'department', label: 'Department', kind: 'options', options: DEPARTMENTS },
       {
         key: 'type',
         label: 'Type',
+        kind: 'options',
         options: [
           { id: 'sneakers', label: 'Sneakers', words: ['sneaker*', '*sneakers', 'gympaskor', 'träningssk*', 'löparsk*', 'running', 'joggingsk*'], sellpy: ['Sneakers', 'Träningsskor'] },
           { id: 'boots', label: 'Boots', words: ['boots', '*boots', 'känga', 'kängor', '*kängor', 'stövlar', '*stövlar', 'stövel', '*stövel', 'chelsea'], sellpy: ['Boots & Kängor'] },
@@ -144,11 +147,12 @@ export const CATEGORIES: Category[] = [
           { id: 'hiking', label: 'Hiking', words: ['vandringsk*', 'vandringssk*', 'hiking'], sellpy: ['Vandringsskor'] },
         ],
       },
-      { key: 'size', label: 'Size (EU)', sizeSystems: ['eu'] },
-      { key: 'color', label: 'Colour', options: COLORS },
+      { key: 'size', label: 'Size (EU)', kind: 'size', sizeSystems: ['eu'] },
+      { key: 'color', label: 'Colour', kind: 'options', options: COLORS },
       {
         key: 'material',
         label: 'Material',
+        kind: 'options',
         options: [
           LEATHER,
           SUEDE,
@@ -222,55 +226,128 @@ function sizeFilter(v: unknown, category: Category): SizeFilter | undefined {
   return undefined
 }
 
+/** The category's fields for these filters: a field with `showWhen` only counts for its types (or when no type is picked) */
+export function visibleFields(category: Category, filters: ItemFilters): CategoryField[] {
+  const types = filters.type ?? []
+  return category.fields.filter((f) => !f.showWhen || !types.length || f.showWhen.type.some((t) => types.includes(t)))
+}
+
+function inBounds(v: unknown, field: CategoryField): number | undefined {
+  const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v
+  if (typeof n !== 'number' || !Number.isFinite(n)) return undefined
+  const [lo, hi] = field.bounds ?? [-Infinity, Infinity]
+  return n >= lo && n <= hi ? n : undefined
+}
+
+function rangeFilter(v: unknown, field: CategoryField): NumberRange | undefined {
+  if (!v || typeof v !== 'object') return undefined
+  const r = v as Record<string, unknown>
+  let from = inBounds(r.from, field)
+  let to = inBounds(r.to, field)
+  if (from != null && to != null && from > to) [from, to] = [to, from]
+  if (from == null && to == null) return undefined
+  return { ...(from != null && { from }), ...(to != null && { to }) }
+}
+
 /**
  * Keeps only valid choices for the category. Condition, sale type and strict work without one.
  * Returns the category id (or null) and the cleaned filters.
  */
 export function sanitizeFilters(categoryId: unknown, raw: unknown): { category: CategoryId | null; filters: ItemFilters } {
   const category = getCategory(typeof categoryId === 'string' ? categoryId : null)
+  return { category: category?.id ?? null, filters: sanitizeFiltersFor(category, raw) }
+}
+
+export function sanitizeFiltersFor(category: Category | undefined, raw: unknown): ItemFilters {
   const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
   const out: ItemFilters = {}
 
   if (CONDITIONS.some((c) => c.id === r.condition)) out.condition = r.condition as ConditionGrade
   if (SALE_TYPES.some((s) => s.id === r.saleType)) out.saleType = r.saleType as SaleType
   if (r.strict === true) out.strict = true
+  if (!category) return out
 
-  if (category) {
-    for (const field of category.fields) {
-      if (field.key === 'size') {
-        const size = sizeFilter(r.size, category)
+  for (const field of category.fields) {
+    const v = r[field.key]
+    switch (field.kind) {
+      case 'size': {
+        const size = sizeFilter(v, category)
         if (size) out.size = size
-      } else {
-        const values = asStrings(r[field.key], (field.options ?? []).map((o) => o.id))
-        if (values.length) (out as Record<string, unknown>)[field.key] = values
+        break
       }
+      case 'options': {
+        const values = asStrings(v, (field.options ?? []).map((o) => o.id))
+        if (values.length) out[field.key] = values
+        break
+      }
+      case 'min': {
+        const n = inBounds(v, field)
+        if (n != null) out[field.key] = n
+        break
+      }
+      case 'range': {
+        const range = rangeFilter(v, field)
+        if (range) out[field.key] = range
+        break
+      }
+      case 'toggle':
+        if (v === true) out[field.key] = true
+        break
     }
   }
-  return { category: category?.id ?? null, filters: out }
+  // A field hidden by the chosen type isn't kept
+  const visible = new Set(visibleFields(category, out).map((f) => f.key))
+  for (const field of category.fields) if (!visible.has(field.key)) delete out[field.key]
+  return out
 }
 
 /** Short labels for an item's active filters, for chips on the item page */
 export function describeFilters(categoryId: string | null | undefined, filters: ItemFilters | null | undefined): string[] {
+  return describeFiltersFor(getCategory(categoryId), filters)
+}
+
+const withUnit = (n: number, unit?: string) => (unit ? `${n} ${unit}` : `${n}`)
+
+export function describeFiltersFor(category: Category | undefined, filters: ItemFilters | null | undefined): string[] {
   const f = filters ?? {}
-  const category = getCategory(categoryId)
   const out: string[] = []
   if (category) {
     out.push(category.label)
-    for (const field of category.fields) {
-      if (field.key === 'size') {
-        const s = f.size
-        if (!s) continue
-        if (s.system === 'jeans') {
-          const parts = [s.waist.length ? `W${s.waist.join('/')}` : '', s.length.length ? `L${s.length.join('/')}` : ''].filter(Boolean)
-          out.push(`Size ${parts.join(' ')}`)
-        } else {
-          out.push(`Size ${s.values.join(', ')}${s.system === 'kids' ? ' cl' : ''}`)
+    for (const field of visibleFields(category, f)) {
+      const name = field.short ?? field.label
+      const v = f[field.key]
+      if (v == null) continue
+      switch (field.kind) {
+        case 'size': {
+          const s = f.size
+          if (!s) break
+          if (s.system === 'jeans') {
+            const parts = [s.waist.length ? `W${s.waist.join('/')}` : '', s.length.length ? `L${s.length.join('/')}` : ''].filter(Boolean)
+            out.push(`Size ${parts.join(' ')}`)
+          } else {
+            out.push(`Size ${s.values.join(', ')}${s.system === 'kids' ? ' cl' : ''}`)
+          }
+          break
         }
-        continue
+        case 'options': {
+          const labels = (v as string[]).map((id) => field.options?.find((o) => o.id === id)?.label).filter(Boolean)
+          if (labels.length) out.push(labels.join(', '))
+          break
+        }
+        case 'min':
+          out.push(`${name} ${withUnit(v as number, field.unit)}+`)
+          break
+        case 'range': {
+          const { from, to } = v as NumberRange
+          if (from != null && to != null) out.push(`${name} ${from}–${withUnit(to, field.unit)}`)
+          else if (from != null) out.push(`${name} ${withUnit(from, field.unit)} or more`)
+          else if (to != null) out.push(`${name} up to ${withUnit(to, field.unit)}`)
+          break
+        }
+        case 'toggle':
+          if (v === true) out.push(field.label)
+          break
       }
-      const ids = (f[field.key] as string[] | undefined) ?? []
-      const labels = ids.map((id) => field.options?.find((o) => o.id === id)?.label).filter(Boolean)
-      if (labels.length) out.push(labels.join(', '))
     }
   }
   if (f.condition) out.push(f.condition === 'new_with_tags' ? 'New with tags' : `${conditionLabel(f.condition)} or better`)

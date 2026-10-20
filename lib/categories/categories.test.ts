@@ -1,11 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { getCategory, suggestCategory, sanitizeFilters, sitesForCategory, describeFilters } from './index'
+import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
 import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes } from './attributes'
 import { checkListing, hasNegativeWord } from './filter'
 import { sellpyFilters, sellpyAttributes, vintedParams, blocketParams, siteExcluded } from './native'
 import { parseVintedCardTitle } from '../scrapers/vinted'
-import type { ItemFilters } from './types'
+import type { Category, ItemFilters } from './types'
 
 const clothing = getCategory('clothing')!
 const shoes = getCategory('shoes')!
@@ -224,4 +224,56 @@ test('describeFilters: chips for the item page', () => {
   assert.deepEqual(describeFilters('clothing', { department: ['men'], size: { system: 'jeans', waist: [32], length: [34] }, condition: 'good', strict: true }),
     ['Clothing', 'Men', 'Size W32 L34', 'Good or better', 'Strict'])
   assert.deepEqual(describeFilters(null, {}), [])
+})
+
+// ─── Phase 5: field kinds, on a test-only category ───────────────────────────
+
+const gadget: Category = {
+  id: 'clothing', // any id; this category is never registered
+  label: 'Gadget',
+  hints: [],
+  sites: [],
+  negativeWords: [],
+  fields: [
+    { key: 'type', label: 'Type', kind: 'options', options: [
+      { id: 'watch', label: 'Watch', words: ['klocka'] },
+      { id: 'ring', label: 'Ring', words: ['ring'] },
+    ] },
+    { key: 'battery', label: 'Battery health', short: 'Battery', kind: 'min', unit: '%', bounds: [50, 100] },
+    { key: 'caseSize', label: 'Case size', short: 'Case', kind: 'range', unit: 'mm', bounds: [20, 55], showWhen: { type: ['watch'] } },
+    { key: 'unlocked', label: 'Unlocked', kind: 'toggle', toggle: 'require' },
+    { key: 'secondSort', label: 'Second sort OK', kind: 'toggle', toggle: 'allow' },
+  ],
+}
+
+test('sanitize: each field kind keeps only valid values', () => {
+  assert.deepEqual(sanitizeFiltersFor(gadget, { battery: 85, unlocked: true, secondSort: true }), { battery: 85, unlocked: true, secondSort: true })
+  assert.deepEqual(sanitizeFiltersFor(gadget, { battery: '90' }), { battery: 90 }, 'numbers from a form')
+  assert.deepEqual(sanitizeFiltersFor(gadget, { battery: 120 }), {}, 'out of bounds')
+  assert.deepEqual(sanitizeFiltersFor(gadget, { battery: 'lots' }), {})
+  assert.deepEqual(sanitizeFiltersFor(gadget, { unlocked: false, secondSort: 'yes' }), {}, 'toggles only as true')
+  assert.deepEqual(sanitizeFiltersFor(gadget, { caseSize: { from: 38, to: 41 } }), { caseSize: { from: 38, to: 41 } })
+  assert.deepEqual(sanitizeFiltersFor(gadget, { caseSize: { from: 42, to: 38 } }), { caseSize: { from: 38, to: 42 } }, 'swapped')
+  assert.deepEqual(sanitizeFiltersFor(gadget, { caseSize: { from: 40 } }), { caseSize: { from: 40 } }, 'open end')
+  assert.deepEqual(sanitizeFiltersFor(gadget, { caseSize: { from: 5, to: 99 } }), {}, 'both ends out of bounds')
+  assert.deepEqual(sanitizeFiltersFor(gadget, { caseSize: {} }), {})
+  assert.deepEqual(sanitizeFiltersFor(gadget, { type: ['watch', 'phone'] }), { type: ['watch'] })
+})
+
+test('visibleFields: showWhen hides fields for other types', () => {
+  const keys = (f: ItemFilters) => visibleFields(gadget, f).map((x) => x.key)
+  assert.ok(keys({}).includes('caseSize'), 'no type picked: shown')
+  assert.ok(keys({ type: ['watch'] }).includes('caseSize'))
+  assert.ok(keys({ type: ['watch', 'ring'] }).includes('caseSize'))
+  assert.ok(!keys({ type: ['ring'] }).includes('caseSize'))
+  // A hidden field isn't saved
+  assert.deepEqual(sanitizeFiltersFor(gadget, { type: ['ring'], caseSize: { from: 38 } }), { type: ['ring'] })
+})
+
+test('describe: chips for the new field kinds', () => {
+  assert.deepEqual(describeFiltersFor(gadget, { battery: 85 }), ['Gadget', 'Battery 85 %+'])
+  assert.deepEqual(describeFiltersFor(gadget, { caseSize: { from: 38, to: 41 } }), ['Gadget', 'Case 38–41 mm'])
+  assert.deepEqual(describeFiltersFor(gadget, { caseSize: { from: 40 } }), ['Gadget', 'Case 40 mm or more'])
+  assert.deepEqual(describeFiltersFor(gadget, { caseSize: { to: 40 } }), ['Gadget', 'Case up to 40 mm'])
+  assert.deepEqual(describeFiltersFor(gadget, { unlocked: true, secondSort: true }), ['Gadget', 'Unlocked', 'Second sort OK'])
 })
