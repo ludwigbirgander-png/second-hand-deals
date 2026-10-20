@@ -84,6 +84,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
     - `CategoryFields` renders `min` (number + unit), `range` (two numbers, like `PriceRange`) and `toggle` with existing `Form.tsx` parts, and respects `visibleFields`.
     - The category chip row scrolls sideways in one line at 375 px, with no wrap and no page overflow.
     - Listing cards show the category's `cardFields` in the details line ("256 GB · Battery 88 %").
+    - (Done early in the review fixes: "not stated" names come from `fieldLabel()`, so new fields can't crash the card.)
   - Verify: in `npm run dev`, add "iPhone 13" → Phones suggested → set 128 GB, battery 85, unlocked → refresh → cards and item-page chips are correct; check at 375 px and desktop; keyboard focus order works.
   - Files: `components/CategoryFields.tsx`, `components/ui/Cards.tsx`, `components/ui/Form.tsx` (only if a small number input is missing)
   - Size: M · Depends on: Task 7
