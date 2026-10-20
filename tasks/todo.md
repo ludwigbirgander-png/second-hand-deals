@@ -66,7 +66,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `lib/categories/index.ts`, `lib/categories/native.ts`, `lib/scrapers/auctionet.ts`, `lib/scrapers/bukowskis.ts`, `lib/categories/categories.test.ts`
   - Size: M · Depends on: Tasks 3, 4
 
-- [ ] **Checkpoint B1:** phase 4 tests untouched and green. Three saved Clothing/Shoes items return the same listings before and after (compare `listings` row ids after a refresh). Review before the categories.
+- [x] **Checkpoint B1** (2026-10-20: 65 tests green, phase 4 tests unedited; saved raw Vinted/Tradera results for Levi's 501 (clothing, W32), Fjällräven Kånken (no category) and Dr Martens 1460 (shoes, EU 42, good+) give the same 153 listings and details on main and this branch): phase 4 tests untouched and green. Three saved Clothing/Shoes items return the same listings before and after (compare `listings` row ids after a refresh). Review before the categories.
 
 ## Part B2: Categories
 
