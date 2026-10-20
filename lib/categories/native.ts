@@ -72,20 +72,24 @@ export function sellpyFilters({ category, filters = {} }: SearchOptions): string
     clauses.push(anyOf('metadata.condition', ok))
   }
   if (!category) return clauses.join(' AND ')
-
-  const depts = filters.department?.length ? filters.department : (['women', 'men', 'kids'] as Department[])
-  const trees = uniq(depts.flatMap((d) => SELLPY_TREES[d]))
   const field = (key: string) => category.fields.find((f) => f.key === key)
 
-  const types = (filters.type ?? []).flatMap((id) => field('type')?.options?.find((o) => o.id === id)?.sellpy ?? [])
-  if (types.length) {
-    clauses.push(anyOf('categories.lvl2', trees.flatMap((t) => uniq(types).map((name) => `${t} > ${category.sellpyGroup} > ${name}`))))
+  if (category.sellpyGroup) {
+    // Clothing and shoes: Sellpy's trees per department ("Man > Kläder > Jackor & Ytterkläder")
+    const depts = filters.department?.length ? filters.department : (['women', 'men', 'kids'] as Department[])
+    const trees = uniq(depts.flatMap((d) => SELLPY_TREES[d]))
+    const types = (filters.type ?? []).flatMap((id) => field('type')?.options?.find((o) => o.id === id)?.sellpy ?? [])
+    if (types.length) {
+      clauses.push(anyOf('categories.lvl2', trees.flatMap((t) => uniq(types).map((name) => `${t} > ${category.sellpyGroup} > ${name}`))))
+    } else {
+      clauses.push(anyOf('categories.lvl1', trees.map((t) => `${t} > ${category.sellpyGroup}`)))
+    }
+    if (filters.department?.length) {
+      clauses.push(anyOf('metadata.demography', filters.department.flatMap((d) => field('department')?.options?.find((o) => o.id === d)?.sellpy ?? [])))
+    }
   } else {
-    clauses.push(anyOf('categories.lvl1', trees.map((t) => `${t} > ${category.sellpyGroup}`)))
-  }
-
-  if (filters.department?.length) {
-    clauses.push(anyOf('metadata.demography', filters.department.flatMap((d) => field('department')?.options?.find((o) => o.id === d)?.sellpy ?? [])))
+    const paths = sellpyPathsFor(category, filters)
+    if (paths.length) clauses.push(anyOf('categories.lvl2', paths))
   }
 
   for (const key of ['color', 'material'] as const) {
@@ -100,6 +104,14 @@ export function sellpyFilters({ category, filters = {} }: SearchOptions): string
   if (sizes.length) clauses.push(anyOf('metadata.size', sizes))
 
   return clauses.join(' AND ')
+}
+
+/** Full Sellpy paths: the picked types' own paths if they all have one, else the category's */
+function sellpyPathsFor(category: Category, filters: ItemFilters): string[] {
+  const options = category.fields.find((f) => f.key === 'type')?.options ?? []
+  const picked = (filters.type ?? []).map((id) => options.find((o) => o.id === id))
+  if (picked.length && picked.every((o) => o?.sellpyPaths?.length)) return uniq(picked.flatMap((o) => o!.sellpyPaths!))
+  return category.sellpyPaths ?? []
 }
 
 /** Category options from a Sellpy hit's metadata, as Kompi's option ids */
@@ -139,6 +151,21 @@ export function vintedParams({ filters = {} }: SearchOptions): string[] | null {
   if (filters.saleType === 'auction') return null
   if (!filters.condition) return []
   return VINTED_STATUS.filter(([, g]) => atLeast(filters.condition, g)).map(([id]) => `status_ids[]=${id}`)
+}
+
+// ─── Auctionet ───────────────────────────────────────────────────────────────
+
+/**
+ * Auctionet's category_id for the item. Auctionet takes one id per search, so with several
+ * types picked it's only sent when they share one ("chair" and "table" are both furniture).
+ */
+export function auctionetCategory({ category, filters = {} }: SearchOptions): number | undefined {
+  if (!category) return undefined
+  const types = filters.type ?? []
+  if (!types.length) return category.auctionet
+  const options = category.fields.find((f) => f.key === 'type')?.options ?? []
+  const ids = uniq(types.map((id) => options.find((o) => o.id === id)?.auctionet))
+  return ids.length === 1 ? ids[0] : undefined
 }
 
 // ─── Blocket ─────────────────────────────────────────────────────────────────

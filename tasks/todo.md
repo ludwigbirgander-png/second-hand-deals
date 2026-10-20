@@ -38,7 +38,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `tasks/plan.md`, `SPEC-categories-phase-5.md`
   - Size: XS (research) · Depends on: none
 
-- [ ] **Task 4: Field kinds, widened types, sanitize/describe, visibleFields**
+- [x] **Task 4: Field kinds, widened types, sanitize/describe, visibleFields**
   - Acceptance:
     - `CategoryField` has `kind` (`options` | `size` | `min` | `range` | `toggle`), `unit`, `bounds`, `showWhen`, optional `parse`. Existing Clothing/Shoes fields get `kind: 'options'` or `'size'` with no other change.
     - `sanitizeFilters` validates each kind (unknown ids dropped, numbers clamped to `bounds` or dropped, a range with from > to swapped, toggles kept only as `true`) and drops fields hidden by `showWhen`.
@@ -47,7 +47,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `lib/categories/types.ts`, `lib/categories/index.ts`, `lib/categories/categories.test.ts`
   - Size: M · Depends on: none
 
-- [ ] **Task 5: Parsers and checkListing by field kind**
+- [x] **Task 5: Parsers and checkListing by field kind**
   - Acceptance:
     - `extractAttributes` runs each field's `parse` (title + site fields), falling back to word patterns for `options`.
     - `checkListing` handles every kind: `min` drops below, `range` drops outside, `toggle` requires a stated `true`. A missing detail goes to `unstated` (or drops, if strict). Hidden fields never filter.
@@ -56,11 +56,11 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `lib/categories/attributes.ts`, `lib/categories/filter.ts`, `lib/categories/parse.ts` (new), `lib/categories/categories.test.ts`
   - Size: M · Depends on: Task 4
 
-- [ ] **Task 6: Registry and native plumbing**
+- [x] **Task 6: Registry and native plumbing**
   - Acceptance:
     - `suggestCategory` walks a declared `CATEGORY_PRIORITY` list, with today's results unchanged.
     - `sellpyGroup` is optional; `sellpyFilters` skips the category clause without it. A new `sellpyPaths` (from Task 3) is used when present.
-    - `auctionetCategory(category, filters)` and `bukowskisParams(...)` return an id or params only when unambiguous. `scrapeAuctionet` and `scrapeBukowskis` accept `SearchOptions`.
+    - `auctionetCategory(category, filters)` returns an id only when unambiguous, and `scrapeAuctionet` accepts `SearchOptions`. (Bukowskis has no category parameter (Task 3), so its scraper is unchanged.)
     - `Category.cardFields` exists and `attributeLabels(listing, category)` returns the short card strings.
   - Verify: unit tests for each native helper; `npm run check:scrapers` for Auctionet and Bukowskis still returns listings with no category.
   - Files: `lib/categories/index.ts`, `lib/categories/native.ts`, `lib/scrapers/auctionet.ts`, `lib/scrapers/bukowskis.ts`, `lib/categories/categories.test.ts`

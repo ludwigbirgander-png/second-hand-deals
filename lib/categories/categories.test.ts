@@ -1,10 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
-import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes } from './attributes'
+import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, CATEGORY_PRIORITY, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
+import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes, attributeLabels } from './attributes'
 import { checkListing, hasNegativeWord } from './filter'
 import { decades, numbersWithUnit, percentNear, quantity } from './parse'
-import { sellpyFilters, sellpyAttributes, vintedParams, blocketParams, siteExcluded } from './native'
+import { sellpyFilters, sellpyAttributes, vintedParams, blocketParams, siteExcluded, auctionetCategory } from './native'
 import { parseVintedCardTitle } from '../scrapers/vinted'
 import type { Category, ItemFilters } from './types'
 
@@ -380,4 +380,63 @@ test('filters: min, range and toggle', () => {
 test('filters: a field hidden by the type never filters', () => {
   assert.equal(checkListing(gadgetListing('Ring 50 mm'), { type: ['ring'], caseSize: { to: 40 } }, parsed).keep, true)
   assert.equal(checkListing(gadgetListing('Klocka 50 mm'), { type: ['watch'], caseSize: { to: 40 } }, parsed).keep, false)
+})
+
+// ─── Phase 5: native site params and card details ────────────────────────────
+
+const home: Category = {
+  id: 'clothing', // never registered
+  label: 'Home',
+  hints: [],
+  sites: [],
+  negativeWords: [],
+  sellpyPaths: ['Prylar > Inredning > Möbler', 'Prylar > Inredning > Belysning'],
+  auctionet: 16,
+  fields: [
+    { key: 'type', label: 'Type', kind: 'options', options: [
+      { id: 'chair', label: 'Chair', words: ['stol'], auctionet: 16, sellpyPaths: ['Prylar > Inredning > Möbler'] },
+      { id: 'table', label: 'Table', words: ['bord'], auctionet: 16, sellpyPaths: ['Prylar > Inredning > Möbler'] },
+      { id: 'lamp', label: 'Lamp', words: ['lampa'], auctionet: 1, sellpyPaths: ['Prylar > Inredning > Belysning'] },
+      { id: 'other', label: 'Other', words: [] },
+    ] },
+    { key: 'storage', label: 'Storage', kind: 'options', options: [{ id: '256', label: '256 GB', words: ['256gb'] }] },
+    { key: 'battery', label: 'Battery health', short: 'Battery', kind: 'min', unit: '%', bounds: [50, 100] },
+    { key: 'caseSize', label: 'Case size', kind: 'range', unit: 'mm' },
+    { key: 'unlocked', label: 'Unlocked', kind: 'toggle', toggle: 'require' },
+  ],
+  cardFields: ['storage', 'battery', 'caseSize', 'unlocked', 'type'],
+}
+
+test('Sellpy: category paths for categories without departments', () => {
+  assert.equal(sellpyFilters({ category: home, filters: {} }),
+    'price_SE.amount > 0 AND (categories.lvl2:"Prylar > Inredning > Möbler" OR categories.lvl2:"Prylar > Inredning > Belysning")')
+  assert.equal(sellpyFilters({ category: home, filters: { type: ['lamp'] } }),
+    'price_SE.amount > 0 AND (categories.lvl2:"Prylar > Inredning > Belysning")')
+  // A type without its own path falls back to the category's paths
+  assert.match(sellpyFilters({ category: home, filters: { type: ['lamp', 'other'] } })!, /Möbler.*Belysning/)
+  // Clothing is unchanged
+  assert.match(sellpyFilters({ category: clothing, filters: {} })!, /categories\.lvl1/)
+})
+
+test('Auctionet: one category id, only when it is unambiguous', () => {
+  assert.equal(auctionetCategory({ category: home, filters: {} }), 16)
+  assert.equal(auctionetCategory({ category: home, filters: { type: ['chair', 'table'] } }), 16)
+  assert.equal(auctionetCategory({ category: home, filters: { type: ['lamp'] } }), 1)
+  assert.equal(auctionetCategory({ category: home, filters: { type: ['chair', 'lamp'] } }), undefined)
+  assert.equal(auctionetCategory({ category: home, filters: { type: ['other'] } }), undefined)
+  assert.equal(auctionetCategory({ category: clothing, filters: {} }), undefined)
+  assert.equal(auctionetCategory({}), undefined)
+})
+
+test('cards: short details from the category', () => {
+  assert.deepEqual(attributeLabels({ storage: ['256'], battery: 88, caseSize: 41, unlocked: true, type: ['chair'] }, home),
+    ['256 GB', 'Battery 88 %', '41 mm', 'Unlocked', 'Chair'])
+  assert.deepEqual(attributeLabels({}, home), [])
+  assert.deepEqual(attributeLabels({ storage: ['256'] }, undefined), [])
+})
+
+test('suggestCategory: phase 4 results unchanged with the priority list', () => {
+  assert.deepEqual(CATEGORY_PRIORITY.slice(-2), ['shoes', 'clothing'])
+  assert.equal(suggestCategory('vinterkängor'), 'shoes')
+  assert.equal(suggestCategory('Acne läderjacka'), 'clothing')
 })

@@ -212,6 +212,29 @@ export function sizeLabel(s: ParsedSize | undefined): string | null {
   return null
 }
 
+// ─── Card details ────────────────────────────────────────────────────────────
+
+/** Short details for a listing card, from the category's cardFields ("256 GB", "Battery 88 %", "Unlocked") */
+export function attributeLabels(a: ListingAttributes | null | undefined, category: Category | undefined): string[] {
+  if (!a || !category) return []
+  const out: string[] = []
+  for (const key of category.cardFields ?? []) {
+    const field = category.fields.find((f) => f.key === key)
+    const v = a[key]
+    if (!field || v == null) continue
+    if (field.kind === 'options' && Array.isArray(v)) {
+      const labels = v.map((id) => field.options?.find((o) => o.id === id)?.label).filter(Boolean)
+      if (labels.length) out.push(labels.join('/'))
+    } else if ((field.kind === 'min' || field.kind === 'range') && typeof v === 'number') {
+      const n = field.unit ? `${v} ${field.unit}` : `${v}`
+      out.push(field.kind === 'min' ? `${field.short ?? field.label} ${n}` : n)
+    } else if (field.kind === 'toggle' && v === true && field.toggle === 'require') {
+      out.push(field.label)
+    }
+  }
+  return out
+}
+
 // ─── Everything at once ──────────────────────────────────────────────────────
 
 /** Details a scraper read from the site's own fields; they win over what the title suggests */

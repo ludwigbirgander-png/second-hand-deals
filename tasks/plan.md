@@ -34,9 +34,9 @@ See `tasks/todo.md` for acceptance criteria, verification and files per task.
 
 ### Part B1: Framework
 - [x] Task 3: Live site check for Sellpy, Vinted, Bukowskis, Tradera and Blocket sub-categories
-- [ ] Task 4: Field kinds, widened types, sanitize/describe, `visibleFields`
-- [ ] Task 5: Parsers and `checkListing` by field kind
-- [ ] Task 6: Registry and native plumbing (priority order, optional `sellpyGroup`, `cardFields`, Auctionet/Bukowskis options)
+- [x] Task 4: Field kinds, widened types, sanitize/describe, `visibleFields`
+- [x] Task 5: Parsers and `checkListing` by field kind
+- [x] Task 6: Registry and native plumbing (priority order, optional `sellpyGroup`, `cardFields`, Auctionet/Bukowskis options)
 - [ ] Checkpoint B1: phase 4 tests untouched and green; no behaviour change
 
 ### Part B2: Categories (vertical slices)

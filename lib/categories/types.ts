@@ -81,6 +81,10 @@ export interface FieldOption {
   words: string[]
   /** Sellpy's value for this option (category name, colour, material…) */
   sellpy?: string[]
+  /** Type options: Sellpy's full category paths (categories.lvl2) for this type */
+  sellpyPaths?: string[]
+  /** Type options: Auctionet's category_id for this type */
+  auctionet?: number
 }
 
 /**
@@ -135,4 +139,10 @@ export interface Category {
   sellpyGroup?: string
   /** Blocket's category id */
   blocketCategory?: string
+  /** Sellpy's full category paths (categories.lvl2), for categories not split by department */
+  sellpyPaths?: string[]
+  /** Auctionet's category_id when no type is picked */
+  auctionet?: number
+  /** Field keys shown as short details on listing cards, in order */
+  cardFields?: string[]
 }

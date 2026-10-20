@@ -175,14 +175,13 @@ export function getCategory(id: string | null | undefined): Category | undefined
   return CATEGORIES.find((c) => c.id === id)
 }
 
+/** The order categories are suggested in: more specific first, so "vinterkängor" is Shoes, not Clothing */
+export const CATEGORY_PRIORITY: CategoryId[] = ['shoes', 'clothing']
+
 /** The category an item name points to, or null ("Nike Air Max 90" → Shoes) */
 export function suggestCategory(name: string): CategoryId | null {
   const words = tokens(name)
-  // Shoes first, so "vinterkängor" isn't read as clothing
-  for (const id of ['shoes', 'clothing'] as const) {
-    if (hasPattern(words, getCategory(id)!.hints)) return id
-  }
-  return null
+  return CATEGORY_PRIORITY.find((id) => hasPattern(words, getCategory(id)!.hints)) ?? null
 }
 
 /** The user's enabled sites, narrowed to the ones the category is relevant on */
