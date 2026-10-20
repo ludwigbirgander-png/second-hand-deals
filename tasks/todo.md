@@ -70,7 +70,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 
 ## Part B2: Categories
 
-- [ ] **Task 7: Phones & tablets**
+- [x] **Task 7: Phones & tablets**
   - Acceptance:
     - The `phones` category as in the spec: type (incl. Smartwatch), storage, colour, battery min %, unlocked toggle, junk words, sites from Task 3, Blocket 0.93 (plus a sub-category if found).
     - `suggestCategory`: "iPhone 13 Pro", "Samsung Galaxy S23", "iPad Air", "Apple Watch Series 8" → `phones`.

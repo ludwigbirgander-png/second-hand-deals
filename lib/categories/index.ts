@@ -4,6 +4,7 @@ import type {
   Category, CategoryField, CategoryId, ConditionGrade, Department, FieldOption, ItemFilters, NumberRange, SaleType, SizeFilter, SizeSystem,
 } from './types'
 import { hasPattern, tokens } from './words'
+import { bareNumbers, numbersWithUnit, percentNear } from './parse'
 
 export * from './types'
 
@@ -54,6 +55,13 @@ const COLORS: FieldOption[] = [
 const LEATHER: FieldOption = { id: 'leather', label: 'Leather', words: ['läder*', '*läder', 'skinn*', '*skinn', 'leather'], sellpy: ['Skinn'] }
 const SUEDE: FieldOption = { id: 'suede', label: 'Suede', words: ['mocka*', '*mocka', 'suede'], sellpy: ['Mocka'] }
 
+// Electronics come in silver and gold, which clothing's colour list leaves out
+const ELECTRONICS_COLORS: FieldOption[] = [
+  ...COLORS,
+  { id: 'silver', label: 'Silver', words: ['silver*', 'silvrig*'], sellpy: ['Silverfärgad'] },
+  { id: 'gold', label: 'Gold', words: ['guld*', 'gold', 'rose gold', 'roséguld*'], sellpy: ['Guldfärgad', 'Roséguldfärgad'] },
+]
+
 // ─── Sizes ───────────────────────────────────────────────────────────────────
 
 export const LETTER_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']
@@ -68,6 +76,35 @@ export const SIZE_VALUES = {
 }
 
 export const SIZE_SYSTEM_LABELS: Record<SizeSystem, string> = { letter: 'XS–XXL', eu: 'EU', jeans: 'Jeans W×L', kids: 'Kids (cl)' }
+
+// ─── Shared fields ───────────────────────────────────────────────────────────
+
+/**
+ * Storage options, with ids in GB ("128", "1024" for 1 TB). Only the listed sizes count,
+ * so "8 GB RAM 256 GB" is 256 GB of storage. With `bare`, a lone listed size counts too
+ * ("iPhone 13 Pro 128"), when the title states none with a unit.
+ */
+const storageField = (gb: number[], tb: number[], { bare = false } = {}): CategoryField => ({
+  key: 'storage',
+  label: 'Storage',
+  kind: 'options',
+  options: [
+    ...gb.map((n) => ({ id: `${n}`, label: `${n} GB`, words: [] })),
+    ...tb.map((n) => ({ id: `${n * 1024}`, label: `${n} TB`, words: [] })),
+  ],
+  parse: (title) => {
+    const ids = [
+      ...numbersWithUnit(title, ['gb']).filter((n) => gb.includes(n)).map(String),
+      ...numbersWithUnit(title, ['tb']).filter((n) => tb.includes(n)).map((n) => `${n * 1024}`),
+    ]
+    if (!ids.length && bare) ids.push(...bareNumbers(title, gb.filter((n) => n >= 64)).map(String))
+    return ids.length ? Array.from(new Set(ids)) : undefined
+  },
+})
+
+const PHONE_WORDS = ['iphone*', 'mobiltelefon*', 'mobil', 'telefon', 'smartphone*', 'pixel', 'oneplus*', 'xperia', 'galaxy s*', 'galaxy a*', 'galaxy z*', 'galaxy note*', 'nokia', 'motorola', 'huawei', 'xiaomi', 'fairphone*']
+const TABLET_WORDS = ['ipad*', 'surfplatt*', 'tablet*', 'galaxy tab*', 'läsplatt*', 'kindle']
+const SMARTWATCH_WORDS = ['apple watch', 'galaxy watch', 'pixel watch', 'smartwatch*', 'smartklock*', 'garmin', 'fitbit']
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 
@@ -169,6 +206,53 @@ export const CATEGORIES: Category[] = [
     sellpyGroup: 'Skor',
     blocketCategory: '0.71',
   },
+  {
+    id: 'phones',
+    label: 'Phones & tablets',
+    hints: [...PHONE_WORDS, ...TABLET_WORDS, ...SMARTWATCH_WORDS],
+    fields: [
+      {
+        key: 'type',
+        label: 'Type',
+        kind: 'options',
+        options: [
+          { id: 'phone', label: 'Phone', words: PHONE_WORDS, sellpyPaths: ['Prylar > Hemelektronik > Mobil & Wearables'] },
+          { id: 'tablet', label: 'Tablet', words: TABLET_WORDS, sellpyPaths: ['Prylar > Hemelektronik > Surf- och Läsplattor'] },
+          { id: 'smartwatch', label: 'Smartwatch', words: SMARTWATCH_WORDS, sellpyPaths: ['Prylar > Hemelektronik > Mobil & Wearables'] },
+        ],
+      },
+      storageField([32, 64, 128, 256, 512], [1], { bare: true }),
+      { key: 'color', label: 'Colour', kind: 'options', options: ELECTRONICS_COLORS },
+      {
+        key: 'battery',
+        label: 'Battery health',
+        short: 'Battery',
+        kind: 'min',
+        unit: '%',
+        bounds: [50, 100],
+        // "batterihälsa 89%", "86% batterihälsa", "BH 88 %"; never a bare percentage
+        parse: (title) => percentNear(title, ['batterihälsa', 'batterikapacitet', 'batteri', 'battery', 'bh', 'maxkapacitet']),
+      },
+      {
+        key: 'unlocked',
+        label: 'Unlocked',
+        kind: 'toggle',
+        toggle: 'require',
+        parse: (title) => hasPattern(tokens(title), ['olåst*', 'unlocked', 'operatörsolåst*', 'öppen för alla*', 'fri från operatör*']) || undefined,
+      },
+    ],
+    sites: ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace'],
+    // Not "laddare" or "kartong": "med laddare och kartong" is a selling point
+    negativeWords: [
+      'skal', '*skal', 'skalet', 'fodral*', '*fodral', 'skärmskydd*', 'case',
+      'trasig*', 'sprucken', 'spräckt*', 'defekt*', 'reservdel*',
+      'icloud låst', 'icloudlåst', 'låst till operatör*',
+      'endast kartong*', 'bara kartong*', 'tom kartong', 'dummy', 'attrapp*',
+    ],
+    sellpyPaths: ['Prylar > Hemelektronik > Mobil & Wearables', 'Prylar > Hemelektronik > Surf- och Läsplattor'],
+    blocketCategory: '0.93',
+    cardFields: ['storage', 'battery', 'unlocked'],
+  },
 ]
 
 export function getCategory(id: string | null | undefined): Category | undefined {
@@ -189,7 +273,7 @@ export function fieldLabel(key: string): string {
 }
 
 /** The order categories are suggested in: more specific first, so "vinterkängor" is Shoes, not Clothing */
-export const CATEGORY_PRIORITY: CategoryId[] = ['shoes', 'clothing']
+export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'shoes', 'clothing']
 
 /** The category an item name points to, or null ("Nike Air Max 90" → Shoes) */
 export function suggestCategory(name: string): CategoryId | null {

@@ -18,7 +18,7 @@ test('suggests a category from the item name', () => {
   assert.equal(suggestCategory('Dr Martens 1460'), 'shoes')
   assert.equal(suggestCategory('vinterkängor'), 'shoes')
   assert.equal(suggestCategory('Eames chair'), null)
-  assert.equal(suggestCategory('iPhone 13'), null)
+  assert.equal(suggestCategory('iPhone 13'), 'phones', 'phase 5 added Phones & tablets')
 })
 
 test('condition: site wordings on one scale', () => {
@@ -468,4 +468,61 @@ test('parse: quantity in "stycken"', () => {
 test('cards: an "allow" switch (second sort) is never shown', () => {
   const sorted: Category = { ...gadget, cardFields: ['secondSort', 'unlocked'] }
   assert.deepEqual(attributeLabels({ secondSort: true, unlocked: true }, sorted), ['Unlocked'])
+})
+
+// ─── Phones & tablets ────────────────────────────────────────────────────────
+
+const phones = getCategory('phones')!
+const phone = (title: string, attributes = {}) => ({ title, attributes: extractAttributes({ title, attributes }, phones) })
+
+test('phones: suggested from the name', () => {
+  for (const name of ['iPhone 13 Pro', 'iphone13', 'Samsung Galaxy S23', 'iPad Air', 'Apple Watch Series 8', 'Google Pixel 7', 'Garmin Fenix 7', 'OnePlus 11', 'mobiltelefon', 'surfplatta'])
+    assert.equal(suggestCategory(name), 'phones', name)
+  // Phase 4 still wins for its own words
+  assert.equal(suggestCategory('Nike Air Max 90'), 'shoes')
+})
+
+test('phones: details read from titles', () => {
+  assert.deepEqual(phone('iPhone 13 128GB batterihälsa 89% olåst svart').attributes,
+    { type: ['phone'], storage: ['128'], color: ['black'], battery: 89, unlocked: true })
+  assert.deepEqual(phone('Samsung S23 8 GB RAM 256 GB').attributes.storage, ['256'], 'RAM is not storage')
+  assert.deepEqual(phone('iPhone 15 Pro 1TB').attributes.storage, ['1024'])
+  assert.deepEqual(phone('iPad Air 64 GB silver').attributes, { type: ['tablet'], storage: ['64'], color: ['silver'] })
+  assert.equal(phone('iPhone 13 Pro').attributes.storage, undefined, '"13" is never storage')
+  // Phone titles often leave out "GB"
+  assert.deepEqual(phone('Apple iPhone 13 Pro 128').attributes.storage, ['128'])
+  assert.deepEqual(phone('iPhone 12 64 svart').attributes.storage, ['64'])
+  assert.equal(phone('iPhone 13 512 kr').attributes.storage, undefined, 'a price')
+  assert.equal(phone('iPhone 11 Pro 64 MP kamera').attributes.storage, undefined)
+  assert.deepEqual(phone('Apple Watch Series 8 45mm').attributes.type, ['smartwatch'])
+})
+
+test('phones: junk words, unless they are the search', () => {
+  for (const t of ['iPhone 13 skal svart', 'Silikonskal iPhone 13', 'iPhone 13 fodral', 'iPhone 13 skärmskydd', 'iPhone 13 trasig skärm',
+    'iPhone 13 spräckt', 'iPhone 13 iCloud-låst', 'iPhone 13 reservdelar', 'Endast kartong iPhone 13', 'iPhone 13 dummy'])
+    assert.equal(hasNegativeWord(t, 'iPhone 13', phones), true, t)
+  assert.equal(hasNegativeWord('iPhone 13 128 GB med laddare och kartong', 'iPhone 13', phones), false, 'charger and box are a plus')
+  // Known trade-off: a phone sold with a case is dropped too
+  assert.equal(hasNegativeWord('iPhone 13 i nyskick, inkl. skal', 'iPhone 13', phones), true)
+  assert.equal(hasNegativeWord('iPhone 13 skal svart', 'iPhone 13 skal', phones), false)
+})
+
+test('phones: filters', () => {
+  const f: ItemFilters = { storage: ['128', '256'], battery: 85, unlocked: true }
+  assert.deepEqual(checkListing(phone('iPhone 13 128GB batteri 90% olåst'), f, phones), { keep: true, unstated: [] })
+  assert.equal(checkListing(phone('iPhone 13 64GB batteri 90% olåst'), f, phones).keep, false)
+  assert.equal(checkListing(phone('iPhone 13 256GB batteri 80%'), f, phones).keep, false)
+  assert.deepEqual(checkListing(phone('iPhone 13 256GB'), f, phones), { keep: true, unstated: ['battery', 'unlocked'] })
+})
+
+test('phones: sites and native search', () => {
+  assert.deepEqual(sitesForCategory(['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'], 'phones'),
+    ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace'])
+  assert.deepEqual(blocketParams({ category: phones }), ['category=0.93'])
+  assert.equal(sellpyFilters({ category: phones, filters: { type: ['phone'] } }),
+    'price_SE.amount > 0 AND (categories.lvl2:"Prylar > Hemelektronik > Mobil & Wearables")')
+  assert.match(sellpyFilters({ category: phones, filters: { type: ['tablet'] } })!, /Surf- och Läsplattor/)
+  assert.match(sellpyFilters({ category: phones, filters: { color: ['silver'] } })!, /metadata\.color:"Silverfärgad"/)
+  assert.deepEqual(attributeLabels(phone('iPhone 13 128GB batterihälsa 88% olåst').attributes, phones), ['128 GB', 'Battery 88 %', 'Unlocked'])
+  assert.deepEqual(describeFilters('phones', { storage: ['128'], battery: 85, unlocked: true }), ['Phones & tablets', '128 GB', 'Battery 85 %+', 'Unlocked'])
 })

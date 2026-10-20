@@ -40,7 +40,7 @@ See `tasks/todo.md` for acceptance criteria, verification and files per task.
 - [x] Checkpoint B1: phase 4 tests untouched and green; no behaviour change
 
 ### Part B2: Categories (vertical slices)
-- [ ] Task 7: Phones & tablets
+- [x] Task 7: Phones & tablets
 - [ ] Task 8: UI for the new field kinds, scrolling chips, card details
 - [ ] Checkpoint B2: add a phone item end to end in the dev app
 - [ ] Task 9: Computers

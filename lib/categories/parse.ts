@@ -18,6 +18,16 @@ export function numbersWithUnit(title: string, units: string[]): number[] {
   return found.sort((a, b) => a[0] - b[0]).map(([, n]) => n)
 }
 
+/**
+ * Numbers from `allowed` standing on their own ("iPhone 13 Pro 128"), not followed by
+ * another unit or a price ("512 kr", "64 MP")
+ */
+export function bareNumbers(title: string, allowed: number[]): number[] {
+  const text = title.toLowerCase()
+  const re = new RegExp(`(?<![\\d.,${LETTER}])(${allowed.join('|')})(?![\\d.,${LETTER}]|\\s?(?:kr|sek|:-|%|(?:mp|mb|mah|hz|mm|cm|w|tum|gb|tb)(?![${LETTER}])))`, 'g')
+  return [...text.matchAll(re)].map((m) => Number(m[1]))
+}
+
 /** A percentage right before or after a keyword ("batterihälsa 89%", "86% batterihälsa") */
 export function percentNear(title: string, keywords: string[]): number | undefined {
   const text = title.toLowerCase()
