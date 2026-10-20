@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, CATEGORY_PRIORITY, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
+import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, CATEGORY_PRIORITY, fieldLabel, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
 import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes, attributeLabels } from './attributes'
 import { checkListing, hasNegativeWord } from './filter'
 import { decades, numbersWithUnit, percentNear, quantity } from './parse'
@@ -439,4 +439,33 @@ test('suggestCategory: phase 4 results unchanged with the priority list', () => 
   assert.deepEqual(CATEGORY_PRIORITY.slice(-2), ['shoes', 'clothing'])
   assert.equal(suggestCategory('vinterkängor'), 'shoes')
   assert.equal(suggestCategory('Acne läderjacka'), 'clothing')
+})
+
+// ─── Review fixes ────────────────────────────────────────────────────────────
+
+test('fieldLabel: names for "not stated", from any category', () => {
+  assert.equal(fieldLabel('condition'), 'Condition')
+  assert.equal(fieldLabel('size'), 'Size')
+  assert.equal(fieldLabel('color'), 'Colour')
+  assert.equal(fieldLabel('department'), 'Department')
+  assert.equal(fieldLabel('type'), 'Type')
+  assert.equal(fieldLabel('material'), 'Material')
+  assert.equal(fieldLabel('somethingNew'), 'somethingNew', 'never undefined')
+})
+
+test('parse: "ett 30-tal" means about thirty, not the 1930s', () => {
+  assert.deepEqual(decades('Rörstrand Mon Amie, ett 30-tal tallrikar'), [])
+  assert.deepEqual(decades('Iittala glas, ca 20-tal'), [])
+  assert.deepEqual(decades('Glas, cirka 20-tal st'), [])
+  assert.deepEqual(decades('Ett 60-tals bord'), [1960], '"ett 60-tals bord" is a 1960s table')
+})
+
+test('parse: quantity in "stycken"', () => {
+  assert.equal(quantity('Rörstrand tallrikar 6 stycken'), 6)
+  assert.equal(quantity('Stolar, 4 styck'), 4)
+})
+
+test('cards: an "allow" switch (second sort) is never shown', () => {
+  const sorted: Category = { ...gadget, cardFields: ['secondSort', 'unlocked'] }
+  assert.deepEqual(attributeLabels({ secondSort: true, unlocked: true }, sorted), ['Unlocked'])
 })

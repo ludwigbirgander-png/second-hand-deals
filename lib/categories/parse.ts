@@ -30,13 +30,13 @@ export function percentNear(title: string, keywords: string[]): number | undefin
 const NUMBER_WORDS: Record<string, number> = { två: 2, tre: 3, fyra: 4, fem: 5, sex: 6, sju: 7, åtta: 8, nio: 9, tio: 10, tolv: 12 }
 
 /**
- * How many pieces a listing offers: "4 st", "ett par", "set om 6", "6-pack",
+ * How many pieces a listing offers: "4 st", "6 stycken", "ett par", "set om 6", "6-pack",
  * or a number before one of `nouns` ("6 tallrikar", "sex tallrikar").
  */
 export function quantity(title: string, nouns: string[] = []): number | undefined {
   const text = title.toLowerCase()
   const word = (s: string) => `(?<![${LETTER}\\d])${s}(?![${LETTER}])`
-  const count = text.match(new RegExp(`(?<![\\d.,])(\\d{1,2})\\s?st(?![${LETTER}])`)) ??
+  const count = text.match(new RegExp(`(?<![\\d.,])(\\d{1,2})\\s?(?:st|styck|stycken)(?![${LETTER}])`)) ??
     text.match(new RegExp(`${word('set')} om (\\d{1,2})`)) ??
     text.match(new RegExp(`(?<![\\d.,])(\\d{1,2})\\s?-?\\s?pack(?![${LETTER}])`))
   if (count) return Number(count[1])
@@ -56,6 +56,10 @@ export function decades(title: string): number[] {
   const decade = (s: string) => (s.length === 4 ? Number(s) : 1900 + Number(s))
   const d = '(19[1-9]0|[1-9]0)'
   for (const m of text.matchAll(new RegExp(`(?<!\\d)${d}(?:\\s?[-/–]\\s?${d})?\\s?-?\\s?tal`, 'g'))) {
+    // "ett 30-tal tallrikar" and "ca 20-tal" mean about thirty and about twenty; "ett 60-tals bord" is a decade
+    const before = text.slice(0, m.index)
+    const bare = !new RegExp(`^[${LETTER}]`).test(text.slice((m.index ?? 0) + m[0].length))
+    if (bare && new RegExp(`(?:^|[^${LETTER}])(?:ett|ca\\.?|cirka|omkring)\\s+$`).test(before)) continue
     const from = decade(m[1])
     const to = m[2] ? decade(m[2]) : from
     for (let y = from; y <= to; y += 10) out.add(y)

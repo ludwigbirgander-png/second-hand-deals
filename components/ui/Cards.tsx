@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Listing } from '@/lib/types'
 import { CONDITION_COLORS } from '@/lib/colors'
 import { priceNote } from '@/lib/auction'
-import { conditionLabel, type FilterKey } from '@/lib/categories'
+import { conditionLabel, fieldLabel, type FilterKey } from '@/lib/categories'
 import { sizeLabel } from '@/lib/categories/attributes'
 import { IconButton } from './Button'
 import { Pill, SiteBadge } from './Pill'
@@ -13,14 +13,10 @@ import { Price } from './Price'
 
 // ─── ListingCard ──────────────────────────────────────────────────────────────
 
-const DETAIL_NAMES: Record<FilterKey, string> = {
-  size: 'Size', condition: 'Condition', color: 'Colour', material: 'Material', department: 'Department', type: 'Type',
-}
-
 /** "Size not stated", "Size, colour not stated" */
 function notStated(keys: FilterKey[] | undefined): string | null {
   if (!keys?.length) return null
-  const names = keys.map((k, i) => (i === 0 ? DETAIL_NAMES[k] : DETAIL_NAMES[k].toLowerCase()))
+  const names = keys.map((k, i) => (i === 0 ? fieldLabel(k) : fieldLabel(k).toLowerCase()))
   return `${names.join(', ')} not stated`
 }
 

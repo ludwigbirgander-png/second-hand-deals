@@ -175,6 +175,19 @@ export function getCategory(id: string | null | undefined): Category | undefined
   return CATEGORIES.find((c) => c.id === id)
 }
 
+/**
+ * A field's name for "… not stated" on listing cards, from whichever category has it.
+ * Keys mean the same thing in every category, so the card doesn't need the item's category.
+ */
+export function fieldLabel(key: string): string {
+  if (key === 'condition') return 'Condition'
+  for (const c of CATEGORIES) {
+    const field = c.fields.find((f) => f.key === key)
+    if (field) return field.short ?? field.label
+  }
+  return key
+}
+
 /** The order categories are suggested in: more specific first, so "vinterkängor" is Shoes, not Clothing */
 export const CATEGORY_PRIORITY: CategoryId[] = ['shoes', 'clothing']
 
