@@ -191,7 +191,7 @@ export function ListingGrid({ itemId, query, listings, onListingsChange, exclude
         <div className="text-center py-10 md:py-16 px-4">
           <p className="m-0 text-[15px] md:text-[18px]">Nothing yet — the flea market restocks daily.</p>
           <p className="mt-1.5 md:mt-2 mb-0 text-[14px] md:text-[15px] text-muted">
-            Try hitting Refresh, widening the price range, or dropping the brand from the search.
+            Try hitting Refresh, widening the price range, or a shorter item name.
           </p>
         </div>
       ) : (

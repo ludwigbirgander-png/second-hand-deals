@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Price } from '@/components/ui/Price'
 import { AvatarStack } from '@/components/ui/Avatar'
 import { describeFilters, sanitizeFilters } from '@/lib/categories'
+import { nameWithBrand } from '@/lib/itemName'
 
 interface Loaded {
   itemData: ItemWithMeta | null
@@ -182,8 +183,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
         <div className="flex flex-col md:flex-row md:flex-wrap md:items-end md:justify-between gap-y-4 gap-x-8 mt-2 md:mt-4">
           <div className="min-w-0">
-            {item.brand && <p className="m-0 text-[16px] md:text-[22px] font-medium text-muted tracking-[-0.01em]">{item.brand}</p>}
-            <h1 className="m-0 text-[34px] md:text-[52px] font-bold leading-[1.02] tracking-[-0.035em] [overflow-wrap:anywhere]">{item.name}</h1>
+            <h1 className="m-0 text-[34px] md:text-[52px] font-bold leading-[1.02] tracking-[-0.035em] [overflow-wrap:anywhere]">{nameWithBrand(item.brand, item.name)}</h1>
             {filterChips.length > 0 && (
               <button
                 type="button"
@@ -219,7 +219,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
         <ListingGrid
           key={listings.map((l) => l.id).join()}
           itemId={item.id}
-          query={[item.brand, item.name].filter(Boolean).join(' ')}
+          query={nameWithBrand(item.brand, item.name)}
           listings={listings}
           onListingsChange={setListings}
           excludeWords={item.exclude_words ?? []}

@@ -9,6 +9,7 @@ import { ScreenTitle, TickProgress, fluid } from '@/components/ui/Display'
 import { Button, buttonClass } from '@/components/ui/Button'
 import { Price } from '@/components/ui/Price'
 import { DESKTOP, useMediaQuery } from '@/lib/useMediaQuery'
+import { nameWithBrand } from '@/lib/itemName'
 
 export default function ScanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -33,7 +34,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
   const done = state.sites.filter((s) => s.status === 'done')
   const found = done.reduce((a, s) => a + (s.count ?? 0), 0)
   const progress = state.sites.length ? done.length / state.sites.length : 0
-  const name = item ? (item.brand ? `${item.brand} ${item.name}` : item.name) : ' '
+  const name = item ? nameWithBrand(item.brand, item.name) : ' '
 
   return (
     <div className="flex-1 flex flex-col w-full max-w-[1280px] mx-auto md:px-5 wide:px-8 md:pt-6 md:pb-20">
