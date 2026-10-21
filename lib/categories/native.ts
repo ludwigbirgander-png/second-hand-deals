@@ -122,7 +122,8 @@ export function sellpyAttributes(meta: Record<string, unknown> | undefined, cate
   if (size) out.size = size
 
   const category = getCategory(categoryId)
-  if (!category || !meta) return out
+  if (!category) return out
+  meta ??= {}
   const options = (key: string) => category.fields.find((f) => f.key === key)?.options ?? []
   const pick = (key: string, values: unknown) => {
     const list = (Array.isArray(values) ? values : [values]).filter((v): v is string => typeof v === 'string')
@@ -138,6 +139,9 @@ export function sellpyAttributes(meta: Record<string, unknown> | undefined, cate
   const sub = lvl2?.split(' > ').slice(2).join(' > ')
   const type = sub ? options('type').filter((o) => o.sellpy?.includes(sub)).map((o) => o.id) : []
   if (type.length) out.type = type
+  // Categories with full paths: only a path one type owns says the type (Belysning is a lamp; Möbler could be anything)
+  const owners = lvl2 ? options('type').filter((o) => o.sellpyPaths?.includes(lvl2)) : []
+  if (!out.type && owners.length === 1) out.type = [owners[0].id]
   return out
 }
 

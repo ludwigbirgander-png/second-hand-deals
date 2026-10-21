@@ -60,13 +60,13 @@ const NUMBER_WORDS: Record<string, number> = { två: 2, tre: 3, fyra: 4, fem: 5,
 export function quantity(title: string, nouns: string[] = []): number | undefined {
   const text = title.toLowerCase()
   const word = (s: string) => `(?<![${LETTER}\\d])${s}(?![${LETTER}])`
-  const count = text.match(new RegExp(`(?<![\\d.,])(\\d{1,2})\\s?(?:st|styck|stycken)(?![${LETTER}])`)) ??
+  const amount = `(\\d{1,2}|${Object.keys(NUMBER_WORDS).join('|')})`
+  const count = text.match(new RegExp(`(?<![\\d.,${LETTER}])${amount}\\s?(?:st|styck|stycken)(?![${LETTER}])`)) ??
     text.match(new RegExp(`${word('set')} om (\\d{1,2})`)) ??
     text.match(new RegExp(`(?<![\\d.,])(\\d{1,2})\\s?-?\\s?pack(?![${LETTER}])`))
-  if (count) return Number(count[1])
+  if (count) return NUMBER_WORDS[count[1]] ?? Number(count[1])
   if (new RegExp(`${word('ett par')}|${word('paret')}`).test(text)) return 2
   if (nouns.length) {
-    const amount = `(\\d{1,2}|${Object.keys(NUMBER_WORDS).join('|')})`
     const m = text.match(new RegExp(`(?<![${LETTER}\\d.,])${amount}\\s+(?:${nouns.map(esc).join('|')})(?![${LETTER}])`))
     if (m) return NUMBER_WORDS[m[1]] ?? Number(m[1])
   }

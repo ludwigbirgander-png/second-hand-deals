@@ -17,7 +17,7 @@ test('suggests a category from the item name', () => {
   assert.equal(suggestCategory('Nike Air Max 90'), 'shoes')
   assert.equal(suggestCategory('Dr Martens 1460'), 'shoes')
   assert.equal(suggestCategory('vinterkängor'), 'shoes')
-  assert.equal(suggestCategory('Eames chair'), null)
+  assert.equal(suggestCategory('Eames chair'), 'furniture', 'phase 5 added Furniture & design')
   assert.equal(suggestCategory('iPhone 13'), 'phones', 'phase 5 added Phones & tablets')
 })
 
@@ -462,6 +462,8 @@ test('parse: "ett 30-tal" means about thirty, not the 1930s', () => {
 
 test('parse: quantity in "stycken"', () => {
   assert.equal(quantity('Rörstrand tallrikar 6 stycken'), 6)
+  assert.equal(quantity('Carl Malmsten. STOLAR, FYRA ST.'), 4)
+  assert.equal(quantity('Sex stycken glas'), 6)
   assert.equal(quantity('Stolar, 4 styck'), 4)
 })
 
@@ -572,4 +574,61 @@ test('computers: sites, native search, cards', () => {
   assert.deepEqual(blocketParams({ category: computers }), ['category=0.93'])
   assert.match(sellpyFilters({ category: computers, filters: {} })!, /Datorer & Tillbehör/)
   assert.deepEqual(attributeLabels(computer('MacBook Air M2 8/256').attributes, computers), ['M2', '8 GB RAM', '256 GB'])
+})
+
+// ─── Furniture & design ──────────────────────────────────────────────────────
+
+const furniture = getCategory('furniture')!
+const piece = (title: string) => ({ title, attributes: extractAttributes({ title }, furniture) })
+
+test('furniture: suggested from the name', () => {
+  for (const name of ['Lilla Åland stol', 'String hylla', 'PH5 lampa', 'Eames chair', 'teakbord', 'fåtölj', 'Svenskt Tenn soffa', 'skrivbordslampa', 'byrå', 'spegel'])
+    assert.equal(suggestCategory(name), 'furniture', name)
+  assert.equal(suggestCategory('MacBook Air'), 'computers')
+})
+
+test('furniture: details read from titles', () => {
+  assert.deepEqual(piece('Lilla Åland stolar 4 st').attributes, { type: ['chair'], quantity: ['set4'] })
+  assert.deepEqual(piece('60-tals teakbord').attributes, { type: ['table'], material: ['teak'], decade: ['1960'] })
+  assert.deepEqual(piece('Arne Jacobsen stolar 6 st, Sjuan').attributes.quantity, ['set4', 'set6'])
+  assert.deepEqual(piece('Fåtöljer, ett par, 1950/60-tal').attributes, { type: ['armchair'], quantity: ['pair'], decade: ['1950', '1960'] })
+  assert.deepEqual(piece('Skrivbordslampa mässing').attributes, { type: ['lamp'], material: ['metal'] })
+  assert.deepEqual(piece('Matbord i ek, 3 stolar').attributes.quantity, ['three'], 'three: neither a pair nor a set of 4')
+  assert.deepEqual(piece('Stol i bok med dyna').attributes.type, ['chair'])
+})
+
+test('furniture: junk words', () => {
+  for (const t of ['Åland, F 209, Mitt Åland, frimärke', 'Vykort Lilla Åland', 'Eames miniatyr', 'Vitra miniatures Panton', 'Lilla Åland ritning', 'Dockskåp med möbler', 'Affisch Eames', 'Dynor till Lilla Åland', 'Överdrag till soffa'])
+    assert.equal(hasNegativeWord(t, 'Eames', furniture), true, t)
+  for (const t of ['Stol i bok med dyna', 'Lilla Åland stol, ek'])
+    assert.equal(hasNegativeWord(t, 'stol', furniture), false, t)
+})
+
+test('furniture: filters', () => {
+  const sets: ItemFilters = { quantity: ['set4'] }
+  assert.equal(checkListing(piece('Stolar 6 st'), sets, furniture).keep, true)
+  assert.equal(checkListing(piece('Stolar, ett par'), sets, furniture).keep, false)
+  assert.equal(checkListing(piece('Stolar 3 st'), sets, furniture).keep, false)
+  assert.deepEqual(checkListing(piece('Stol'), sets, furniture), { keep: true, unstated: ['quantity'] })
+  assert.equal(checkListing(piece('Byrå 1970-tal'), { decade: ['1950', '1960'] }, furniture).keep, false)
+})
+
+test('furniture: native search per type', () => {
+  assert.deepEqual(blocketParams({ category: furniture }), ['category=0.78'])
+  assert.equal(auctionetCategory({ category: furniture, filters: {} }), 16)
+  assert.equal(auctionetCategory({ category: furniture, filters: { type: ['chair', 'table'] } }), 16)
+  assert.equal(auctionetCategory({ category: furniture, filters: { type: ['lamp'] } }), 1)
+  assert.equal(auctionetCategory({ category: furniture, filters: { type: ['mirror'] } }), 42)
+  assert.equal(auctionetCategory({ category: furniture, filters: { type: ['rug'] } }), 35)
+  assert.equal(auctionetCategory({ category: furniture, filters: { type: ['chair', 'lamp'] } }), undefined)
+  assert.match(sellpyFilters({ category: furniture, filters: { type: ['lamp'] } })!, /\(categories\.lvl2:"Prylar > Inredning > Belysning"\)/)
+  assert.deepEqual(sitesForCategory(['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'], 'furniture'),
+    ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'])
+  assert.deepEqual(attributeLabels(piece('Lilla Åland stolar 4 st, 1960-tal, ek').attributes, furniture), ['Set of 4 or more', '1960s', 'Oak'])
+})
+
+test('Sellpy: the type from a hit\'s category path, only when one type owns it', () => {
+  assert.deepEqual(sellpyAttributes({}, 'furniture', 'Prylar > Inredning > Belysning', undefined).type, ['lamp'])
+  assert.equal(sellpyAttributes({}, 'furniture', 'Prylar > Inredning > Möbler', undefined).type, undefined, 'chairs, tables, sofas… share Möbler')
+  assert.deepEqual(sellpyAttributes({}, 'phones', 'Prylar > Hemelektronik > Surf- och Läsplattor', undefined).type, ['tablet'])
 })

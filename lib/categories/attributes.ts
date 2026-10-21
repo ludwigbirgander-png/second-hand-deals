@@ -1,5 +1,5 @@
 // Normalised details of a listing: condition on one scale, sizes, and category options found in the title.
-import type { Category, ConditionGrade, Department, ListingAttributes, ParsedSize } from './types'
+import type { Category, ConditionGrade, Department, FieldValue, ListingAttributes, ParsedSize } from './types'
 import { hasPattern, tokens } from './words'
 
 // ─── Condition ───────────────────────────────────────────────────────────────
@@ -222,7 +222,10 @@ export function attributeLabels(a: ListingAttributes | null | undefined, categor
     const field = category.fields.find((f) => f.key === key)
     const v = a[key]
     if (!field || v == null) continue
-    if (field.kind === 'options' && Array.isArray(v)) {
+    if (field.cardLabel) {
+      const label = field.cardLabel(v as FieldValue)
+      if (label) out.push(label)
+    } else if (field.kind === 'options' && Array.isArray(v)) {
       const labels = v.map((id) => field.options?.find((o) => o.id === id)?.label).filter(Boolean)
       // A short name tells same-looking values apart: "8 GB RAM" next to "256 GB"
       if (labels.length) out.push(field.short ? `${labels.join('/')} ${field.short}` : labels.join('/'))

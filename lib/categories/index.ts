@@ -4,7 +4,7 @@ import type {
   Category, CategoryField, CategoryId, ConditionGrade, Department, FieldOption, ItemFilters, NumberRange, SaleType, SizeFilter, SizeSystem,
 } from './types'
 import { hasPattern, tokens } from './words'
-import { bareNumbers, numbersWithUnit, percentNear, slashPair } from './parse'
+import { bareNumbers, decades, numbersWithUnit, percentNear, quantity, slashPair } from './parse'
 
 export * from './types'
 
@@ -134,6 +134,61 @@ function screenFromTitle(title: string): string[] | undefined {
 }
 
 const computerStorage = storageField([128, 256, 512], [1, 2])
+
+/**
+ * How many pieces: single, pair, a set of 4 or more, or 6 or more. A set of 6 is also a set of 4,
+ * and three pieces ("three", not a choice) contradict every option.
+ */
+const quantityField = (nouns: string[]): CategoryField => ({
+  key: 'quantity',
+  label: 'Quantity',
+  kind: 'options',
+  options: [
+    { id: 'single', label: 'Single', words: [] },
+    { id: 'pair', label: 'Pair', words: [] },
+    { id: 'set4', label: 'Set of 4 or more', words: [] },
+    { id: 'set6', label: 'Set of 6 or more', words: [] },
+  ],
+  parse: (title) => {
+    const n = quantity(title, nouns)
+    if (n == null) return undefined
+    if (n === 1) return ['single']
+    if (n === 2) return ['pair']
+    if (n === 3) return ['three']
+    return n >= 6 ? ['set4', 'set6'] : ['set4']
+  },
+  cardLabel: (v) => {
+    const ids = v as string[]
+    return ids.includes('set6') ? 'Set of 6 or more' : ids.includes('set4') ? 'Set of 4 or more'
+      : ids.includes('pair') ? 'Pair' : ids.includes('three') ? '3 pieces' : undefined
+  },
+})
+
+const DECADES = [1940, 1950, 1960, 1970, 1980, 1990]
+
+const decadeField: CategoryField = {
+  key: 'decade',
+  label: 'Decade',
+  kind: 'options',
+  options: DECADES.map((d) => ({ id: `${d}`, label: `${d}s`, words: [] })),
+  parse: (title) => {
+    const ids = decades(title).filter((d) => DECADES.includes(d)).map(String)
+    return ids.length ? ids : undefined
+  },
+}
+
+const CHAIR = ['stol', 'stolar', 'stolen', '*stol', '*stolar', 'pall', 'pallar', '*pall', 'chair', 'chairs', '*chair']
+const ARMCHAIR = ['fåtölj*', '*fåtölj', '*fåtöljer', 'armchair', 'lounge chair', 'loungestol*']
+const SOFA = ['soffa', 'soffan', '*soffa', 'soffor', '*soffor', 'sofa', 'daybed', 'dagbädd*', 'divan*']
+const TABLE = ['bord', 'bordet', '*bord', 'table', '*table', 'matbord*', 'soffbord*', 'sidobord*']
+const DESK = ['skrivbord', 'skrivbordet', '*skrivbord', 'desk', 'sekretär*']
+const STORAGE = ['hylla', '*hylla', 'hyllor', '*hyllor', 'bokhylla*', 'byrå*', '*byrå', 'skåp', '*skåp', 'skänk*', 'sideboard*', 'vitrinskåp*', 'kommod*', 'string', 'shelf', 'cabinet']
+// Not "pendel*": "pendelur" is a clock
+const LAMP = ['lampa', '*lampa', 'lampor', '*lampor', 'lamp', '*lamp', 'pendellampa*', 'armatur*', 'ljuskrona*', 'ph5', 'ph 5', 'panthella']
+const BED = ['säng', 'sängen', '*säng', 'sängar', 'bed']
+const RUG = ['matta', '*matta', 'mattor', '*mattor', 'rug', 'carpet', 'rya*', 'röllakan*']
+const MIRROR = ['spegel', '*spegel', 'speglar', 'mirror', '*mirror']
+const MOBLER = 'Prylar > Inredning > Möbler'
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 
@@ -354,6 +409,64 @@ export const CATEGORIES: Category[] = [
     blocketCategory: '0.93',
     cardFields: ['chip', 'ram', 'storage'],
   },
+  {
+    id: 'furniture',
+    label: 'Furniture & design',
+    short: 'Furniture',
+    hints: [...CHAIR, ...ARMCHAIR, ...SOFA, ...TABLE, ...DESK, ...STORAGE, ...LAMP, ...BED, ...MIRROR, 'möbel*', 'möbler', '*möbel', 'eames', 'lilla åland'],
+    fields: [
+      {
+        key: 'type',
+        label: 'Type',
+        kind: 'options',
+        options: [
+          { id: 'chair', label: 'Chair', words: CHAIR, auctionet: 16, sellpyPaths: [MOBLER] },
+          { id: 'armchair', label: 'Armchair', words: ARMCHAIR, auctionet: 16, sellpyPaths: [MOBLER] },
+          { id: 'sofa', label: 'Sofa', words: SOFA, auctionet: 16, sellpyPaths: [MOBLER] },
+          { id: 'table', label: 'Table', words: TABLE, auctionet: 16, sellpyPaths: [MOBLER] },
+          { id: 'desk', label: 'Desk', words: DESK, auctionet: 16, sellpyPaths: [MOBLER] },
+          { id: 'storage', label: 'Shelves & storage', words: STORAGE, auctionet: 16, sellpyPaths: [MOBLER] },
+          { id: 'lamp', label: 'Lamp', words: LAMP, auctionet: 1, sellpyPaths: ['Prylar > Inredning > Belysning'] },
+          { id: 'bed', label: 'Bed', words: BED, auctionet: 16, sellpyPaths: [MOBLER] },
+          { id: 'rug', label: 'Rug', words: RUG, auctionet: 35, sellpyPaths: ['Prylar > Inredning > Textiler'] },
+          { id: 'mirror', label: 'Mirror', words: MIRROR, auctionet: 42, sellpyPaths: [MOBLER] },
+        ],
+      },
+      {
+        key: 'material',
+        label: 'Material',
+        kind: 'options',
+        options: [
+          { id: 'teak', label: 'Teak', words: ['teak*', '*teak'] },
+          { id: 'oak', label: 'Oak', words: ['ek', 'eken', 'oak', 'ekfaner*', 'ekfanér*', 'ekbord*', 'ekstol*', 'ekskänk*', 'ekhylla*', 'ekskåp*', 'massivek'] },
+          { id: 'walnut', label: 'Walnut', words: ['valnöt*', 'walnut'] },
+          { id: 'birch', label: 'Birch', words: ['björk*', 'birch'] },
+          { id: 'rosewood', label: 'Rosewood', words: ['jakaranda*', 'palisander*', 'rosewood', 'rosenträ*'] },
+          { id: 'pine', label: 'Pine', words: ['furu*', 'tall', 'pine'] },
+          LEATHER,
+          { id: 'rattan', label: 'Rattan & cane', words: ['rotting*', '*rotting', 'rattan', 'wicker', 'pedig*', 'flätad*', 'flätat'] },
+          { id: 'metal', label: 'Metal', words: ['metall*', 'stål', 'krom*', '*krom', 'förkromad*', 'mässing*', 'aluminium', 'järn*', 'steel', 'brass', 'chrome'] },
+          { id: 'glass', label: 'Glass', words: ['glas', 'glasskiva*', 'glasbord*', 'rökglas*', 'glass'] },
+          { id: 'fabric', label: 'Fabric', words: ['tyg*', '*tyg', 'textil*', 'sammet*', 'manchester*', 'bouclé', 'boucle', 'fabric', 'velvet'] },
+        ],
+      },
+      { key: 'color', label: 'Colour', kind: 'options', options: COLORS },
+      quantityField(['stolar', 'karmstolar', 'fåtöljer', 'pallar', 'lampor', 'bord']),
+      decadeField,
+    ],
+    sites: ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'],
+    // Not plain "bok" (beech) or "dyna" ("stol med dyna" comes with a cushion)
+    negativeWords: [
+      'ritning*', 'miniatyr*', 'miniature*', 'dockskåp*', 'dockmöbler*', 'affisch*', 'poster', 'katalog*', 'boken',
+      'dyna till', 'dynor till', 'överdrag till', 'klädsel till', 'reservdel*',
+      // Tradera's loose matches for place-named designs ("Lilla Åland")
+      'frimärke*', 'vykort*',
+    ],
+    sellpyPaths: [MOBLER, 'Prylar > Inredning > Belysning', 'Prylar > Inredning > Textiler'],
+    blocketCategory: '0.78',
+    auctionet: 16,
+    cardFields: ['quantity', 'decade', 'material'],
+  },
 ]
 
 export function getCategory(id: string | null | undefined): Category | undefined {
@@ -374,7 +487,7 @@ export function fieldLabel(key: string): string {
 }
 
 /** The order categories are suggested in: more specific first, so "vinterkängor" is Shoes, not Clothing */
-export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'computers', 'shoes', 'clothing']
+export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'computers', 'furniture', 'shoes', 'clothing']
 
 /** The category an item name points to, or null ("Nike Air Max 90" → Shoes) */
 export function suggestCategory(name: string): CategoryId | null {

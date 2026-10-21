@@ -106,7 +106,7 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
   - Files: `lib/categories/index.ts`, `lib/categories/parse.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Task 8
 
-- [ ] **Task 10: Furniture & design**
+- [x] **Task 10: Furniture & design**
   - Acceptance:
     - Fields: type (chair, armchair, sofa, table, desk, shelf & storage, lamp, bed, rug, mirror), material (teak, oak, walnut, birch, rosewood/jakaranda/palisander, pine, leather, rattan & cane, metal, glass, fabric), colour, quantity (single, pair, set of 4+; parsed with `quantity()` and nouns such as stolar/fåtöljer/pallar), decade (1940s–1990s; parsed with `decades()`).
     - Native: Blocket 0.78. Auctionet per type: 16 for furniture types, **1** lamp, **42** mirror, **35** rug; no id for a mix. Sellpy per type: `Prylar > Inredning > Möbler`, lamp `Prylar > Inredning > Belysning`.

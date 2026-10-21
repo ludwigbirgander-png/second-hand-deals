@@ -1,6 +1,6 @@
 // Types for categories, an item's filters and a listing's normalised details.
 
-export type CategoryId = 'clothing' | 'shoes' | 'phones' | 'computers'
+export type CategoryId = 'clothing' | 'shoes' | 'phones' | 'computers' | 'furniture'
 
 export type Department = 'women' | 'men' | 'kids' | 'unisex'
 
@@ -125,6 +125,8 @@ export interface CategoryField {
    * Returns option ids for options, a number for min and range, true for toggle.
    */
   parse?: (title: string) => string[] | number | boolean | undefined
+  /** The text on a listing card, when the option labels alone would read oddly ("Set of 6 or more", not "4+/6+") */
+  cardLabel?: (value: FieldValue) => string | undefined
 }
 
 export interface Category {
