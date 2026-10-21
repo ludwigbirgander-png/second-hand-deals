@@ -144,7 +144,7 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
   - Files: `lib/categories/index.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Task 8
 
-- [ ] **Checkpoint B3:**
+- [ ] **Checkpoint B3** (my side done 2026-10-21: 96 tests, lint, build; all five live-checked; 23-name suggestion test; 375 px screenshots of each category's form, no sideways overflow; selected chip scrolls into view. Waiting for your review):
   - All five categories live-checked on every site; `npm test`, lint, type check and `npm run build` green.
   - A priority test: 20 item names across all seven categories each get the right suggestion (or none).
   - 375 px and desktop screenshots via a temporary preview page and Chrome's DevTools Protocol (headless Chrome can't go below 500 px on its own): seven chips scroll in one row with no page overflow; each category's fields render.

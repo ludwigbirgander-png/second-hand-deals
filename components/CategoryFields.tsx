@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   CATEGORIES, CONDITIONS, LETTER_SIZES, SALE_TYPES, SIZE_SYSTEM_LABELS, SIZE_VALUES, getCategory, visibleFields,
   type CategoryField, type CategoryId, type ConditionGrade, type ItemFilters, type NumberRange, type SaleType, type SizeFilter, type SizeSystem,
@@ -24,6 +24,17 @@ export function CategoryFields({ category, filters, onChange, suggested }: Props
   const [moreOpen, setMoreOpen] = useState(!!(filters.condition || filters.saleType))
   const set = (patch: Partial<ItemFilters>) => onChange(category, { ...filters, ...patch })
   const active = Object.keys(filters).filter((k) => k !== 'strict').length > 0
+
+  // On phones the chips scroll: bring the picked one into view if it's off to the side (Watches, Glass)
+  const chipRow = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const row = chipRow.current
+    const chip = row?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (!row || !chip) return
+    const r = row.getBoundingClientRect()
+    const c = chip.getBoundingClientRect()
+    if (c.left < r.left || c.right > r.right) row.scrollBy({ left: c.left - r.left - (r.width - c.width) / 2 })
+  }, [category])
 
   function pickCategory(id: CategoryId | null) {
     if (id === category) return
@@ -60,7 +71,7 @@ export function CategoryFields({ category, filters, onChange, suggested }: Props
       <div>
         <FieldLabel>Category</FieldLabel>
         {/* One scrolling row on phones, wrapping on wider screens */}
-        <div className="flex items-center gap-2 max-md:overflow-x-auto max-md:-mx-4 max-md:px-4 max-md:pb-1 md:flex-wrap [scrollbar-width:none]">
+        <div ref={chipRow} className="flex items-center gap-2 max-md:overflow-x-auto max-md:-mx-4 max-md:px-4 max-md:pb-1 md:flex-wrap [scrollbar-width:none]">
           <Chip size="sm" label="Any" active={!c} onClick={() => pickCategory(null)} className="shrink-0" />
           {CATEGORIES.map((x) => (
             <Chip key={x.id} size="sm" label={x.short ?? x.label} active={category === x.id} onClick={() => pickCategory(x.id)} className="shrink-0" />

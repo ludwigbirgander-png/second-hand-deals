@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, CATEGORY_PRIORITY, fieldLabel, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
+import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, CATEGORY_PRIORITY, CATEGORIES, fieldLabel, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
 import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes, attributeLabels } from './attributes'
 import { checkListing, hasNegativeWord } from './filter'
 import { decades, numbersWithUnit, percentNear, quantity, slashPair } from './parse'
@@ -730,4 +730,21 @@ test('glass: sites and native search', () => {
   assert.equal(auctionetCategory({ category: glass, filters: { type: ['plate'] } }), undefined, 'and on Auctionet')
   assert.match(sellpyFilters({ category: glass, filters: {} })!, /Porslin.*Koppar & Glas.*Vaser & Krukor/)
   assert.deepEqual(attributeLabels(dish('Rörstrand Mon Amie 6 st tallrikar').attributes, glass), ['Plate', 'Set of 6 or more'])
+})
+
+// ─── All categories together ─────────────────────────────────────────────────
+
+test('suggestions across all seven categories', () => {
+  const expected: [string, string | null][] = [
+    ['iPhone 14', 'phones'], ['Apple Watch', 'phones'], ['iPad mini', 'phones'],
+    ['MacBook Pro', 'computers'], ['Lenovo ThinkPad', 'computers'],
+    ['Omega Speedmaster', 'watches'], ['guldring 18k', 'watches'], ['Georg Jensen halsband', 'watches'],
+    ['Lilla Åland stol', 'furniture'], ['PH5 lampa', 'furniture'], ['Iittala lampa', 'furniture'], ['String hylla', 'furniture'], ['Hästens säng', 'furniture'],
+    ['Rörstrand Ostindia', 'glass'], ['Kosta Boda vas', 'glass'], ['Bing & Grøndahl tallrik', 'glass'],
+    ['Nike Air Max', 'shoes'], ['Dr Martens kängor', 'shoes'],
+    ['Acne jacka', 'clothing'], ["Levi's 501 jeans", 'clothing'],
+    ['Fjällräven Kånken', null], ['Lego Technic', null], ['Acne', null],
+  ]
+  for (const [name, id] of expected) assert.equal(suggestCategory(name), id, name)
+  assert.deepEqual([...CATEGORY_PRIORITY].sort(), CATEGORIES.map((c) => c.id).sort(), 'every category has a place in the order')
 })
