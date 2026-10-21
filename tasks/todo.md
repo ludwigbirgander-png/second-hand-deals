@@ -89,33 +89,66 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `components/CategoryFields.tsx`, `components/ui/Cards.tsx`, `components/ui/Form.tsx` (only if a small number input is missing)
   - Size: M · Depends on: Task 7
 
-- [ ] **Checkpoint B2:** a phone item works end to end in the dev app; review the UI with you before the remaining categories.
+- [ ] **Checkpoint B2:** a phone item works end to end in the dev app; review the UI with you before the remaining categories. (Done on my side 2026-10-20: 74 tests, build, 375/1100 px screenshots of a preview page. Waiting for your try in the real app.)
+
+Each category task follows the Phones pattern (Task 7): add the id to `CategoryId`, the category to `CATEGORIES` (with `short` for its chip), its place in `CATEGORY_PRIORITY`, `sellpyPaths` per type, `cardFields`; tests first; a live `runSite` check per site; one commit.
 
 - [ ] **Task 9: Computers**
-  - Acceptance: the spec's fields (type, chip, RAM, storage, screen size, Swedish keyboard toggle), junk words, sites, Blocket 0.93; "MacBook Air M2 8/256" → chip M2, RAM 8, storage 256; a bare "13" never sets screen size; ≥ 8 fixture titles; suggests for "MacBook Pro", "ThinkPad", "iMac".
-  - Verify: `npm test`; `npm run check:scrapers` with "MacBook Air M2" + Computers.
-  - Files: `lib/categories/index.ts`, `lib/categories/categories.test.ts`
+  - Acceptance:
+    - Fields: type (laptop, desktop), chip (M1–M4, where "M2 Pro/Max" counts as M2; Intel; AMD Ryzen), RAM (8/16/18/24/32/36/64 GB), storage (`storageField([128, 256, 512], [1, 2])`, no bare numbers), screen size (13/14/15/16), Swedish keyboard toggle.
+    - New parser `slashPair` for "8/256" and "16/512 GB" → RAM and storage. RAM also reads "16 GB RAM" and "16GB minne". A GB number only counts as storage when it's in the storage list and not followed by "RAM".
+    - Screen size comes only from a unit: `13"`, `13″`, "13 tum", "13-tum", "13,3", "13-inch". A bare "13" (as in "MacBook Pro 13 M1") is never a screen size.
+    - Junk words (spec list): laddare, adapter, skal, fodral, väska, sleeve, trasig*, delar, reservdel*, moderkort, "skärm till", "tangentbord till", "icloud låst", mdm, "bios låst". Searching for one of them keeps it.
+    - Sites: Blocket (0.93), Tradera, Sellpy (`Prylar > Hemelektronik > Datorer & Tillbehör`), Vinted, Facebook Marketplace. Card fields: chip, RAM, storage.
+    - Priority: after `phones`. Suggests "MacBook Air", "MacBook Pro M3", "ThinkPad", "iMac", "laptop", "bärbar dator"; "iPad" stays Phones.
+    - ≥ 8 fixture titles, including "MacBook Air M2 8/256 GB" → M2, 8, 256 and "MacBook Pro 13 M1 16GB 512GB" → no screen size.
+  - Verify: `npm test`; live `runSite` for "MacBook Air M2" + Computers on every site.
+  - Files: `lib/categories/index.ts`, `lib/categories/parse.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Task 8
 
 - [ ] **Task 10: Furniture & design**
-  - Acceptance: type, material, colour, quantity, decade; junk words; sites; Blocket 0.78; Auctionet 16, or 1 when the type is only Lamp. "Lilla Åland stolar 4 st" → Chair, set of 4+; "60-tals teakbord" → Table, Teak, 1960s; "Eames miniatyr" is dropped; ≥ 8 fixtures; suggests for "Lilla Åland stol", "String hylla", "PH5 lampa".
-  - Verify: `npm test`; `npm run check:scrapers` with "Lilla Åland" + Furniture; Vinted/Sellpy only searched if Task 3 said yes.
-  - Files: `lib/categories/index.ts`, `lib/categories/native.ts`, `lib/categories/categories.test.ts`
+  - Acceptance:
+    - Fields: type (chair, armchair, sofa, table, desk, shelf & storage, lamp, bed, rug, mirror), material (teak, oak, walnut, birch, rosewood/jakaranda/palisander, pine, leather, rattan & cane, metal, glass, fabric), colour, quantity (single, pair, set of 4+; parsed with `quantity()` and nouns such as stolar/fåtöljer/pallar), decade (1940s–1990s; parsed with `decades()`).
+    - Native: Blocket 0.78. Auctionet per type: 16 for furniture types, **1** lamp, **42** mirror, **35** rug; no id for a mix. Sellpy per type: `Prylar > Inredning > Möbler`, lamp `Prylar > Inredning > Belysning`.
+    - Review finding 6: `sellpyAttributes` reads the type from a hit's full Sellpy path (`sellpyPaths`), not only `sellpyGroup` trees.
+    - Junk words (spec list), e.g. "Eames miniatyr" and "Vitra miniatures" are dropped; "dyna", "dynor" and "överdrag" are dropped unless searched.
+    - Sites: Blocket, Tradera, Auctionet, Bukowskis, Facebook Marketplace, Sellpy, Vinted. Card fields: quantity, decade, material.
+    - Suggests "Lilla Åland stol", "String hylla", "PH5 lampa", "Eames chair", "teakbord", "fåtölj". Watch the overlaps: "skrivbordslampa" → Lamp, not Desk.
+    - ≥ 8 fixtures: "Lilla Åland stolar 4 st" → Chair, set of 4+; "60-tals teakbord" → Table, Teak, 1960s.
+  - Verify: `npm test`; live `runSite` for "Lilla Åland" + Furniture on every site.
+  - Files: `lib/categories/index.ts`, `lib/categories/native.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Task 8
 
 - [ ] **Task 11: Watches & jewellery**
-  - Acceptance: type (incl. Smartwatch), movement and case size (`showWhen` watch), metal, ring size (`showWhen` ring), box & papers; junk words with the "armband" exception for Bracelet; Auctionet 31 or 13 by type; "Omega Seamaster 41 mm automatic full set" parses all three; "armband till Omega" is dropped; ≥ 8 fixtures; "Apple Watch" can be filed here with type Smartwatch.
-  - Verify: `npm test`; `npm run check:scrapers` with "Omega Seamaster" + Watches; in the dev app, ring size only shows when Ring is picked.
-  - Files: `lib/categories/index.ts`, `lib/categories/native.ts`, `lib/categories/categories.test.ts`
-  - Size: S · Depends on: Task 8
+  - Acceptance:
+    - Fields: type (watch, smartwatch, ring, necklace, bracelet, earrings, brooch), movement (automatic/"automat", manual/"handuppdragen", quartz/"kvarts"; `showWhen` watch), case size (range, 20–55 mm; `showWhen` watch), metal (gold 18k/750, 14k/585, 9k/375, silver 925/830, platinum, steel, gold-plated/doublé; read from words and stamps such as "18k", "18 karat", "750"), ring size (range, 14–23 mm; `showWhen` ring; "stl 17", "storlek 17,5"), box & papers toggle.
+    - **Decimals:** ring size needs 17.5. Number fields get `step` (0.5 for ring size), and the form accepts "17,5" and "17.5" (today `parseWhole` drops decimals).
+    - **Simplified:** the spec's "`*armband` unless the type is Bracelet" needs type-aware junk words, which the framework doesn't have. Instead the junk words are only "armband till", "rem till", "länk till", "länkar"; a plain "armband" is never junk.
+    - Native: Auctionet 31 for watch and smartwatch types, 13 for jewellery types, none for a mix. Sellpy per type: `{Kvinna,Man,Barn} > Accessoarer > Armbandsur` for watches, `… > Smycken` for jewellery, `Prylar > Hemelektronik > Mobil & Wearables` for smartwatches. No Blocket category (split over 0.71 and 0.76).
+    - Sites: Tradera, Auctionet, Bukowskis, Blocket, Sellpy, Vinted, Facebook Marketplace. Card fields: case size, metal, movement.
+    - Priority: after `phones`, so "Apple Watch" stays Phones (decision 5). Suggests "Omega Seamaster", "Rolex", "Seiko 5", "guldring", "halsband", "örhängen".
+    - ≥ 8 fixtures: "Omega Seamaster 41 mm automatic full set" → watch, 41, automatic, box & papers; "armband till Omega" is dropped.
+  - Verify: `npm test`; live `runSite` for "Omega Seamaster" + Watches; a 375 px screenshot (see B3) with Ring picked shows ring size and hides movement and case size.
+  - Files: `lib/categories/index.ts`, `lib/categories/types.ts`, `components/CategoryFields.tsx`, `lib/categories/categories.test.ts`
+  - Size: M · Depends on: Task 8
 
 - [ ] **Task 12: Glass, ceramics & tableware**
-  - Acceptance: piece type, quantity (incl. 6+), Second sort OK toggle (off hides "2:a sortering", "andra sortering", "sekunda"); junk words; Sellpy path from Task 3; no Auctionet/Blocket category (split categories). "Rörstrand Mon Amie 6 st tallrikar" → Plate, 6+; "Ostindia skål nagg" is dropped; ≥ 8 fixtures; suggests for "Rörstrand Ostindia", "Iittala Kastehelmi", "Gustavsberg Spisa Ribb".
-  - Verify: `npm test`; `npm run check:scrapers` with "Mon Amie" + Glass.
-  - Files: `lib/categories/index.ts`, `lib/categories/categories.test.ts`
+  - Acceptance:
+    - Fields: piece type (plate, deep plate, bowl, cup & saucer, mug, vase, drinking glass, dish & serving, jug & pot), quantity (single, pair, set of 4+, set of 6+; nouns tallrikar/assietter/koppar/skålar/glas/muggar/fat), Second sort OK (`toggle: 'allow'`, with a description; hides "2:a sortering", "andra sortering", "sekunda").
+    - Native: no Blocket or Auctionet category (glass and ceramics are split on both). Sellpy: `Prylar > Hushåll > Porslin`, `Prylar > Hushåll > Koppar & Glas`, `Prylar > Inredning > Vaser & Krukor`.
+    - Junk words (spec list): skadad*, nagg*, kantstött*, spricka, sprucken, limmad*, lagad*, krakelerad*, "bild på", affisch*.
+    - Hints: makers (Rörstrand, Gustavsberg, Iittala, Arabia, Orrefors, Kosta, Höganäs, Upsala-Ekeby, Figgjo, Porsgrund, Royal Copenhagen, Bing & Grøndahl), series (Ostindia, Mon Amie, Kastehelmi, Spisa Ribb, Blå Eld, Pomona, Bersa, Aino Aalto, Teema) and pieces (tallrik*, assiett*, skål*, kopp*, vas*). "Iittala lampa" stays Furniture: furniture comes first.
+    - Sites: Tradera, Auctionet, Blocket, Bukowskis, Facebook Marketplace, Sellpy, Vinted. Card fields: type, quantity.
+    - ≥ 8 fixtures: "Rörstrand Mon Amie 6 st tallrikar" → Plate, 6+; "Ostindia skål nagg" is dropped; "Mon Amie 2:a sortering" is hidden unless Second sort OK is on.
+  - Verify: `npm test`; live `runSite` for "Mon Amie" + Glass.
+  - Files: `lib/categories/index.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Task 8
 
-- [ ] **Checkpoint B3:** all five categories live-checked; `npm run build` green.
+- [ ] **Checkpoint B3:**
+  - All five categories live-checked on every site; `npm test`, lint, type check and `npm run build` green.
+  - A priority test: 20 item names across all seven categories each get the right suggestion (or none).
+  - 375 px and desktop screenshots via a temporary preview page and Chrome's DevTools Protocol (headless Chrome can't go below 500 px on its own): seven chips scroll in one row with no page overflow; each category's fields render.
+  - Review with you.
 
 ## Part B3: Wrap-up
 

@@ -3,6 +3,8 @@
 Spec: `SPEC-categories-phase-5.md` (approved 2026-10-20). Tasks: `tasks/todo.md`. Branch: `search-phase-5`.
 
 ## Overview
+_Updated 2026-10-21 after tasks 1–8: tasks 9–12 now carry the site ids, parsers and decisions learned so far (see `tasks/todo.md`)._
+
 Two parts. **Part A** removes the Brand field and merges existing brands into item names. It is small and ships on its own. **Part B** generalises the category framework (new field kinds, parsers, field visibility, more native site params). It then adds Phones & tablets, Computers, Furniture & design, Watches & jewellery, and Glass, ceramics & tableware, one category per task, each with its tests. Clothing and Shoes must behave exactly as before throughout.
 
 ## Site check (done while planning, 2026-10-20)
@@ -59,6 +61,10 @@ Tasks 9–12 are independent once Task 8 is in. They touch different parts of `l
 ## Risks and mitigations
 | Risk | Impact | Mitigation |
 |---|---|---|
+| Suggestion overlaps across seven categories ("Iittala lampa", "Apple Watch", "skrivbordslampa") | Med | A declared `CATEGORY_PRIORITY` (phones → computers → watches → furniture → glass → shoes → clothing) and a 20-name priority test at Checkpoint B3 |
+| RAM vs storage vs screen numbers in computer titles ("8/256", "MacBook Pro 13 M1") | Med | Storage only from its own size list; RAM from "RAM"/"minne" or a slash pair; screen size only with a unit |
+| Decimal values (ring size 17.5) can't be typed: the form reads whole numbers | Med | `step` on number fields; the form accepts "17,5" (Task 11) |
+| Type-aware junk words ("armband" is junk for a watch, not for a bracelet) | Low | Not built: only "armband till" and similar are junk (Task 11); revisit if bracelets show up as noise |
 | Widening the types breaks phase 4 behaviour | High | Task 4–6 rule: no edits to existing phase 4 tests; Checkpoint B1 compares listings for 3 saved Clothing/Shoes items before and after |
 | Number parsers misread titles ("iPhone 13" as a 13″ screen, "Lilla Åland 4 st" vs model numbers) | Med | Parsers only read numbers next to a unit or keyword; negative test cases for each |
 | Junk words drop good listings ("armband" in "klocka med armband") | Med | Junk words skip words in the search and type-aware lists; a fixture test for each known trap |
