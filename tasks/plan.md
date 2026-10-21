@@ -48,7 +48,7 @@ See `tasks/todo.md` for acceptance criteria, verification and files per task.
 - [x] Task 9: Computers
 - [x] Task 10: Furniture & design
 - [x] Task 11: Watches & jewellery
-- [ ] Task 12: Glass, ceramics & tableware
+- [x] Task 12: Glass, ceramics & tableware
 - [ ] Checkpoint B3: all five live-checked
 
 ### Part B3: Wrap-up

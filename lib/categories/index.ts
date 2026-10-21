@@ -206,6 +206,23 @@ const JEWELLERY_BRANDS = ['georg jensen', 'pandora', 'efva attling', 'sophie by 
 const ARMBANDSUR = ['Kvinna', 'Man', 'Barn'].map((t) => `${t} > Accessoarer > Armbandsur`)
 const SMYCKEN = ['Kvinna', 'Man', 'Barn'].map((t) => `${t} > Accessoarer > Smycken`)
 
+const PLATE = ['tallrik', 'tallrikar', '*tallrik', '*tallrikar', 'assiett*', 'plate', 'plates', '*plate']
+const DEEP_PLATE = ['djup tallrik*', 'djupa tallrik*', 'djuptallrik*', 'soppskål*', 'pastatallrik*']
+const BOWL = ['skål', 'skålar', 'skålen', '*skål', '*skålar', 'bowl*']
+const CUP = ['kopp', 'koppar', '*kopp', '*koppar', 'cup', 'cups', 'mokka*']
+const MUG = ['mugg', 'muggar', '*mugg', '*muggar', 'mug', 'mugs']
+const VASE = ['vas', 'vaser', 'vasen', '*vas', '*vaser', 'vase*']
+const DRINKING_GLASS = ['glas', 'dricksglas*', 'vinglas*', 'champagneglas*', 'snapsglas*', 'ölglas*', 'drinkglas*', 'remmare', 'pokal*', 'glass', 'glasses', 'tumbler*']
+const DISH = ['fat', '*fat', 'uppläggningsfat*', 'serveringsfat*', 'tårtfat*', 'karott*', 'dish', 'platter']
+const JUG = ['kanna', '*kanna', 'kannor', 'tillbringare', 'karaff*', 'gryta', '*gryta', 'jug', 'pitcher', 'teapot']
+const TABLEWARE_MAKERS = [
+  'rörstrand', 'gustavsberg', 'iittala', 'littala', 'arabia', 'orrefors', 'kosta', 'höganäs', 'upsala ekeby', 'ekeby', 'figgjo', 'porsgrund',
+  'royal copenhagen', 'bing grøndahl', 'bing grondahl', 'nuutajärvi', 'reijmyre',
+]
+const TABLEWARE_SERIES = [
+  'ostindia', 'ostindie', 'mon amie', 'kastehelmi', 'spisa ribb', 'blå eld', 'pomona', 'bersa', 'berså', 'aino aalto', 'teema', 'swedish grace',
+]
+
 /** Metals from words and hallmarks ("18k", "585", "sterling"); a hallmark that is really a price ("750 kr") doesn't count */
 const METALS: { id: string; label: string; words: string[]; stamps?: number[] }[] = [
   { id: 'gold18', label: '18k gold', words: ['18k', '18kt', '18 k', '18 kt', '18 karat*', '18 carat'], stamps: [750] },
@@ -586,6 +603,50 @@ export const CATEGORIES: Category[] = [
     sellpyPaths: [...ARMBANDSUR, ...SMYCKEN],
     cardFields: ['caseSize', 'metal', 'movement'],
   },
+  {
+    id: 'glass',
+    label: 'Glass, ceramics & tableware',
+    short: 'Glass & ceramics',
+    hints: [...TABLEWARE_MAKERS, ...TABLEWARE_SERIES, ...PLATE, ...BOWL, ...CUP, ...MUG, ...VASE, ...DISH.filter((w) => w !== 'fat'), 'porslin', 'servis', '*servis', 'keramik'],
+    fields: [
+      {
+        key: 'type',
+        label: 'Piece',
+        kind: 'options',
+        options: [
+          { id: 'plate', label: 'Plate', words: PLATE },
+          { id: 'deepPlate', label: 'Deep plate', words: DEEP_PLATE },
+          { id: 'bowl', label: 'Bowl', words: BOWL },
+          { id: 'cup', label: 'Cup & saucer', words: CUP },
+          { id: 'mug', label: 'Mug', words: MUG },
+          { id: 'vase', label: 'Vase', words: VASE },
+          { id: 'drinkingGlass', label: 'Drinking glass', words: DRINKING_GLASS },
+          { id: 'dish', label: 'Dish & serving', words: DISH },
+          { id: 'jug', label: 'Jug & pot', words: JUG },
+        ],
+      },
+      quantityField(['delar', 'tallrikar', 'djupa tallrikar', 'assietter', 'koppar', 'kaffekoppar', 'tekoppar', 'skålar', 'glas', 'vinglas', 'dricksglas', 'muggar', 'fat']),
+      {
+        key: 'secondSort',
+        label: 'Second sort OK',
+        kind: 'toggle',
+        toggle: 'allow',
+        description: 'Off: listings marked "2:a sortering" (factory seconds) are hidden',
+        parse: (title) => hasPattern(tokens(title), ['2 a sort*', '2a sort*', 'andra sort*', 'sekunda', 'second sort*', 'seconds']) || undefined,
+      },
+    ],
+    sites: ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'],
+    // Exact chip words: "naggfri" (chip-free) is a plus
+    negativeWords: [
+      'skadad*', 'nagg', 'naggad*', 'naggar', 'naggning*', 'kantstött*', 'kantstöt*', 'spricka', 'sprickor', 'sprucken', 'spruckna',
+      'limmad*', 'lagad*', 'krakelerad*', 'bild på', 'affisch*',
+      // Merchandise with a famous pattern; not plain "burk" ("kryddburk" can be porcelain)
+      'zoegas', 'zoégas', 'plåtburk*', 'kaffeburk*', 'paraply*', 'handduk*', '*handduk', 'grytlapp*', 'förkläde*', 'vaxduk*', 'servett*', 'tapet*',
+    ],
+    // Glass and ceramics are separate categories on Blocket and Auctionet, so neither gets one
+    sellpyPaths: ['Prylar > Hushåll > Porslin', 'Prylar > Hushåll > Koppar & Glas', 'Prylar > Inredning > Vaser & Krukor'],
+    cardFields: ['type', 'quantity'],
+  },
 ]
 
 export function getCategory(id: string | null | undefined): Category | undefined {
@@ -606,7 +667,7 @@ export function fieldLabel(key: string): string {
 }
 
 /** The order categories are suggested in: more specific first, so "vinterkängor" is Shoes, not Clothing */
-export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'computers', 'watches', 'furniture', 'shoes', 'clothing']
+export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'computers', 'watches', 'furniture', 'glass', 'shoes', 'clothing']
 
 /** The category an item name points to, or null ("Nike Air Max 90" → Shoes) */
 export function suggestCategory(name: string): CategoryId | null {

@@ -1,6 +1,6 @@
 // Types for categories, an item's filters and a listing's normalised details.
 
-export type CategoryId = 'clothing' | 'shoes' | 'phones' | 'computers' | 'furniture' | 'watches'
+export type CategoryId = 'clothing' | 'shoes' | 'phones' | 'computers' | 'furniture' | 'watches' | 'glass'
 
 export type Department = 'women' | 'men' | 'kids' | 'unisex'
 

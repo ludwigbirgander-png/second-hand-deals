@@ -132,7 +132,7 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
   - Files: `lib/categories/index.ts`, `lib/categories/types.ts`, `components/CategoryFields.tsx`, `lib/categories/categories.test.ts`
   - Size: M · Depends on: Task 8
 
-- [ ] **Task 12: Glass, ceramics & tableware**
+- [x] **Task 12: Glass, ceramics & tableware**
   - Acceptance:
     - Fields: piece type (plate, deep plate, bowl, cup & saucer, mug, vase, drinking glass, dish & serving, jug & pot), quantity (single, pair, set of 4+, set of 6+; nouns tallrikar/assietter/koppar/skålar/glas/muggar/fat), Second sort OK (`toggle: 'allow'`, with a description; hides "2:a sortering", "andra sortering", "sekunda").
     - Native: no Blocket or Auctionet category (glass and ceramics are split on both). Sellpy: `Prylar > Hushåll > Porslin`, `Prylar > Hushåll > Koppar & Glas`, `Prylar > Inredning > Vaser & Krukor`.

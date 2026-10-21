@@ -687,3 +687,47 @@ test('watches: native search and cards', () => {
   assert.deepEqual(attributeLabels(jewel('Omega 41 mm automatic stål').attributes, watches), ['41 mm', 'Steel', 'Automatic'])
   assert.deepEqual(describeFilters('watches', { type: ['ring'], ringSize: { from: 17, to: 17.5 } }), ['Watches & jewellery', 'Ring', 'Ring size 17–17.5 mm'])
 })
+
+// ─── Glass, ceramics & tableware ─────────────────────────────────────────────
+
+const glass = getCategory('glass')!
+const dish = (title: string) => ({ title, attributes: extractAttributes({ title }, glass) })
+
+test('glass: suggested from the name', () => {
+  for (const name of ['Rörstrand Ostindia', 'Iittala Kastehelmi', 'Gustavsberg Spisa Ribb', 'Mon Amie tallrik', 'Aalto vas', 'Orrefors vinglas', 'littala Teema'])
+    assert.equal(suggestCategory(name), 'glass', name)
+  assert.equal(suggestCategory('Iittala lampa'), 'furniture', 'a lamp is furniture, whoever made it')
+})
+
+test('glass: details read from titles', () => {
+  assert.deepEqual(dish('Rörstrand Mon Amie 6 st tallrikar').attributes, { type: ['plate'], quantity: ['set4', 'set6'] })
+  assert.deepEqual(dish('Sex djupa tallrikar Ostindia').attributes, { type: ['plate', 'deepPlate'], quantity: ['set4', 'set6'] })
+  assert.deepEqual(dish('Kastehelmi skål').attributes, { type: ['bowl'] })
+  assert.deepEqual(dish('Två kaffekoppar med fat, Pomona').attributes, { type: ['cup', 'dish'], quantity: ['pair'] })
+  assert.deepEqual(dish('Spisa Ribb tallrik 2:a sortering').attributes, { type: ['plate'], secondSort: true })
+  assert.deepEqual(dish('Mon Amie assiett, andra sortering').attributes.secondSort, true)
+  assert.deepEqual(dish('Kaffeservis, 20 delar, Mon Amie').attributes.quantity, ['set4', 'set6'])
+})
+
+test('glass: junk words; chip-free is a plus', () => {
+  for (const t of ['Zoegas Mon Amie plåtburk', 'Mon amie kaffeburk', 'Mon Amie Paraply', 'Mon Amie kökshandduk', 'Ostindia skål nagg', 'Mon Amie tallrik naggad', 'Vas med spricka', 'Lagad Ostindia kanna', 'Kantstött fat'])
+    assert.equal(hasNegativeWord(t, 'Ostindia', glass), true, t)
+  for (const t of ['Ostindia tallrik naggfri', 'Mon Amie, inga skador', 'Ostindia skål 21 cm', 'Mon Amie kryddburk porslin'])
+    assert.equal(hasNegativeWord(t, 'Ostindia', glass), false, t)
+})
+
+test('glass: second sort is hidden unless allowed', () => {
+  assert.equal(checkListing(dish('Spisa Ribb tallrik 2:a sortering'), {}, glass).keep, false)
+  assert.equal(checkListing(dish('Spisa Ribb tallrik 2:a sortering'), { secondSort: true }, glass).keep, true)
+  assert.deepEqual(checkListing(dish('Spisa Ribb tallrik'), {}, glass), { keep: true, unstated: [] })
+  assert.deepEqual(describeFilters('glass', { secondSort: true }), ['Glass, ceramics & tableware', 'Second sort OK'])
+})
+
+test('glass: sites and native search', () => {
+  assert.deepEqual(sitesForCategory(['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'], 'glass'),
+    ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'])
+  assert.deepEqual(blocketParams({ category: glass }), [], 'glass and ceramics are split on Blocket')
+  assert.equal(auctionetCategory({ category: glass, filters: { type: ['plate'] } }), undefined, 'and on Auctionet')
+  assert.match(sellpyFilters({ category: glass, filters: {} })!, /Porslin.*Koppar & Glas.*Vaser & Krukor/)
+  assert.deepEqual(attributeLabels(dish('Rörstrand Mon Amie 6 st tallrikar').attributes, glass), ['Plate', 'Set of 6 or more'])
+})
