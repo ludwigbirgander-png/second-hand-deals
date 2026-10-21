@@ -1,6 +1,6 @@
 // Types for categories, an item's filters and a listing's normalised details.
 
-export type CategoryId = 'clothing' | 'shoes' | 'phones' | 'computers' | 'furniture'
+export type CategoryId = 'clothing' | 'shoes' | 'phones' | 'computers' | 'furniture' | 'watches'
 
 export type Department = 'women' | 'men' | 'kids' | 'unisex'
 
@@ -111,6 +111,8 @@ export interface CategoryField {
   unit?: string
   /** min and range: the lowest and highest number that can be picked */
   bounds?: [number, number]
+  /** min and range: the smallest step (0.5 for ring sizes); whole numbers when not set */
+  step?: number
   /**
    * toggle: 'require' (on: the listing must say so, e.g. Unlocked) or
    * 'allow' (off, the default: listings that say so are hidden, e.g. second sort)

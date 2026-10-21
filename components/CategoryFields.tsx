@@ -145,10 +145,38 @@ function OptionsField({ field, value, onChange }: {
   )
 }
 
-/** Whole numbers only; empty means "not set" */
-const parseWhole = (text: string) => {
-  const digits = text.replace(/\D/g, '')
-  return digits ? Number(digits) : undefined
+/** Digits, plus one decimal comma or point when the field allows halves ("17,5"); empty means "not set" */
+function cleanNumber(text: string, decimals: boolean): string {
+  if (!decimals) return text.replace(/\D/g, '')
+  const [whole, ...rest] = text.replace(/[^\d.,]/g, '').split(/[.,]/)
+  return rest.length ? `${whole},${rest.join('').slice(0, 1)}` : whole
+}
+const toNumber = (text: string) => (text && text !== ',' ? Number(text.replace(',', '.')) : undefined)
+
+/**
+ * A number box that keeps what's typed ("17," on the way to "17,5") and reports the number.
+ * Text that no longer matches the value (the filters were reset) is replaced.
+ */
+function NumberInput({ value, step, onChange, ...rest }: {
+  value: number | undefined
+  step?: number
+  onChange: (n: number | undefined) => void
+} & Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange' | 'step'>) {
+  const decimals = !!step && step < 1
+  const [text, setText] = useState(value == null ? '' : String(value).replace('.', ','))
+  const shown = toNumber(text) === value ? text : value == null ? '' : String(value).replace('.', ',')
+  return (
+    <Input
+      {...rest}
+      inputMode={decimals ? 'decimal' : 'numeric'}
+      value={shown}
+      onChange={(e) => {
+        const next = cleanNumber(e.target.value, decimals)
+        setText(next)
+        onChange(toNumber(next))
+      }}
+    />
+  )
 }
 
 /** "50–100 %", or an error when outside the field's bounds (it wouldn't be saved) */
@@ -164,16 +192,16 @@ function MinField({ field, value, onChange }: {
   onChange: (v: number | undefined) => void
 }) {
   return (
-    <Input
+    <NumberInput
       label={`${field.label}, at least`}
       inputSize="sm"
-      inputMode="numeric"
       placeholder="Any"
       suffix={field.unit}
-      value={value ?? ''}
+      step={field.step}
+      value={value}
       error={boundsError(field, value)}
       wrapperClassName="max-w-[180px]"
-      onChange={(e) => onChange(parseWhole(e.target.value))}
+      onChange={onChange}
     />
   )
 }
@@ -191,11 +219,11 @@ function RangeField({ field, value, onChange }: {
     <div className="flex flex-col gap-1.5 max-w-[320px]">
       <span className="text-[13px] font-medium leading-[1.3] text-muted">{field.label}</span>
       <div className="flex items-start gap-2">
-        <Input aria-label={`${field.label} from`} inputSize="sm" inputMode="numeric" placeholder="Any" suffix={field.unit} value={value?.from ?? ''}
-          error={boundsError(field, value?.from)} wrapperClassName="flex-1" onChange={(e) => update({ from: parseWhole(e.target.value) })} />
+        <NumberInput aria-label={`${field.label} from`} inputSize="sm" placeholder="Any" suffix={field.unit} step={field.step} value={value?.from}
+          error={boundsError(field, value?.from)} wrapperClassName="flex-1" onChange={(from) => update({ from })} />
         <span className="leading-9 text-faint">–</span>
-        <Input aria-label={`${field.label} to`} inputSize="sm" inputMode="numeric" placeholder="Any" suffix={field.unit} value={value?.to ?? ''}
-          error={boundsError(field, value?.to)} wrapperClassName="flex-1" onChange={(e) => update({ to: parseWhole(e.target.value) })} />
+        <NumberInput aria-label={`${field.label} to`} inputSize="sm" placeholder="Any" suffix={field.unit} step={field.step} value={value?.to}
+          error={boundsError(field, value?.to)} wrapperClassName="flex-1" onChange={(to) => update({ to })} />
       </div>
     </div>
   )

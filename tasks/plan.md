@@ -47,7 +47,7 @@ See `tasks/todo.md` for acceptance criteria, verification and files per task.
 - [x] Checkpoint B2: add a phone item end to end in the dev app
 - [x] Task 9: Computers
 - [x] Task 10: Furniture & design
-- [ ] Task 11: Watches & jewellery
+- [x] Task 11: Watches & jewellery
 - [ ] Task 12: Glass, ceramics & tableware
 - [ ] Checkpoint B3: all five live-checked
 

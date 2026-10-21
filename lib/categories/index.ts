@@ -190,6 +190,47 @@ const RUG = ['matta', '*matta', 'mattor', '*mattor', 'rug', 'carpet', 'rya*', 'r
 const MIRROR = ['spegel', '*spegel', 'speglar', 'mirror', '*mirror']
 const MOBLER = 'Prylar > Inredning > Möbler'
 
+const WATCH = ['klocka', 'klockan', '*klocka', 'klockor', 'armbandsur*', '*armbandsur', 'ur', 'fickur*', 'watch', 'chronograph', 'kronograf*', 'dykarklocka*']
+// Not "*ring": "gravering" and "signering" end in "ring"
+const RING = ['ring', 'ringar', 'ringen', 'guldring*', 'silverring*', 'förlovningsring*', 'vigselring*', 'diamantring*', 'solitär*', 'signetring*', 'cocktailring*']
+// Not "*halsband": "hundhalsband" is a dog collar
+const NECKLACE = ['halsband', 'guldhalsband*', 'silverhalsband*', 'pärlhalsband*', 'collier*', 'hänge', 'hängsmycke*', 'necklace', 'kedja', 'guldkedja*', 'silverkedja*']
+const BRACELET = ['armband', '*armband', 'armring*', 'bracelet']
+const EARRINGS = ['örhänge*', '*örhängen', 'örstick*', 'earring*', 'creoler']
+const BROOCH = ['brosch*', '*brosch', 'brooch']
+const WATCH_BRANDS = [
+  'rolex', 'omega', 'seiko', 'tissot', 'longines', 'tag heuer', 'cartier', 'breitling', 'iwc', 'tudor', 'casio', 'g shock', 'citizen',
+  'hamilton', 'oris', 'sinn', 'swatch', 'certina', 'zenith', 'patek', 'audemars', 'junghans', 'skagen', 'daniel wellington',
+]
+const JEWELLERY_BRANDS = ['georg jensen', 'pandora', 'efva attling', 'sophie by sophie', 'david andersen', 'kalevala', 'lapponia', 'thomas sabo']
+const ARMBANDSUR = ['Kvinna', 'Man', 'Barn'].map((t) => `${t} > Accessoarer > Armbandsur`)
+const SMYCKEN = ['Kvinna', 'Man', 'Barn'].map((t) => `${t} > Accessoarer > Smycken`)
+
+/** Metals from words and hallmarks ("18k", "585", "sterling"); a hallmark that is really a price ("750 kr") doesn't count */
+const METALS: { id: string; label: string; words: string[]; stamps?: number[] }[] = [
+  { id: 'gold18', label: '18k gold', words: ['18k', '18kt', '18 k', '18 kt', '18 karat*', '18 carat'], stamps: [750] },
+  { id: 'gold14', label: '14k gold', words: ['14k', '14kt', '14 k', '14 kt', '14 karat*', '14 carat'], stamps: [585] },
+  { id: 'gold9', label: '9k gold', words: ['9k', '9kt', '9 k', '9 kt', '9 karat*', '9 carat'], stamps: [375] },
+  { id: 'silver', label: 'Silver', words: ['silver', 'sterling*', 'sterlingsilver', 'silverring*', 'silverhalsband*', 'silverarmband*', 'silverkedja*'], stamps: [925, 830] },
+  { id: 'platinum', label: 'Platinum', words: ['platina', 'platinum'] },
+  { id: 'steel', label: 'Steel', words: ['stål', 'rostfri*', 'rostfritt', 'stainless', 'steel'] },
+  { id: 'plated', label: 'Gold-plated', words: ['förgylld*', 'guldpläterad*', 'gold plated', 'doublé', 'double', 'pläterad*', 'gold filled', 'guld på stål', 'gold on steel'] },
+]
+
+function metalFromTitle(title: string): string[] | undefined {
+  const words = tokens(title)
+  const stamps = bareNumbers(title, [750, 585, 375, 925, 830])
+  const ids = METALS.filter((m) => hasPattern(words, m.words) || m.stamps?.some((s) => stamps.includes(s))).map((m) => m.id)
+  return ids.length ? ids : undefined
+}
+
+/** Ring size after a keyword ("stl 17", "storlek 17,5", "ringstorlek: 18") */
+function ringSizeFromTitle(title: string): number | undefined {
+  const m = title.toLowerCase().match(/(?:stl|strl|storlek|size|ringstorlek|innerdiameter)\.?\s*:?\s*(\d{2}(?:[.,]\d)?)/)
+  const n = m ? Number(m[1].replace(',', '.')) : NaN
+  return n >= 14 && n <= 23 ? n : undefined
+}
+
 // ─── Categories ──────────────────────────────────────────────────────────────
 
 const MARKETPLACES = ['Sellpy', 'Vinted', 'Tradera', 'Blocket']
@@ -467,6 +508,84 @@ export const CATEGORIES: Category[] = [
     auctionet: 16,
     cardFields: ['quantity', 'decade', 'material'],
   },
+  {
+    id: 'watches',
+    label: 'Watches & jewellery',
+    hints: [...WATCH, ...RING, ...NECKLACE, ...BRACELET, ...EARRINGS, ...BROOCH, ...WATCH_BRANDS, ...JEWELLERY_BRANDS, 'smycke*', '*smycke', 'smycken'],
+    fields: [
+      {
+        key: 'type',
+        label: 'Type',
+        kind: 'options',
+        options: [
+          // A watch brand alone says watch ("Omega Seamaster 41 mm")
+          { id: 'watch', label: 'Watch', words: [...WATCH, ...WATCH_BRANDS], auctionet: 31, sellpyPaths: ARMBANDSUR },
+          { id: 'smartwatch', label: 'Smartwatch', words: SMARTWATCH_WORDS, auctionet: 31, sellpyPaths: ['Prylar > Hemelektronik > Mobil & Wearables'] },
+          { id: 'ring', label: 'Ring', words: RING, auctionet: 13, sellpyPaths: SMYCKEN },
+          { id: 'necklace', label: 'Necklace', words: NECKLACE, auctionet: 13, sellpyPaths: SMYCKEN },
+          { id: 'bracelet', label: 'Bracelet', words: BRACELET, auctionet: 13, sellpyPaths: SMYCKEN },
+          { id: 'earrings', label: 'Earrings', words: EARRINGS, auctionet: 13, sellpyPaths: SMYCKEN },
+          { id: 'brooch', label: 'Brooch', words: BROOCH, auctionet: 13, sellpyPaths: SMYCKEN },
+        ],
+      },
+      {
+        key: 'movement',
+        label: 'Movement',
+        kind: 'options',
+        showWhen: { type: ['watch'] },
+        options: [
+          { id: 'automatic', label: 'Automatic', words: ['automatic', 'automat*', 'automatisk*', 'självdragande', 'självuppdragande'] },
+          { id: 'manual', label: 'Manual winding', words: ['handuppdragen', 'handuppdragning', 'manuell*', 'manual', 'hand wound', 'handwound', 'handwinding', 'hand winding'] },
+          { id: 'quartz', label: 'Quartz', words: ['quartz', 'kvarts*', 'batteridriven'] },
+        ],
+      },
+      {
+        key: 'caseSize',
+        label: 'Case size',
+        short: 'Case',
+        kind: 'range',
+        unit: 'mm',
+        bounds: [20, 55],
+        showWhen: { type: ['watch'] },
+        parse: (title) => numbersWithUnit(title, ['mm']).find((n) => n >= 20 && n <= 55),
+      },
+      {
+        key: 'metal',
+        label: 'Metal',
+        kind: 'options',
+        options: METALS.map(({ id, label }) => ({ id, label, words: [] })),
+        parse: metalFromTitle,
+      },
+      {
+        key: 'ringSize',
+        label: 'Ring size',
+        kind: 'range',
+        unit: 'mm',
+        bounds: [14, 23],
+        step: 0.5,
+        showWhen: { type: ['ring'] },
+        parse: ringSizeFromTitle,
+      },
+      {
+        key: 'boxPapers',
+        label: 'Box & papers',
+        kind: 'toggle',
+        toggle: 'require',
+        parse: (title) => hasPattern(tokens(title), [
+          'box och papper*', 'box papper*', 'box and papers', 'box papers', 'full set', 'fullset', 'fullt set', 'kvitto och box', 'box och kvitto', 'låda och papper*',
+        ]) || undefined,
+      },
+    ],
+    sites: ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'],
+    // Decision 7: "armband till", not "armband", so bracelets stay. Not "länkar" or "klockask" alone:
+    // "med extra länkar" and "med klockask" are a plus
+    negativeWords: [
+      'armband till', 'rem till', 'länk till', 'länkar till', 'endast box', 'endast låda', 'endast klockask*', 'klockask till', 'urverk till',
+      'replika*', 'replica', 'kopia', 'fake', 'inspired', 'reservdel*',
+    ],
+    sellpyPaths: [...ARMBANDSUR, ...SMYCKEN],
+    cardFields: ['caseSize', 'metal', 'movement'],
+  },
 ]
 
 export function getCategory(id: string | null | undefined): Category | undefined {
@@ -487,7 +606,7 @@ export function fieldLabel(key: string): string {
 }
 
 /** The order categories are suggested in: more specific first, so "vinterkängor" is Shoes, not Clothing */
-export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'computers', 'furniture', 'shoes', 'clothing']
+export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'computers', 'watches', 'furniture', 'shoes', 'clothing']
 
 /** The category an item name points to, or null ("Nike Air Max 90" → Shoes) */
 export function suggestCategory(name: string): CategoryId | null {
@@ -546,7 +665,9 @@ function inBounds(v: unknown, field: CategoryField): number | undefined {
   const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v
   if (typeof n !== 'number' || !Number.isFinite(n)) return undefined
   const [lo, hi] = field.bounds ?? [-Infinity, Infinity]
-  return n >= lo && n <= hi ? n : undefined
+  if (n < lo || n > hi) return undefined
+  const step = field.step ?? 1
+  return Math.round(n / step) * step
 }
 
 function rangeFilter(v: unknown, field: CategoryField): NumberRange | undefined {

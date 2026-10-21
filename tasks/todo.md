@@ -119,7 +119,7 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
   - Files: `lib/categories/index.ts`, `lib/categories/native.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Task 8
 
-- [ ] **Task 11: Watches & jewellery**
+- [x] **Task 11: Watches & jewellery**
   - Acceptance:
     - Fields: type (watch, smartwatch, ring, necklace, bracelet, earrings, brooch), movement (automatic/"automat", manual/"handuppdragen", quartz/"kvarts"; `showWhen` watch), case size (range, 20–55 mm; `showWhen` watch), metal (gold 18k/750, 14k/585, 9k/375, silver 925/830, platinum, steel, gold-plated/doublé; read from words and stamps such as "18k", "18 karat", "750"), ring size (range, 14–23 mm; `showWhen` ring; "stl 17", "storlek 17,5"), box & papers toggle.
     - **Decimals:** ring size needs 17.5. Number fields get `step` (0.5 for ring size), and the form accepts "17,5" and "17.5" (today `parseWhole` drops decimals).

@@ -632,3 +632,58 @@ test('Sellpy: the type from a hit\'s category path, only when one type owns it',
   assert.equal(sellpyAttributes({}, 'furniture', 'Prylar > Inredning > Möbler', undefined).type, undefined, 'chairs, tables, sofas… share Möbler')
   assert.deepEqual(sellpyAttributes({}, 'phones', 'Prylar > Hemelektronik > Surf- och Läsplattor', undefined).type, ['tablet'])
 })
+
+// ─── Watches & jewellery ─────────────────────────────────────────────────────
+
+const watches = getCategory('watches')!
+const jewel = (title: string) => ({ title, attributes: extractAttributes({ title }, watches) })
+
+test('watches: suggested from the name; Apple Watch stays Phones', () => {
+  for (const name of ['Omega Seamaster', 'Rolex Submariner', 'Seiko 5', 'guldring', 'halsband', 'örhängen', 'Georg Jensen armband', 'fickur'])
+    assert.equal(suggestCategory(name), 'watches', name)
+  assert.equal(suggestCategory('Apple Watch Series 8'), 'phones')
+  assert.equal(suggestCategory('hundhalsband'), null, 'a dog collar')
+})
+
+test('watches: details read from titles', () => {
+  assert.deepEqual(jewel('Omega Seamaster 41 mm automatic full set').attributes,
+    { type: ['watch'], movement: ['automatic'], caseSize: 41, boxPapers: true })
+  assert.deepEqual(jewel('Seiko kvarts 38mm stål').attributes, { type: ['watch'], movement: ['quartz'], caseSize: 38, metal: ['steel'] })
+  assert.deepEqual(jewel('Guldring 18k storlek 17,5').attributes, { type: ['ring'], metal: ['gold18'], ringSize: 17.5 })
+  assert.deepEqual(jewel('Ring 585 guld stl 18').attributes, { type: ['ring'], metal: ['gold14'], ringSize: 18 })
+  assert.deepEqual(jewel('Halsband sterling silver 925').attributes, { type: ['necklace'], metal: ['silver'] })
+  assert.equal(jewel('Silverfärgat armband 750 kr').attributes.metal, undefined, 'silver-coloured, and 750 is a price')
+  assert.equal(jewel('Klocka med gravering').attributes.type?.includes('ring'), false, '"gravering" is not a ring')
+  assert.deepEqual(jewel('Omega Seamaster 600 handwinding').attributes.movement, ['manual'])
+  assert.deepEqual(jewel('OMEGA. ARMBANDSUR. GULD PÅ STÅL. ÅR 1969').attributes.metal, ['steel', 'plated'])
+})
+
+test('watches: junk words (decision 7)', () => {
+  for (const t of ['Armband till Omega Seamaster', 'Rem till Rolex', 'Länkar till Omega', 'Endast klockask Rolex', 'Omega replika', 'Urverk till Omega'])
+    assert.equal(hasNegativeWord(t, 'Omega', watches), true, t)
+  for (const t of ['Omega Seamaster med extra länkar', 'Rolex med klockask och papper', 'Georg Jensen armband silver'])
+    assert.equal(hasNegativeWord(t, 'Omega', watches), false, t)
+})
+
+test('watches: fields follow the type', () => {
+  const keys = (f: ItemFilters) => visibleFields(watches, f).map((x) => x.key)
+  assert.ok(keys({ type: ['watch'] }).includes('movement') && keys({ type: ['watch'] }).includes('caseSize'))
+  assert.ok(!keys({ type: ['watch'] }).includes('ringSize'))
+  assert.ok(keys({ type: ['ring'] }).includes('ringSize'))
+  assert.ok(!keys({ type: ['ring'] }).includes('movement') && !keys({ type: ['ring'] }).includes('caseSize'))
+  // Half sizes are kept, other decimals rounded to the step
+  assert.deepEqual(sanitizeFilters('watches', { type: ['ring'], ringSize: { from: 17.5, to: 18.3 } }).filters, { type: ['ring'], ringSize: { from: 17.5, to: 18.5 } })
+})
+
+test('watches: native search and cards', () => {
+  assert.equal(auctionetCategory({ category: watches, filters: { type: ['watch'] } }), 31)
+  assert.equal(auctionetCategory({ category: watches, filters: { type: ['ring', 'necklace'] } }), 13)
+  assert.equal(auctionetCategory({ category: watches, filters: { type: ['watch', 'ring'] } }), undefined)
+  assert.equal(auctionetCategory({ category: watches, filters: {} }), undefined)
+  assert.match(sellpyFilters({ category: watches, filters: { type: ['watch'] } })!, /Man > Accessoarer > Armbandsur/)
+  assert.deepEqual(blocketParams({ category: watches }), [])
+  assert.deepEqual(sitesForCategory(['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'], 'watches'),
+    ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'])
+  assert.deepEqual(attributeLabels(jewel('Omega 41 mm automatic stål').attributes, watches), ['41 mm', 'Steel', 'Automatic'])
+  assert.deepEqual(describeFilters('watches', { type: ['ring'], ringSize: { from: 17, to: 17.5 } }), ['Watches & jewellery', 'Ring', 'Ring size 17–17.5 mm'])
+})
