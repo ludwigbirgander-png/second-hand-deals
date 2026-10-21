@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parseAuctionet } from './auctionet'
 import { parseBukowskis } from './bukowskis'
 import { parseTraderaApi, parseTraderaHtml } from './tradera'
+import { parseVinted } from './vinted'
 import { isRelevant } from './index'
 
 // Saved responses (see __fixtures__). Run from the repo root: npm test
@@ -99,4 +100,20 @@ test('isRelevant matches auction-house titles', () => {
   assert.ok(isRelevant('Josef Frank, spegel, Firma Svenskt Tenn', 'josef frank svenskt tenn'))
   assert.ok(isRelevant("Levi's 501 jeans", 'levis 501'))
   assert.ok(!isRelevant('Bruno Mathsson, fåtölj "Eva"', 'Eames'))
+})
+
+test('Vinted: listing links are full vinted.se links, without tracking', () => {
+  // A catalog card as Vinted renders it (2026-10-21): the overlay link is relative
+  const card = (id: string, href: string) => `
+    <div>
+      <a data-testid="product-item-id-${id}--overlay-link" href="${href}" title="Omega Seamaster, Varumärke: Omega, Skick: Mycket bra, 4 500,00 kr, 4 700,00 kr"></a>
+      <img data-testid="product-item-id-${id}--image--img" src="https://images.vinted.net/${id}.jpg">
+      <p data-testid="product-item-id-${id}--price-text">4 500,00 kr</p>
+    </div>`
+  const listings = parseVinted(card('10408298470', '/items/10408298470-vintage-omega-seamaster?referrer=catalog') +
+    card('77', 'https://www.vinted.se/items/77-omega?referrer=catalog'))
+  assert.deepEqual(listings.map((l) => l.url), [
+    'https://www.vinted.se/items/10408298470-vintage-omega-seamaster',
+    'https://www.vinted.se/items/77-omega',
+  ])
 })

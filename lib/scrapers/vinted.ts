@@ -35,6 +35,17 @@ export function parseVintedCardTitle(full: string): { title: string; brand: stri
   return { title, brand: labelled('Varumärke'), condition: labelled('Skick'), size: size === 'Annat' ? null : size }
 }
 
+/**
+ * A full listing link. Vinted's cards link relatively ("/items/123-omega?referrer=catalog"),
+ * which on Kompi would open Kompi's own /items page. The tracking query is dropped so the
+ * same listing always has the same link (listings are unique per item and link).
+ */
+export function vintedUrl(href: string | undefined): string {
+  if (!href) return ''
+  const url = new URL(href, 'https://www.vinted.se')
+  return `${url.origin}${url.pathname}`
+}
+
 export function parseVinted(html: string): ScrapedListing[] {
   const $ = cheerio.load(html)
   const listings: ScrapedListing[] = []
@@ -48,7 +59,7 @@ export function parseVinted(html: string): ScrapedListing[] {
 
     const priceText = $(el).text().trim()
     const price = parsePrice(priceText)
-    const url = $(`[data-testid="product-item-id-${itemId}--overlay-link"]`).attr('href') || ''
+    const url = vintedUrl($(`[data-testid="product-item-id-${itemId}--overlay-link"]`).attr('href'))
 
     const fullTitle = $(`[data-testid="product-item-id-${itemId}--overlay-link"]`).attr('title') || ''
     const { title, condition, size } = parseVintedCardTitle(fullTitle)
