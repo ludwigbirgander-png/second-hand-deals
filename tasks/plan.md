@@ -49,6 +49,7 @@ See `tasks/todo.md` for acceptance criteria, verification and files per task.
 - [x] Task 10: Furniture & design
 - [x] Task 11: Watches & jewellery
 - [x] Task 12: Glass, ceramics & tableware
+- [x] Task 12b: "Did you mean …?" spelling hint
 - [ ] Checkpoint B3: all five live-checked
 
 ### Part B3: Wrap-up

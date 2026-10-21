@@ -4,6 +4,7 @@ import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, CATE
 import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes, attributeLabels } from './attributes'
 import { checkListing, hasNegativeWord } from './filter'
 import { decades, numbersWithUnit, percentNear, quantity, slashPair } from './parse'
+import { spellingHint } from './spelling'
 import { sellpyFilters, sellpyAttributes, vintedParams, blocketParams, siteExcluded, auctionetCategory } from './native'
 import { parseVintedCardTitle } from '../scrapers/vinted'
 import type { Category, ItemFilters } from './types'
@@ -747,4 +748,23 @@ test('suggestions across all seven categories', () => {
   ]
   for (const [name, id] of expected) assert.equal(suggestCategory(name), id, name)
   assert.deepEqual([...CATEGORY_PRIORITY].sort(), CATEGORIES.map((c) => c.id).sort(), 'every category has a place in the order')
+})
+
+// ─── Spelling hint ───────────────────────────────────────────────────────────
+
+test('spelling: one letter off a known word', () => {
+  assert.deepEqual(spellingHint('McBook M2'), { word: 'McBook', suggestion: 'Macbook', name: 'Macbook M2' })
+  assert.deepEqual(spellingHint('Rörstand Mon Amie')?.name, 'Rörstrand Mon Amie')
+  assert.deepEqual(spellingHint('iitala kastehelmi')?.name, 'iittala kastehelmi', 'lowercase stays lowercase')
+  assert.deepEqual(spellingHint('Iphoen 14')?.name, 'Iphone 14', 'two letters swapped')
+  assert.deepEqual(spellingHint('tallirk Mon Amie')?.name, 'tallrik Mon Amie')
+  assert.deepEqual(spellingHint('Gustavberg')?.name, 'Gustavsberg')
+  assert.deepEqual(spellingHint('fåtöl')?.name, 'fåtölj', 'a cut-off word')
+  assert.equal(spellingHint('Omega Seamaster, Omgae'), null, 'too far off; no guess')
+})
+
+test('spelling: no hint for known words, longer forms or unknown names', () => {
+  for (const name of ['MacBook M2', 'Lilla Åland stol', 'lampan', 'vinterjacka', 'Fjällräven Kånken', 'Omega Seamaster', 'iPhone 13 128GB', 'Rörstrand Ostindia', 'Eames chair', 'stolar',
+    'Bruno Mathsson fåtölj', 'Nintendo Switch'])
+    assert.equal(spellingHint(name), null, name)
 })

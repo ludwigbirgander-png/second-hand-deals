@@ -10,6 +10,7 @@ import { Chip } from './ui/Chip'
 import { FieldLabel, Input, PriceRange, Toggle, parsePrice, priceRangeError } from './ui/Form'
 import { CategoryFields } from './CategoryFields'
 import { nameWithBrand } from '@/lib/itemName'
+import { spellingHint } from '@/lib/categories/spelling'
 import { suggestCategory, type CategoryId, type ItemFilters } from '@/lib/categories'
 
 export interface ItemFormValues {
@@ -235,6 +236,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
         </div>
         <div className="flex-1 overflow-y-auto flex flex-col gap-4 p-4">
           <Input aria-label="Item name" icon="search" placeholder="Add an item" autoFocus={!edit} value={name} onChange={(e) => setName(e.target.value)} />
+          <SpellingHintLine name={name} onFix={setName} className="-mt-2" />
           {fields}
           {error && <p role="alert" className="m-0 text-[13px] text-state-danger">{error}</p>}
           {edit && <div className="mt-auto pt-4 border-t border-dashed border-line-dashed flex justify-center">{deleteButton}</div>}
@@ -281,6 +283,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
             />
             <Button type="submit" size="lg" disabled={!canSubmit}>{submitLabel}</Button>
           </div>
+          <SpellingHintLine name={name} onFix={setName} className="px-6 pb-3 -mt-1" />
           {error && <p role="alert" className="m-0 px-6 pb-4 -mt-1 text-[13px] text-state-danger">{error}</p>}
         </div>
       </form>
@@ -320,8 +323,27 @@ export function AddDock({ onSubmit }: { onSubmit: (name: string) => Promise<stri
           />
           <Button type="submit" size="lg" disabled={!name.trim() || saving}>{saving ? 'Adding…' : 'Add to watchlist'}</Button>
         </div>
+        <SpellingHintLine name={name} onFix={setName} className="px-5 pb-3 -mt-1" />
         {error && <p role="alert" className="m-0 px-5 pb-3 text-[13px] text-state-danger">{error}</p>}
       </div>
     </form>
+  )
+}
+
+/**
+ * "Did you mean Macbook M2?" when a word in the name looks like a typo of one Kompi knows.
+ * A misspelt name finds almost nothing, because the sites search for the exact words.
+ */
+function SpellingHintLine({ name, onFix, className }: { name: string; onFix: (name: string) => void; className?: string }) {
+  const hint = spellingHint(name)
+  if (!hint) return null
+  return (
+    <p className={`m-0 text-[13px] text-muted ${className ?? ''}`} aria-live="polite">
+      Did you mean{' '}
+      <button type="button" onClick={() => onFix(hint.name)} className="font-semibold text-ink underline underline-offset-2 cursor-pointer">
+        {hint.name}
+      </button>
+      ?
+    </p>
   )
 }

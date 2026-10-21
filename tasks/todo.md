@@ -150,6 +150,15 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
   - 375 px and desktop screenshots via a temporary preview page and Chrome's DevTools Protocol (headless Chrome can't go below 500 px on its own): seven chips scroll in one row with no page overflow; each category's fields render.
   - Review with you.
 
+- [x] **Task 12b: "Did you mean …?" spelling hint** (added 2026-10-21, after "McBook M2" found only possible matches)
+  - Acceptance:
+    - `spellingHint(name)` suggests a fix when a word of 5+ letters isn't a word Kompi knows but is one letter off one (category words, type words, brands, makers): "McBook M2" → "Macbook M2", "Rörstand" → "Rörstrand", "Iitala" → "Iittala".
+    - No hint for known words, their longer forms or compounds ("lampan", "vinterjacka", "taklampa"), names Kompi doesn't know at all ("Fjällräven Kånken"), or words with digits.
+    - The add/edit form (mobile, desktop, and the empty-watchlist dock) shows "Did you mean **Macbook M2**?" under the name; tapping it fixes the name.
+  - Verify: `npm test`; screenshot of the hint at 375 px and desktop.
+  - Files: `lib/categories/spelling.ts` (new), `lib/search/match.ts` (export `editDistance`), `components/AddPanel.tsx`, `lib/categories/categories.test.ts`
+  - Size: S · Depends on: Task 12
+
 ## Part B3: Wrap-up
 
 - [ ] **Task 13: Precision check and "Phase 5 as built"**
