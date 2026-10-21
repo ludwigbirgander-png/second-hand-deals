@@ -12,46 +12,68 @@ where site = 'Vinted'
   and url <> 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1);
 
 -- 2. The fix. Commented out so running this file only shows the dry run above.
---    Check that list, then select the lines from "begin;" to "commit;" and run them.
+--    Check that list, then select the lines from the "begin" line to the "commit" line and run them.
+--    No temporary table: Supabase's "enable RLS" option appends an alter table for one,
+--    which failed after the commit had dropped it.
+--    Copies of the same listing (same item and link) are merged into one row: the one that
+--    already has the full link, else the oldest. Every step ranks the copies the same way.
 /*
 begin;
 
--- One row per item and new link: prefer a row that already has it, else the oldest
-create temp table vinted_links on commit drop as
-select id, item_id,
-  'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1) as new_url,
-  starred, removed_at, removed_word,
-  row_number() over (
-    partition by item_id, 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)
-    order by (url = 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)) desc, found_at
-  ) as keep_rank
-from listings
-where site = 'Vinted';
-
--- The kept row gets a star if any copy had one, and a removal if any copy was removed
-update listings l
-set starred = g.starred,
-    removed_at = coalesce(l.removed_at, g.removed_at),
-    removed_word = coalesce(l.removed_word, g.removed_word)
-from vinted_links k
-join (
+-- 1. The kept row gets a star if any copy had one, and a removal if any copy was removed
+with v as (
+  select id, item_id, starred, removed_at, removed_word,
+    'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1) as new_url,
+    row_number() over (
+      partition by item_id, 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)
+      order by (url = 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)) desc, found_at, id
+    ) as keep_rank
+  from listings
+  where site = 'Vinted'
+), merged as (
   select item_id, new_url, bool_or(starred) as starred, min(removed_at) as removed_at, min(removed_word) as removed_word
-  from vinted_links group by item_id, new_url
-) g on g.item_id = k.item_id and g.new_url = k.new_url
-where k.keep_rank = 1 and l.id = k.id;
+  from v group by item_id, new_url
+)
+update listings l
+set starred = m.starred,
+    removed_at = coalesce(l.removed_at, m.removed_at),
+    removed_word = coalesce(l.removed_word, m.removed_word)
+from v join merged m on m.item_id = v.item_id and m.new_url = v.new_url
+where v.keep_rank = 1 and l.id = v.id;
 
--- Alerts already sent for a duplicate count for the kept row, so nothing is emailed twice
+-- 2. Alerts already sent for a copy count for the kept row, so nothing is emailed twice
+with v as (
+  select id, item_id, starred, removed_at, removed_word,
+    'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1) as new_url,
+    row_number() over (
+      partition by item_id, 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)
+      order by (url = 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)) desc, found_at, id
+    ) as keep_rank
+  from listings
+  where site = 'Vinted'
+)
 update alert_log a
 set listing_id = keep.id
-from vinted_links dup
-join vinted_links keep on keep.item_id = dup.item_id and keep.new_url = dup.new_url and keep.keep_rank = 1
+from v dup join v keep on keep.item_id = dup.item_id and keep.new_url = dup.new_url and keep.keep_rank = 1
 where dup.keep_rank > 1 and a.listing_id = dup.id;
 
--- Drop the duplicates
-delete from listings l using vinted_links k where k.keep_rank > 1 and l.id = k.id;
+-- 3. Drop the copies
+with v as (
+  select id, item_id, starred, removed_at, removed_word,
+    'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1) as new_url,
+    row_number() over (
+      partition by item_id, 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)
+      order by (url = 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)) desc, found_at, id
+    ) as keep_rank
+  from listings
+  where site = 'Vinted'
+)
+delete from listings l using v where v.keep_rank > 1 and l.id = v.id;
 
--- Full links for the rest
-update listings l set url = k.new_url from vinted_links k where k.keep_rank = 1 and l.id = k.id and l.url <> k.new_url;
+-- 4. Full links
+update listings
+set url = 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1)
+where site = 'Vinted' and url <> 'https://www.vinted.se' || split_part(regexp_replace(url, '^https?://[^/]+', ''), '?', 1);
 
 commit;
 */
