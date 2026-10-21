@@ -77,7 +77,7 @@ Shared options for every category stay the same: condition, sale type, strict/le
 - **Metal:** Gold 18k (750), Gold 14k (585), Gold 9k (375), Silver (925/830), Platinum, Steel, Gold-plated / doublé
 - **Ring size** (rings): a range of Swedish sizes in mm, 14–23 ("stl 17", "storlek 17,5", "17 mm")
 - **Box & papers:** a toggle ("box och papper", "box & papers", "full set", "fullset", "kvitto och box")
-- **Junk words:** `armband till`, `länk*` (spare links), `rem`, `*armband` unless the type is Bracelet, `endast box`, `endast låda`, `klockask*`, `replika*`, `replica`, `kopia`, `fake`, `inspired`, `reservdel*`, `urverk till`
+- **Junk words:** `armband till`, `rem till`, `länk till`, `länkar` (decision 7), `endast box`, `endast låda`, `klockask*`, `replika*`, `replica`, `kopia`, `fake`, `inspired`, `reservdel*`, `urverk till`
 - **Sites:** Tradera, Auctionet, Bukowskis, Blocket, Sellpy, Vinted, Facebook Marketplace
 
 ### Glass, ceramics & tableware (`glass`)
@@ -207,5 +207,6 @@ Follow `lib/categories/`: declarative data first, small pure functions, comments
 5. **Smartwatches:** in both Phones & tablets and Watches & jewellery (type Smartwatch).
 
 6. **Brand:** merge existing brands into item names, then hide the field.
+7. **Watch straps (2026-10-21):** only "armband till", "rem till", "länk till" and "länkar" are junk words for Watches & jewellery; a plain "armband" never is, so bracelets aren't hidden.
 
 Spec approved 2026-10-20.

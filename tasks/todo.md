@@ -89,7 +89,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `components/CategoryFields.tsx`, `components/ui/Cards.tsx`, `components/ui/Form.tsx` (only if a small number input is missing)
   - Size: M · Depends on: Task 7
 
-- [ ] **Checkpoint B2:** a phone item works end to end in the dev app; review the UI with you before the remaining categories. (Done on my side 2026-10-20: 74 tests, build, 375/1100 px screenshots of a preview page. Waiting for your try in the real app.)
+- [x] **Checkpoint B2:** a phone item works end to end in the dev app; review the UI with you before the remaining categories. (Done on my side 2026-10-20: 74 tests, build, 375/1100 px screenshots of a preview page. You tried an iPhone item 2026-10-21: looks good.)
 
 Each category task follows the Phones pattern (Task 7): add the id to `CategoryId`, the category to `CATEGORIES` (with `short` for its chip), its place in `CATEGORY_PRIORITY`, `sellpyPaths` per type, `cardFields`; tests first; a live `runSite` check per site; one commit.
 
