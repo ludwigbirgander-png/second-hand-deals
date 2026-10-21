@@ -391,6 +391,8 @@ export const CATEGORIES: Category[] = [
       'trasig*', 'sprucken', 'spräckt*', 'defekt*', 'reservdel*',
       'icloud låst', 'icloudlåst', 'låst till operatör*',
       'endast kartong*', 'bara kartong*', 'tom kartong', 'dummy', 'attrapp*',
+      // Screen protectors (found in the precision check)
+      'protektion', 'skyddsglas*', 'härdat glas', 'skärmglas*',
     ],
     sellpyPaths: ['Prylar > Hemelektronik > Mobil & Wearables', 'Prylar > Hemelektronik > Surf- och Läsplattor'],
     blocketCategory: '0.93',
@@ -462,6 +464,8 @@ export const CATEGORIES: Category[] = [
       'laddare till', 'laddare för', 'adapter till', 'skal till', 'skal för', 'fodral', 'väska till', 'väska för', 'sleeve',
       'skärm till', 'tangentbord till', 'batteri till', 'delar', 'reservdel*', 'moderkort',
       'trasig*', 'defekt*', 'sprucken', 'spräckt*', 'icloud låst', 'icloudlåst', 'aktiveringslås*', 'mdm', 'bios låst',
+      // Spare parts (found in the precision check); not plain "batteri" or "skärm": "100 % batteri", "ny skärm" are a plus
+      'bottenkåpa*', 'bottenplatta*', 'touchpad', 'trackpad', 'gångjärn*', 'mah', '*mah', 'lego', 'klocków',
     ],
     sellpyPaths: ['Prylar > Hemelektronik > Datorer & Tillbehör'],
     blocketCategory: '0.93',
@@ -519,6 +523,8 @@ export const CATEGORIES: Category[] = [
       'dyna till', 'dynor till', 'överdrag till', 'klädsel till', 'reservdel*',
       // Tradera's loose matches for place-named designs ("Lilla Åland")
       'frimärke*', 'vykort*',
+      // Copies ("inspirerade av Lilla Åland")
+      'inspirerad*', 'inspired',
     ],
     sellpyPaths: [MOBLER, 'Prylar > Inredning > Belysning', 'Prylar > Inredning > Textiler'],
     blocketCategory: '0.78',
@@ -599,6 +605,8 @@ export const CATEGORIES: Category[] = [
     negativeWords: [
       'armband till', 'rem till', 'länk till', 'länkar till', 'endast box', 'endast låda', 'endast klockask*', 'klockask till', 'urverk till',
       'replika*', 'replica', 'kopia', 'fake', 'inspired', 'reservdel*',
+      // Keyrings (found in the precision check)
+      'brelok*', 'nyckelring*', 'keychain', 'keyring',
     ],
     sellpyPaths: [...ARMBANDSUR, ...SMYCKEN],
     cardFields: ['caseSize', 'metal', 'movement'],

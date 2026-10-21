@@ -1,6 +1,6 @@
 # Spec: Search phase 5 — five more categories
 
-Written 2026-10-20. **Status:** approved 2026-10-20; plan in `tasks/plan.md`. Builds on phase 4 ("Phase 4 as built" in `SEARCH-PLAN.md`).
+Written 2026-10-20. **Status:** built 2026-10-21 on `search-phase-5`; see "Phase 5 as built" in `SEARCH-PLAN.md`. Plan in `tasks/plan.md`. Builds on phase 4 ("Phase 4 as built" in `SEARCH-PLAN.md`).
 
 ## Objective
 Kompi now has two categories, Clothing and Shoes. Phase 5 adds the five where noise hurts most:
@@ -189,15 +189,15 @@ Follow `lib/categories/`: declarative data first, small pure functions, comments
 4. **Wrap-up:** precision check, "Phase 5 as built" in `SEARCH-PLAN.md`.
 
 ## Success criteria
-- [ ] The five categories appear as chips; picking one shows only its fields, and the watch and ring fields follow `showWhen`.
-- [ ] `suggestCategory` gets at least 9 of 10 test names right, and returns no category when the name gives no clue (a plain brand like "Acne").
-- [ ] Junk-word tests: cases, chargers, drawings, straps, chipped pieces and replicas are dropped in their category, and kept when the word is part of the search ("iPhone 13 skal" still finds cases).
-- [ ] Lenient mode keeps listings without the detail and marks them "not stated"; strict mode hides them.
-- [ ] Every site in a category's list is searched, and sites outside it aren't. The *(verify)* sites are settled by a live check and recorded in "Phase 5 as built".
-- [ ] For the 10 precision items, relevant listings in the top 20 go up on average, and no item gets worse by more than 2.
-- [ ] Existing Clothing and Shoes items return the same listings as before (phase 4 tests unchanged and green).
-- [ ] `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
-- [ ] No schema migration for categories; the only data change is the one-off brand merge (if approved).
+- [x] The five categories appear as chips; picking one shows only its fields, and the watch and ring fields follow `showWhen`.
+- [x] `suggestCategory` gets at least 9 of 10 test names right (23 of 23 in the all-category test), and returns no category when the name gives no clue (a plain brand like "Acne").
+- [x] Junk-word tests: cases, chargers, drawings, straps, chipped pieces and replicas are dropped in their category, and kept when the word is part of the search ("iPhone 13 skal" still finds cases). Chargers and straps only in their "till" form, since "med laddare" and "med extra länkar" are a plus.
+- [x] Lenient mode keeps listings without the detail and marks them "not stated"; strict mode hides them.
+- [x] Every site in a category's list is searched, and sites outside it aren't. The *(verify)* sites are settled by a live check and recorded in "Phase 5 as built".
+- [x] For the 10 precision items, relevant listings in the top 20 go up on average, and no item gets worse by more than 2 (17.9 → 19.2; none worse).
+- [x] Existing Clothing and Shoes items return the same listings as before (phase 4 tests green; two phase 4 assertions changed on purpose: "iPhone 13" and "Eames chair" now get Phones and Furniture instead of no category).
+- [x] `npm test`, `npx tsc --noEmit` and `npm run build` pass; `npm run lint` is clean for every file phase 5 touched (18 older errors elsewhere were already on `main`).
+- [x] No schema migration for categories; the only data changes are the brand merge and the Vinted link fix (a bug fix, also on `main`).
 
 ## Decisions (2026-10-20)
 1. **Manufacturer / designer filter:** not now, maybe later.

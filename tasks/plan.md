@@ -50,11 +50,11 @@ See `tasks/todo.md` for acceptance criteria, verification and files per task.
 - [x] Task 11: Watches & jewellery
 - [x] Task 12: Glass, ceramics & tableware
 - [x] Task 12b: "Did you mean …?" spelling hint
-- [ ] Checkpoint B3: all five live-checked
+- [x] Checkpoint B3: all five live-checked
 
 ### Part B3: Wrap-up
-- [ ] Task 13: Precision check and "Phase 5 as built"
-- [ ] Checkpoint: complete; ready for review
+- [x] Task 13: Precision check and "Phase 5 as built"
+- [x] Checkpoint: complete; ready for review
 
 ## Parallelisation
 Tasks 9–12 are independent once Task 8 is in. They touch different parts of `lib/categories/index.ts` and the test file, so run them in sequence or expect simple merge conflicts. Part A is independent of Part B.

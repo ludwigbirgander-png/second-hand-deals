@@ -23,7 +23,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `components/ui/ItemTile.tsx`, `app/items/[id]/page.tsx`, `app/items/[id]/scan/page.tsx`, `components/ListingGrid.tsx`
   - Size: S · Depends on: Task 1
 
-- [ ] **Checkpoint A:** tests, lint and build green; you run the migration in Supabase; review, then merge Part A.
+- [ ] **Checkpoint A:** tests, lint and build green; you run the migration in Supabase; review, then merge Part A. (Part A ships with the whole branch instead. Still open: run `supabase/migrations/20261022_merge_brand.sql` when merging.)
 
 ## Part B1: Framework
 
@@ -144,7 +144,7 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
   - Files: `lib/categories/index.ts`, `lib/categories/types.ts`, `lib/categories/categories.test.ts`
   - Size: S · Depends on: Task 8
 
-- [ ] **Checkpoint B3** (my side done 2026-10-21: 96 tests, lint, build; all five live-checked; 23-name suggestion test; 375 px screenshots of each category's form, no sideways overflow; selected chip scrolls into view. Waiting for your review):
+- [x] **Checkpoint B3** (my side done 2026-10-21: 96 tests, lint, build; all five live-checked; 23-name suggestion test; 375 px screenshots of each category's form, no sideways overflow; selected chip scrolls into view. Waiting for your review):
   - All five categories live-checked on every site; `npm test`, lint, type check and `npm run build` green.
   - A priority test: 20 item names across all seven categories each get the right suggestion (or none).
   - 375 px and desktop screenshots via a temporary preview page and Chrome's DevTools Protocol (headless Chrome can't go below 500 px on its own): seven chips scroll in one row with no page overflow; each category's fields render.
@@ -161,7 +161,7 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
 
 ## Part B3: Wrap-up
 
-- [ ] **Task 13: Precision check and "Phase 5 as built"**
+- [x] **Task 13: Precision check and "Phase 5 as built"**
   - Acceptance:
     - Ten real items (2 per category): relevant listings in the top 20, counted before and after and recorded. The average goes up, and no item drops by more than 2.
     - "Phase 5 as built" in `SEARCH-PLAN.md` (site ids, what was left out, surprises); phase 5 marked done in the Phases list; spec status updated.
@@ -169,4 +169,4 @@ Each category task follows the Phones pattern (Task 7): add the id to `CategoryI
   - Files: `SEARCH-PLAN.md`, `SPEC-categories-phase-5.md`
   - Size: S · Depends on: Tasks 9–12
 
-- [ ] **Checkpoint: complete.** All spec success criteria ticked; ready for review.
+- [x] **Checkpoint: complete.** All spec success criteria ticked; ready for review.

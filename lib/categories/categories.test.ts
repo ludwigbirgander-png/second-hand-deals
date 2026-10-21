@@ -768,3 +768,25 @@ test('spelling: no hint for known words, longer forms or unknown names', () => {
     'Bruno Mathsson fåtölj', 'Nintendo Switch'])
     assert.equal(spellingHint(name), null, name)
 })
+
+// ─── Task 13: misses from the before/after check ─────────────────────────────
+
+test('junk words found in the precision check', () => {
+  const junk: [string, string, Category][] = [
+    ['Samsung Galaxy S23 glas protektion', 'Samsung Galaxy S23', phones],
+    ['Härdat glas iPhone 13', 'iPhone 13', phones],
+    ['Lenovo ThinkPad X1 Carbon Gen 9 Bottenkåpa', 'ThinkPad X1 Carbon', computers],
+    ['Lenovo ThinkPad X1 Carbon Gen2 Gen3 Touchpad Trackpad', 'ThinkPad X1 Carbon', computers],
+    ['Nytt! Batteri Lenovo Thinkpad X1 Carbon 1st 14.8V 3200mAh', 'ThinkPad X1 Carbon', computers],
+    ['Lego ThinkPad X1 Carbon', 'ThinkPad X1 Carbon', computers],
+    ['Brelok Omega Seamaster', 'Omega Seamaster', watches],
+    ['Bara 2 kvar ! 6 fina svarta pinnstolar inspirerade av Lilla Åland', 'Lilla Åland stol', furniture],
+  ]
+  for (const [title, query, category] of junk) assert.equal(hasNegativeWord(title, query, category), true, title)
+  const keep: [string, string, Category][] = [
+    ['MacBook Air M2 – Nyskick – 100 % batteri – 8/256 GB', 'MacBook Air M2', computers],
+    ['ThinkPad X1 Carbon, ny skärm, nytt batteri', 'ThinkPad X1 Carbon', computers],
+    ['Lilla Åland stol med sittdyna', 'Lilla Åland stol', furniture],
+  ]
+  for (const [title, query, category] of keep) assert.equal(hasNegativeWord(title, query, category), false, title)
+})
