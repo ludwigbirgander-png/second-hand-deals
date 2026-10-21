@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import type { Listing } from '@/lib/types'
 import { CONDITION_COLORS } from '@/lib/colors'
 import { priceNote } from '@/lib/auction'
-import { conditionLabel, type FilterKey } from '@/lib/categories'
-import { sizeLabel } from '@/lib/categories/attributes'
+import { conditionLabel, fieldLabel, getCategory, type CategoryId, type FilterKey } from '@/lib/categories'
+import { attributeLabels, sizeLabel } from '@/lib/categories/attributes'
 import { IconButton } from './Button'
 import { Pill, SiteBadge } from './Pill'
 import { Badge } from './Badge'
@@ -13,14 +13,10 @@ import { Price } from './Price'
 
 // ─── ListingCard ──────────────────────────────────────────────────────────────
 
-const DETAIL_NAMES: Record<FilterKey, string> = {
-  size: 'Size', condition: 'Condition', color: 'Colour', material: 'Material', department: 'Department', type: 'Type',
-}
-
 /** "Size not stated", "Size, colour not stated" */
 function notStated(keys: FilterKey[] | undefined): string | null {
   if (!keys?.length) return null
-  const names = keys.map((k, i) => (i === 0 ? DETAIL_NAMES[k] : DETAIL_NAMES[k].toLowerCase()))
+  const names = keys.map((k, i) => (i === 0 ? fieldLabel(k) : fieldLabel(k).toLowerCase()))
   return `${names.join(', ')} not stated`
 }
 
@@ -45,6 +41,8 @@ function useAuctionCountdown(endsAt: string | null) {
 
 interface ListingCardProps {
   listing: Listing
+  /** The item's category; its card fields show next to the condition ("256 GB", "Battery 88 %") */
+  category?: CategoryId | null
   starred: boolean
   onStar: () => void
   /** Hide the listing; Kompi remembers it so it doesn't come back */
@@ -58,7 +56,7 @@ interface ListingCardProps {
  * title, site, then condition/shipping/auction. A favourite adds an ink ring; an ended
  * auction fades its photo.
  */
-export function ListingCard({ listing: l, starred, onStar, onRemove, isNew = false }: ListingCardProps) {
+export function ListingCard({ listing: l, category, starred, onStar, onRemove, isNew = false }: ListingCardProps) {
   const auction = useAuctionCountdown(l.auction_ends_at)
   const ended = auction?.text === 'Ended'
   const note = ended ? null : priceNote(l)
@@ -66,6 +64,7 @@ export function ListingCard({ listing: l, starred, onStar, onRemove, isNew = fal
   const condition = l.attributes?.condition ? conditionLabel(l.attributes.condition) : l.condition
   const size = sizeLabel(l.attributes?.size) ?? l.size
   const unstated = notStated(l.attributes?.unstated)
+  const details = attributeLabels(l.attributes, getCategory(category)).join(' · ')
   return (
     <div className={`relative flex flex-col gap-2 min-w-0 p-2 pb-3 rounded-lg bg-chalk ${starred ? 'shadow-[inset_0_0_0_2px_var(--ink)]' : ''}`}>
       <a
@@ -111,10 +110,11 @@ export function ListingCard({ listing: l, starred, onStar, onRemove, isNew = fal
           {l.title}
         </a>
         <SiteBadge site={l.site} />
-        {(condition || size || unstated || l.location || l.shipping_cost != null || auction) && (
+        {(condition || size || details || unstated || l.location || l.shipping_cost != null || auction) && (
           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-0.5 text-[12px] text-muted">
             {condition && <Pill variant="solid" size="sm" color={CONDITION_COLORS[condition] ?? 'var(--paper-2)'}>{condition}</Pill>}
             {size && <span>{size}</span>}
+            {details && <span>{details}</span>}
             {unstated && <span className="italic" title="Kept because the item isn't set to strict">{unstated}</span>}
             {l.location && <span>{l.location}</span>}
             {l.shipping_cost != null && <span>{l.shipping_cost === 0 ? 'Free shipping' : `+${l.shipping_cost} kr shipping`}</span>}

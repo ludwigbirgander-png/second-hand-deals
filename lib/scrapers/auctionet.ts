@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { ScrapedListing } from '../types'
+import { auctionetCategory, type SearchOptions } from '../categories/native'
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -24,9 +25,11 @@ interface AuctionetItem {
  * Finland and Germany; only SEK lots are kept (the API ignores currency and
  * country filters, so they are applied here).
  */
-export async function scrapeAuctionet(query: string): Promise<ScrapedListing[]> {
+export async function scrapeAuctionet(query: string, opts: SearchOptions = {}): Promise<ScrapedListing[]> {
+  // One category_id narrows the search ("stol" in furniture); see auctionetCategory
+  const category_id = auctionetCategory(opts)
   const { data } = await axios.get('https://auctionet.com/api/v2/items.json', {
-    params: { q: query, per_page: 50 },
+    params: { q: query, per_page: 50, ...(category_id != null && { category_id }) },
     headers: HEADERS,
     timeout: 10000,
   })

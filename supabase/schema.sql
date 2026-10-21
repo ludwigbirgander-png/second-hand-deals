@@ -27,7 +27,7 @@ create table if not exists items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
-  brand text,
+  brand text, -- unused since phase 5: brands are merged into name (20261022_merge_brand.sql)
   min_price integer,
   max_price integer,
   notify boolean not null default true,

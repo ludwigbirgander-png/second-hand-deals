@@ -1,5 +1,5 @@
 // Normalised details of a listing: condition on one scale, sizes, and category options found in the title.
-import type { Category, ConditionGrade, ListingAttributes, ParsedSize } from './types'
+import type { Category, ConditionGrade, Department, FieldValue, ListingAttributes, ParsedSize } from './types'
 import { hasPattern, tokens } from './words'
 
 // ─── Condition ───────────────────────────────────────────────────────────────
@@ -212,10 +212,37 @@ export function sizeLabel(s: ParsedSize | undefined): string | null {
   return null
 }
 
+// ─── Card details ────────────────────────────────────────────────────────────
+
+/** Short details for a listing card, from the category's cardFields ("256 GB", "Battery 88 %", "Unlocked") */
+export function attributeLabels(a: ListingAttributes | null | undefined, category: Category | undefined): string[] {
+  if (!a || !category) return []
+  const out: string[] = []
+  for (const key of category.cardFields ?? []) {
+    const field = category.fields.find((f) => f.key === key)
+    const v = a[key]
+    if (!field || v == null) continue
+    if (field.cardLabel) {
+      const label = field.cardLabel(v as FieldValue)
+      if (label) out.push(label)
+    } else if (field.kind === 'options' && Array.isArray(v)) {
+      const labels = v.map((id) => field.options?.find((o) => o.id === id)?.label).filter(Boolean)
+      // A short name tells same-looking values apart: "8 GB RAM" next to "256 GB"
+      if (labels.length) out.push(field.short ? `${labels.join('/')} ${field.short}` : labels.join('/'))
+    } else if ((field.kind === 'min' || field.kind === 'range') && typeof v === 'number') {
+      const n = field.unit ? `${v} ${field.unit}` : `${v}`
+      out.push(field.kind === 'min' ? `${field.short ?? field.label} ${n}` : n)
+    } else if (field.kind === 'toggle' && v === true && field.toggle === 'require') {
+      out.push(field.label)
+    }
+  }
+  return out
+}
+
 // ─── Everything at once ──────────────────────────────────────────────────────
 
 /** Details a scraper read from the site's own fields; they win over what the title suggests */
-export type SiteAttributes = Omit<ListingAttributes, 'unstated'>
+export type SiteAttributes = ListingAttributes
 
 export interface AttributeSource {
   title: string
@@ -234,16 +261,17 @@ export function extractAttributes(l: AttributeSource, category?: Category): List
 
   const words = tokens(l.title)
   for (const field of category.fields) {
-    if (field.key === 'size' || !field.options) continue
+    if (field.kind === 'size') continue
     const fromSite = site[field.key]
     if (fromSite != null && (!Array.isArray(fromSite) || fromSite.length)) {
-      ;(out as Record<string, unknown>)[field.key] = fromSite
+      out[field.key] = fromSite
       continue
     }
-    const found = field.options.filter((o) => hasPattern(words, o.words)).map((o) => o.id)
-    if (!found.length) continue
-    if (field.key === 'department') out.department = found[0] as ListingAttributes['department']
-    else (out as Record<string, unknown>)[field.key] = found
+    let value = field.parse?.(l.title)
+    if (value == null && field.options) value = field.options.filter((o) => hasPattern(words, o.words)).map((o) => o.id)
+    if (value == null || value === false || (Array.isArray(value) && !value.length)) continue
+    if (field.key === 'department') out.department = (value as string[])[0] as Department
+    else out[field.key] = value
   }
 
   const size = hasSize(site.size) ? site.size! : parseSize(l.size, l.title, category.id === 'shoes')

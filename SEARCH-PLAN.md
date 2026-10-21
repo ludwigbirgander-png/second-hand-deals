@@ -1,6 +1,6 @@
 # Kompi search: categories and precision plan
 
-Written 2026-10-17. **Status:** phases 1 and 2 built on branch `search-phase-1-2` (needs `supabase/migrations/20261018_remove_and_match.sql`). Phase 3 built on `search-phase-3`, on top of it (needs `supabase/migrations/20261020_alerts.sql`). Phases 1–3 merged into `main` 2026-10-20. Phase 4 built on `search-phase-4` (needs `supabase/migrations/20261021_categories.sql`); see "Phase 4 as built". Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
+Written 2026-10-17. **Status:** phases 1 and 2 built on branch `search-phase-1-2` (needs `supabase/migrations/20261018_remove_and_match.sql`). Phase 3 built on `search-phase-3`, on top of it (needs `supabase/migrations/20261020_alerts.sql`). Phases 1–3 merged into `main` 2026-10-20. Phase 4 built on `search-phase-4` (needs `supabase/migrations/20261021_categories.sql`); see "Phase 4 as built". Phase 5 built on `search-phase-5` (needs `supabase/migrations/20261022_merge_brand.sql`); see "Phase 5 as built" and `SPEC-categories-phase-5.md`. Decisions from 2026-10-17 are under "Beyond categories: decided features" and "Phases".
 
 ## Context
 Today a Kompi item is only a name, an optional brand and a price range (`items` table). Kompi sends the same text query to every site and keeps a listing when every word of 3+ letters appears in its title (`isRelevant` in `lib/scrapers/index.ts`). That causes three problems:
@@ -173,7 +173,7 @@ To build this:
 2. **Synonyms, fuzzy matching and Possible matches** (B, C).
 3. **Alerts** (D): restart the background job, weekly email, 3-hourly checks for target price, favourite price drops, auctions ending soon and rare finds.
 4. **Category framework, Clothing and Shoes:** `lib/categories.ts`, condition normalisation and sale-type filter.
-5. **Next categories:** Phones & tablets, Computers, Furniture & design, Watches & jewellery, Glass & ceramics.
+5. **Next categories:** Phones & tablets, Computers, Furniture & design, Watches & jewellery, Glass & ceramics. *Built 2026-10-21.*
 6. **Remaining categories.**
 7. **AI-assisted extraction and suggestions** (optional).
 
@@ -189,6 +189,65 @@ To build this:
 - Built-in junk words: plain "endast" was left out, because "endast använd en gång" means "worn only once".
 - Fixed on the way: the Vinted scraper saved "Varumärke: …" as the size; Sellpy titles showed raw size codes.
 - Changing an item's category or filters refreshes its search; listings from sites the category rules out are pruned on that refresh (favourites and removed ones stay).
+
+## Phase 5 as built
+Spec: `SPEC-categories-phase-5.md`. Plan and task log: `tasks/plan.md`, `tasks/todo.md`.
+
+- **Five categories** in `lib/categories/index.ts`:
+  - Phones & tablets: type, storage, colour, battery health, Unlocked.
+  - Computers: type, chip, RAM, storage, screen, Swedish keyboard.
+  - Furniture & design: type, material, colour, quantity, decade.
+  - Watches & jewellery: type, movement, case size, metal, ring size, box & papers.
+  - Glass, ceramics & tableware: piece, quantity, Second sort OK.
+- **Framework:**
+  - Field kinds `options`, `size`, `min`, `range` and `toggle` (`require`, or `allow` for second sort).
+  - `showWhen` per type, `step` for half sizes, `parse` per field (`lib/categories/parse.ts`), and `cardFields`/`cardLabel` for card details.
+  - `CATEGORY_PRIORITY`: phones → computers → watches → furniture → glass → shoes → clothing.
+  - Stored data stays flat in `items.filters` and `listings.attributes`, with no schema migration.
+- **Brand field removed:** brands merged into item names (`20261022_merge_brand.sql`); the `items.brand` column stays until a later clean-up.
+- **"Did you mean …?"** (`lib/categories/spelling.ts`): a letter missing, extra or swapped, on a word Kompi knows.
+- **Native filters, checked live 2026-10-20:**
+  - Sellpy: full `categories.lvl2` paths per type, for example `Prylar > Hemelektronik > Mobil & Wearables`, `{Kvinna,Man,Barn} > Accessoarer > Armbandsur` / `Smycken`, `Prylar > Inredning > Möbler` / `Belysning` / `Textiler`, and `Prylar > Hushåll > Porslin` / `Koppar & Glas`. A hit's path sets the type only when one type owns it.
+  - Auctionet: one `category_id` per search: 16 furniture, 1 lamps, 42 mirrors, 35 rugs, 31 watches, 13 jewellery. None for a mix of types, and none for glass, since glass (6) and ceramics (9) are split.
+  - Blocket: 0.93 (phones, computers) and 0.78 (furniture). None for watches and glass, which are split over several categories. Sub-categories (1.93.3217 phones, 1.93.3215 computers, 1.78.5196 tables and chairs…) are recorded but not used.
+  - Vinted, Bukowskis, Tradera HTML: no category parameter; Kompi's own check.
+- **Sites:** Sellpy and Vinted carry all five categories, so every category searches them (decision 2: every relevant site).
+- **Junk words that turned out to be a plus**, so only the "till"/"för" forms count as junk:
+  - "med laddare och kartong" (phones), "med laddare", "+ väska" (computers).
+  - "stol med dyna", "stol i bok" (beech) (furniture).
+  - "med extra länkar", "med klockask" (watches; decision 7: "armband till", not "armband").
+  - "naggfri" (glass).
+- **Other junk words learned from live results:**
+  - Tradera's Åland stamps and postcards.
+  - Mon Amie merchandise (Zoégas tins, umbrellas, tea towels).
+  - Screen protectors ("glas protektion").
+  - Laptop parts (bottom cover, touchpad, mAh batteries).
+  - Keyrings ("brelok").
+  - "Inspirerade av" copies.
+- **Fixed on the way:**
+  - Vinted listing links were relative and opened Kompi's own `/items` page. Fixed on `main` too (`20261023_vinted_full_links.sql`).
+  - "ett 30-tal" (about thirty) is no longer read as the 1930s.
+  - Listing cards look "not stated" names up with `fieldLabel()`.
+- **Not built:** Manufacturer/designer filter, dimensions in cm, pickup radius, phone grade, type-aware junk words, Blocket sub-categories, Tradera API filters.
+
+### Precision check (2026-10-21)
+Top 20 real matches from all sites, one site at a time in turn, without and with the suggested category (no other filters). A listing counts as relevant when it is the thing itself, not a case, part, copy or other model.
+
+| Item | Category | Before | After |
+|---|---|---|---|
+| iPhone 13 | Phones | 15 | 20 |
+| Samsung Galaxy S23 | Phones | 16 | 20 |
+| MacBook Air M2 | Computers | 20 | 20 |
+| ThinkPad X1 Carbon | Computers | 14 | 15 |
+| Lilla Åland stol | Furniture | 18 | 18 |
+| String hylla | Furniture | 19 | 19 |
+| Omega Seamaster | Watches | 20 | 20 |
+| Seiko 5 | Watches | 20 | 20 |
+| Rörstrand Mon Amie | Glass | 17 | 20 |
+| Iittala Kastehelmi | Glass | 20 | 20 |
+| **Average** | | **17.9** | **19.2** |
+
+No item got worse. The biggest gains are from Sellpy's category paths (no more iPhone cases) and junk words (Zoégas tins, screen protectors). Laptop spare parts are a long tail: a ThinkPad fingerprint reader, a Norwegian keyboard and a Polish battery still get through.
 
 ## Files the later implementation will touch
 - `lib/categories.ts` (new)

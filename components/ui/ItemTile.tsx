@@ -4,6 +4,7 @@ import { themeFor } from '@/lib/colors'
 import { Badge } from './Badge'
 import { Icon } from './Icon'
 import type { ReactNode } from 'react'
+import { nameWithBrand } from '@/lib/itemName'
 
 interface Props {
   item: ItemWithMeta
@@ -50,9 +51,8 @@ export function ItemTile({ item, placeholder, className }: Props) {
       <span className="block px-0.5 min-w-0">
         <span className="flex items-center gap-1.5 text-[12px] font-medium leading-tight text-muted min-w-0">
           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: themeFor(item)[0] }} />
-          {item.brand && <span className="truncate">{item.brand}</span>}
         </span>
-        <span className="block mt-0.5 text-[16px] font-semibold leading-[1.2] truncate">{item.name}</span>
+        <span className="block mt-0.5 text-[16px] font-semibold leading-[1.2] truncate">{nameWithBrand(item.brand, item.name)}</span>
         <span className="block mt-0.5 text-[13px] font-medium tabular-nums">
           {total} listing{total === 1 ? '' : 's'}
         </span>

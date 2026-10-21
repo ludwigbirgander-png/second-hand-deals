@@ -36,7 +36,7 @@ for (const group of SYNONYM_GROUPS) {
 }
 
 /** Levenshtein distance, stopping early once it passes `max`. */
-function editDistance(a: string, b: string, max = 1): number {
+export function editDistance(a: string, b: string, max = 1): number {
   if (Math.abs(a.length - b.length) > max) return max + 1
   let prev = Array.from({ length: b.length + 1 }, (_, i) => i)
   for (let i = 1; i <= a.length; i++) {
