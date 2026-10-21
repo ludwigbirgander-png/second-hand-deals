@@ -224,7 +224,8 @@ export function attributeLabels(a: ListingAttributes | null | undefined, categor
     if (!field || v == null) continue
     if (field.kind === 'options' && Array.isArray(v)) {
       const labels = v.map((id) => field.options?.find((o) => o.id === id)?.label).filter(Boolean)
-      if (labels.length) out.push(labels.join('/'))
+      // A short name tells same-looking values apart: "8 GB RAM" next to "256 GB"
+      if (labels.length) out.push(field.short ? `${labels.join('/')} ${field.short}` : labels.join('/'))
     } else if ((field.kind === 'min' || field.kind === 'range') && typeof v === 'number') {
       const n = field.unit ? `${v} ${field.unit}` : `${v}`
       out.push(field.kind === 'min' ? `${field.short ?? field.label} ${n}` : n)

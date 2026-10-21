@@ -12,7 +12,8 @@ export function numbersWithUnit(title: string, units: string[]): number[] {
   for (const unit of units) {
     // A word unit must end there ("128gb", not "12 gbit"); quote marks needn't
     const end = /^[a-z]/.test(unit) ? `(?![${LETTER}])` : ''
-    const re = new RegExp(`(?<![\\d.,])(\\d{1,4}(?:[.,]\\d{1,2})?)\\s?-?\\s?${esc(unit)}${end}`, 'g')
+    // Not inside a number ("13,3"), but a comma between words is fine ("ram,256ssd")
+    const re = new RegExp(`(?<!\\d[.,]?)(\\d{1,4}(?:[.,]\\d{1,2})?)\\s?-?\\s?${esc(unit)}${end}`, 'g')
     for (const m of text.matchAll(re)) found.push([m.index ?? 0, num(m[1])])
   }
   return found.sort((a, b) => a[0] - b[0]).map(([, n]) => n)
@@ -26,6 +27,19 @@ export function bareNumbers(title: string, allowed: number[]): number[] {
   const text = title.toLowerCase()
   const re = new RegExp(`(?<![\\d.,${LETTER}])(${allowed.join('|')})(?![\\d.,${LETTER}]|\\s?(?:kr|sek|:-|%|(?:mp|mb|mah|hz|mm|cm|w|tum|gb|tb)(?![${LETTER}])))`, 'g')
   return [...text.matchAll(re)].map((m) => Number(m[1]))
+}
+
+const PAIR_RAM = [4, 8, 12, 16, 18, 24, 32, 36, 48, 64]
+const PAIR_STORAGE = [128, 256, 512, 1024, 2048]
+
+/** Computer shorthand for RAM/storage: "8/256", "16GB/512GB", "32/1TB". Empty unless both look right ("12/2021" is a date). */
+export function slashPair(title: string): { ram?: number; storage?: number } {
+  const m = title.toLowerCase().match(/(?<![\d.,])(\d{1,2})\s?(?:gb)?\s?\/\s?(\d{1,4})\s?(gb|tb)?(?!\d)/)
+  if (!m) return {}
+  const ram = Number(m[1])
+  const n = Number(m[2])
+  const storage = m[3] === 'tb' || n <= 2 ? n * 1024 : n
+  return PAIR_RAM.includes(ram) && PAIR_STORAGE.includes(storage) ? { ram, storage } : {}
 }
 
 /** A percentage right before or after a keyword ("batterihälsa 89%", "86% batterihälsa") */

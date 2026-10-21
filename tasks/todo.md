@@ -93,7 +93,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 
 Each category task follows the Phones pattern (Task 7): add the id to `CategoryId`, the category to `CATEGORIES` (with `short` for its chip), its place in `CATEGORY_PRIORITY`, `sellpyPaths` per type, `cardFields`; tests first; a live `runSite` check per site; one commit.
 
-- [ ] **Task 9: Computers**
+- [x] **Task 9: Computers**
   - Acceptance:
     - Fields: type (laptop, desktop), chip (M1–M4, where "M2 Pro/Max" counts as M2; Intel; AMD Ryzen), RAM (8/16/18/24/32/36/64 GB), storage (`storageField([128, 256, 512], [1, 2])`, no bare numbers), screen size (13/14/15/16), Swedish keyboard toggle.
     - New parser `slashPair` for "8/256" and "16/512 GB" → RAM and storage. RAM also reads "16 GB RAM" and "16GB minne". A GB number only counts as storage when it's in the storage list and not followed by "RAM".

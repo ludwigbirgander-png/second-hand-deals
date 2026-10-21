@@ -4,7 +4,7 @@ import type {
   Category, CategoryField, CategoryId, ConditionGrade, Department, FieldOption, ItemFilters, NumberRange, SaleType, SizeFilter, SizeSystem,
 } from './types'
 import { hasPattern, tokens } from './words'
-import { bareNumbers, numbersWithUnit, percentNear } from './parse'
+import { bareNumbers, numbersWithUnit, percentNear, slashPair } from './parse'
 
 export * from './types'
 
@@ -105,6 +105,35 @@ const storageField = (gb: number[], tb: number[], { bare = false } = {}): Catego
 const PHONE_WORDS = ['iphone*', 'mobiltelefon*', 'mobil', 'telefon', 'smartphone*', 'pixel', 'oneplus*', 'xperia', 'galaxy s*', 'galaxy a*', 'galaxy z*', 'galaxy note*', 'nokia', 'motorola', 'huawei', 'xiaomi', 'fairphone*']
 const TABLET_WORDS = ['ipad*', 'surfplatt*', 'tablet*', 'galaxy tab*', 'läsplatt*', 'kindle']
 const SMARTWATCH_WORDS = ['apple watch', 'galaxy watch', 'pixel watch', 'smartwatch*', 'smartklock*', 'garmin', 'fitbit']
+
+const LAPTOP_WORDS = ['laptop*', 'bärbar', 'bärbara', 'macbook*', 'thinkpad*', 'chromebook*', 'notebook', 'ultrabook', 'zenbook', 'vivobook', 'xps', 'surface laptop']
+const DESKTOP_WORDS = ['stationär*', 'imac*', 'mac mini', 'mac studio', 'mac pro', 'desktop', 'speldator*', 'gamingdator*', 'gaming pc']
+const RAM_GB = [8, 16, 18, 24, 32, 36, 64]
+
+/** RAM: "16 GB" in the RAM sizes (not "64GB SSD"), or the first half of "8/256" */
+function ramFromTitle(title: string): string[] | undefined {
+  const text = title.toLowerCase()
+  const ids = numbersWithUnit(text, ['gb'])
+    .filter((n) => RAM_GB.includes(n) && !new RegExp(`(?<![\\d.,])${n}\\s?gb\\s?(?:ssd|hdd|emmc|lagring|flash)`).test(text))
+    .map(String)
+  const pair = slashPair(text).ram
+  if (pair && RAM_GB.includes(pair)) ids.push(`${pair}`)
+  return ids.length ? Array.from(new Set(ids)) : undefined
+}
+
+const SCREEN_INCHES = [13, 14, 15, 16, 17]
+
+/** Screen size only with a unit or as a decimal ("14\"", "13 tum", "13-inch", "15,6"); "MacBook Pro 13" is a model */
+function screenFromTitle(title: string): string[] | undefined {
+  const text = title.toLowerCase()
+  const sizes = [
+    ...numbersWithUnit(text, ['"', '″', '”', "''", 'tum', 'inch']),
+    ...[...text.matchAll(/(?<![\d.,])(1[3-7][.,]\d)(?![\d.,])/g)].map((m) => Number(m[1].replace(',', '.'))),
+  ].map(Math.floor).filter((n) => SCREEN_INCHES.includes(n))
+  return sizes.length ? Array.from(new Set(sizes)).map(String) : undefined
+}
+
+const computerStorage = storageField([128, 256, 512], [1, 2])
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 
@@ -254,6 +283,77 @@ export const CATEGORIES: Category[] = [
     blocketCategory: '0.93',
     cardFields: ['storage', 'battery', 'unlocked'],
   },
+  {
+    id: 'computers',
+    label: 'Computers',
+    hints: [...LAPTOP_WORDS, ...DESKTOP_WORDS, 'dator', 'datorn', '*dator', 'datorer'],
+    fields: [
+      {
+        key: 'type',
+        label: 'Type',
+        kind: 'options',
+        options: [
+          { id: 'laptop', label: 'Laptop', words: LAPTOP_WORDS },
+          { id: 'desktop', label: 'Desktop', words: DESKTOP_WORDS },
+        ],
+      },
+      {
+        key: 'chip',
+        label: 'Chip',
+        kind: 'options',
+        // "M2 Pro" and "M2 Max" count as M2
+        options: [
+          ...[1, 2, 3, 4].map((n) => ({ id: `m${n}`, label: `M${n}`, words: [`m${n}`, `m${n}pro`, `m${n}max`, `m${n}ultra`] })),
+          { id: 'intel', label: 'Intel', words: ['intel', 'i3', 'i5', 'i7', 'i9', 'celeron', 'pentium', 'xeon', 'core ultra'] },
+          { id: 'amd', label: 'AMD Ryzen', words: ['amd', 'ryzen*'] },
+        ],
+      },
+      {
+        key: 'ram',
+        label: 'RAM',
+        short: 'RAM',
+        kind: 'options',
+        options: RAM_GB.map((n) => ({ id: `${n}`, label: `${n} GB`, words: [] })),
+        parse: ramFromTitle,
+      },
+      {
+        ...computerStorage,
+        // Also "256ssd" and the second half of "8/256"
+        parse: (title) => {
+          const pair = slashPair(title).storage
+          const ssd = numbersWithUnit(title, ['ssd']).filter((n) => [128, 256, 512].includes(n))
+          const ids = [...((computerStorage.parse!(title) as string[] | undefined) ?? []), ...ssd.map(String), ...(pair ? [`${pair}`] : [])]
+          return ids.length ? Array.from(new Set(ids)) : undefined
+        },
+      },
+      {
+        key: 'screen',
+        label: 'Screen size',
+        kind: 'options',
+        options: SCREEN_INCHES.map((n) => ({ id: `${n}`, label: `${n}″`, words: [] })),
+        parse: screenFromTitle,
+      },
+      {
+        key: 'swedishKeyboard',
+        label: 'Swedish keyboard',
+        kind: 'toggle',
+        toggle: 'require',
+        parse: (title) => hasPattern(tokens(title), [
+          'svenskt tangentbord', 'svenska tangentbord', 'svensk layout', 'svenskt keyboard', 'nordiskt tangentbord', 'nordisk layout', 'swedish keyboard',
+        ]) || undefined,
+      },
+    ],
+    sites: ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace'],
+    // "till"/"för" forms only: "med laddare" and "+ väska" are a plus on a laptop
+    negativeWords: [
+      'laddare till', 'laddare för', 'adapter till', 'skal till', 'skal för', 'fodral', 'väska till', 'väska för', 'sleeve',
+      'skärm till', 'tangentbord till', 'batteri till', 'delar', 'reservdel*', 'moderkort',
+      'trasig*', 'defekt*', 'sprucken', 'spräckt*', 'icloud låst', 'icloudlåst', 'aktiveringslås*', 'mdm', 'bios låst',
+    ],
+    sellpyPaths: ['Prylar > Hemelektronik > Datorer & Tillbehör'],
+    blocketCategory: '0.93',
+    cardFields: ['chip', 'ram', 'storage'],
+  },
 ]
 
 export function getCategory(id: string | null | undefined): Category | undefined {
@@ -274,7 +374,7 @@ export function fieldLabel(key: string): string {
 }
 
 /** The order categories are suggested in: more specific first, so "vinterkängor" is Shoes, not Clothing */
-export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'shoes', 'clothing']
+export const CATEGORY_PRIORITY: CategoryId[] = ['phones', 'computers', 'shoes', 'clothing']
 
 /** The category an item name points to, or null ("Nike Air Max 90" → Shoes) */
 export function suggestCategory(name: string): CategoryId | null {

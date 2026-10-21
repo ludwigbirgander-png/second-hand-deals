@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { getCategory, suggestCategory, sanitizeFilters, sanitizeFiltersFor, CATEGORY_PRIORITY, fieldLabel, sitesForCategory, describeFilters, describeFiltersFor, visibleFields } from './index'
 import { normalizeCondition, conditionFromTitle, parseSize, extractAttributes, attributeLabels } from './attributes'
 import { checkListing, hasNegativeWord } from './filter'
-import { decades, numbersWithUnit, percentNear, quantity } from './parse'
+import { decades, numbersWithUnit, percentNear, quantity, slashPair } from './parse'
 import { sellpyFilters, sellpyAttributes, vintedParams, blocketParams, siteExcluded, auctionetCategory } from './native'
 import { parseVintedCardTitle } from '../scrapers/vinted'
 import type { Category, ItemFilters } from './types'
@@ -525,4 +525,51 @@ test('phones: sites and native search', () => {
   assert.match(sellpyFilters({ category: phones, filters: { color: ['silver'] } })!, /metadata\.color:"Silverfärgad"/)
   assert.deepEqual(attributeLabels(phone('iPhone 13 128GB batterihälsa 88% olåst').attributes, phones), ['128 GB', 'Battery 88 %', 'Unlocked'])
   assert.deepEqual(describeFilters('phones', { storage: ['128'], battery: 85, unlocked: true }), ['Phones & tablets', '128 GB', 'Battery 85 %+', 'Unlocked'])
+})
+
+// ─── Computers ───────────────────────────────────────────────────────────────
+
+const computers = getCategory('computers')!
+const computer = (title: string) => ({ title, attributes: extractAttributes({ title }, computers) })
+
+test('computers: suggested from the name, phones keep theirs', () => {
+  for (const name of ['MacBook Air', 'MacBook Pro M3', 'Lenovo ThinkPad X1', 'iMac 24', 'Mac mini M2', 'laptop', 'Bärbar dator', 'speldator', 'Dell XPS 13'])
+    assert.equal(suggestCategory(name), 'computers', name)
+  assert.equal(suggestCategory('iPad Pro'), 'phones')
+})
+
+test('parse: slash pairs of RAM and storage', () => {
+  assert.deepEqual(slashPair('MacBook Air M2 8/256'), { ram: 8, storage: 256 })
+  assert.deepEqual(slashPair('MacBook Pro 16GB/512GB'), { ram: 16, storage: 512 })
+  assert.deepEqual(slashPair('ThinkPad 32/1TB'), { ram: 32, storage: 1024 })
+  assert.deepEqual(slashPair('Köpt 12/2021'), {})
+})
+
+test('computers: details read from titles', () => {
+  assert.deepEqual(computer('MacBook Air M2 8/256 GB svenskt tangentbord').attributes,
+    { type: ['laptop'], chip: ['m2'], ram: ['8'], storage: ['256'], swedishKeyboard: true })
+  assert.deepEqual(computer('MacBook Pro 14" M3 Pro 18GB 1TB').attributes,
+    { type: ['laptop'], chip: ['m3'], ram: ['18'], storage: ['1024'], screen: ['14'] })
+  assert.equal(computer('MacBook Pro 13 M1 16GB 512GB').attributes.screen, undefined, 'a bare 13 is the model, not a size')
+  assert.deepEqual(computer('MacBook Pro (13-inch, 2016)').attributes.screen, ['13'])
+  assert.deepEqual(computer('Lenovo 15,6 tum i5 8 GB RAM').attributes, { chip: ['intel'], ram: ['8'], screen: ['15'] })
+  assert.deepEqual(computer('Asus ROG Ryzen 7 16GB 512GB SSD').attributes, { chip: ['amd'], ram: ['16'], storage: ['512'] })
+  assert.equal(computer('Gammal laptop 64GB SSD').attributes.ram, undefined, '64 GB SSD is storage, not RAM')
+  assert.deepEqual(computer('iMac 24 M1 8GB 256GB').attributes.type, ['desktop'])
+  assert.deepEqual(computer('MacBook Air M2, 15”, 16gb ram,256ssd').attributes.storage, ['256'], '"256ssd" without GB')
+})
+
+test('computers: junk words, but a charger or bag included is fine', () => {
+  for (const t of ['Laddare till MacBook Air', 'Väska för MacBook 13', 'MacBook Air M1 trasig skärm', 'MacBook Pro delar', 'MacBook moderkort', 'MacBook Air iCloud låst', 'MacBook Pro MDM'])
+    assert.equal(hasNegativeWord(t, 'MacBook', computers), true, t)
+  for (const t of ['MacBook Air M1 med laddare', 'MacBook Air M2 + väska och laddare'])
+    assert.equal(hasNegativeWord(t, 'MacBook', computers), false, t)
+})
+
+test('computers: sites, native search, cards', () => {
+  assert.deepEqual(sitesForCategory(['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace', 'Auctionet', 'Bukowskis'], 'computers'),
+    ['Blocket', 'Tradera', 'Sellpy', 'Vinted', 'Facebook Marketplace'])
+  assert.deepEqual(blocketParams({ category: computers }), ['category=0.93'])
+  assert.match(sellpyFilters({ category: computers, filters: {} })!, /Datorer & Tillbehör/)
+  assert.deepEqual(attributeLabels(computer('MacBook Air M2 8/256').attributes, computers), ['M2', '8 GB RAM', '256 GB'])
 })
