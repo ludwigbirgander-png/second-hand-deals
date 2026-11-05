@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ownsItem } from '@/lib/access'
+import { markUpdate } from '@/lib/marks'
 
 export async function PATCH(
   request: Request,
@@ -24,14 +25,28 @@ export async function PATCH(
     if (removed) update.starred = false
   }
 
-  // Verify the listing belongs to one of the caller's items
+  // Database rules only return listings the caller can see (own items, or lists they follow or belong to)
   const { data: listing } = await supabase
     .from('listings')
     .select('item_id')
     .eq('id', id)
     .maybeSingle()
-  if (!listing || !(await ownsItem(supabase, listing.item_id, user.id))) {
-    return Response.json({ error: 'Not found' }, { status: 404 })
+  if (!listing) return Response.json({ error: 'Not found' }, { status: 404 })
+
+  // Someone else's item: save it as this person's own mark, so the owner and
+  // other followers aren't affected
+  if (!(await ownsItem(supabase, listing.item_id, user.id))) {
+    const mark = markUpdate({ starred, removed })
+    const { data, error } = await supabase
+      .from('listing_marks')
+      .upsert({ user_id: user.id, listing_id: id, ...mark, updated_at: new Date().toISOString() }, { onConflict: 'user_id,listing_id' })
+      .select('listing_id, starred, removed_at')
+      .single()
+    if (error) {
+      console.error('listing mark failed:', error.message)
+      return Response.json({ error: 'Couldn’t save that. Try again.' }, { status: 500 })
+    }
+    return Response.json(data)
   }
 
   const { data, error } = await supabase
