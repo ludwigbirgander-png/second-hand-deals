@@ -63,6 +63,8 @@ interface Props {
   onExcludeWordsChange: (words: string[]) => void
   /** The item's last visit; listings found after it get a "New" badge */
   newSince?: string | null
+  /** Whether the viewer can refresh (owners only); changes the empty-state hint */
+  canRefresh?: boolean
 }
 
 const patchListing = (id: string, body: object) =>
@@ -79,7 +81,7 @@ const wordRequest = (itemId: string, method: 'POST' | 'DELETE', word: string) =>
  * The item's listings: real matches (favourites first), then "Possible matches",
  * then removed listings and hidden words. Ended auctions are hidden unless favourited.
  */
-export function ListingGrid({ itemId, query, category, listings, onListingsChange, excludeWords, onExcludeWordsChange, newSince }: Props) {
+export function ListingGrid({ itemId, query, category, listings, onListingsChange, excludeWords, onExcludeWordsChange, newSince, canRefresh = true }: Props) {
   const desktop = useMediaQuery(DESKTOP)
   // Whole rows: 5 columns on desktop, 2 on mobile
   const pageSize = desktop ? 15 : 6
@@ -194,7 +196,9 @@ export function ListingGrid({ itemId, query, category, listings, onListingsChang
         <div className="text-center py-10 md:py-16 px-4">
           <p className="m-0 text-[15px] md:text-[18px]">Nothing yet — the flea market restocks daily.</p>
           <p className="mt-1.5 md:mt-2 mb-0 text-[14px] md:text-[15px] text-muted">
-            Try hitting Refresh, widening the price range, or a shorter item name.
+            {canRefresh
+              ? 'Try hitting Refresh, widening the price range, or a shorter item name.'
+              : 'New finds show up here when the owner searches again.'}
           </p>
         </div>
       ) : (

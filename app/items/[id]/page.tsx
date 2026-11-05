@@ -162,8 +162,9 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     ? `${item.min_price != null ? fmt(item.min_price) : 'Any'} — ${item.max_price != null ? `${fmt(item.max_price)} kr` : 'no max'}`
     : null
   const refresh = () => router.push(`/items/${id}/scan`)
-  // Only the owner can rescan; older API responses without the flag keep the button
-  const canRefresh = item.is_owner !== false
+  // Only the owner can rescan, edit or delete (followers and list members only view).
+  // Older API responses without the flag keep the controls.
+  const isOwner = item.is_owner !== false
   const filterChips = describeFilters(item.category, item.filters)
 
   return (
@@ -176,7 +177,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           <IconButton icon="arrow-left" variant="ghost" label="Back to watchlist" onClick={() => router.push('/watchlist')} />
           {members.length > 0 && <AvatarStack people={members} size={26} />}
           <div className="flex-1" />
-          {canRefresh && <IconButton icon="refresh" label="Refresh listings" onClick={refresh} />}
+          {isOwner && <IconButton icon="refresh" label="Refresh listings" onClick={refresh} />}
         </div>
 
         <Link href="/watchlist" className={`max-md:hidden ${buttonClass({ variant: 'ghost', size: 'sm' })} !px-0 !text-muted no-underline`}>
@@ -186,7 +187,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
         <div className="flex flex-col md:flex-row md:flex-wrap md:items-end md:justify-between gap-y-4 gap-x-8 mt-2 md:mt-4">
           <div className="min-w-0">
             <h1 className="m-0 text-[34px] md:text-[52px] font-bold leading-[1.02] tracking-[-0.035em] [overflow-wrap:anywhere]">{nameWithBrand(item.brand, item.name)}</h1>
-            {filterChips.length > 0 && (
+            {filterChips.length > 0 && (isOwner ? (
               <button
                 type="button"
                 onClick={() => setEditOpen(true)}
@@ -195,9 +196,13 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               >
                 {filterChips.map((label) => <Badge key={label} variant="outline" size="sm">{label}</Badge>)}
               </button>
-            )}
+            ) : (
+              <div className="flex flex-wrap gap-1.5 mt-3" aria-label={`Filters: ${filterChips.join(', ')}`}>
+                {filterChips.map((label) => <Badge key={label} variant="outline" size="sm">{label}</Badge>)}
+              </div>
+            ))}
             <div className="max-md:hidden flex flex-wrap items-center gap-2.5 mt-4">
-              {canRefresh && <Button size="sm" onClick={refresh} icon={<Icon name="refresh" size={15} strokeWidth={2} />}>Refresh</Button>}
+              {isOwner && <Button size="sm" onClick={refresh} icon={<Icon name="refresh" size={15} strokeWidth={2} />}>Refresh</Button>}
               {shared && (
                 <span className="flex items-center gap-2.5">
                   <Badge variant="outline">Shared list</Badge>
@@ -228,9 +233,11 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           excludeWords={item.exclude_words ?? []}
           onExcludeWordsChange={(words) => setItem((prev) => (prev ? { ...prev, exclude_words: words } : prev))}
           newSince={newSince}
+          canRefresh={isOwner}
         />
       </section>
 
+      {isOwner && (<>
       <FloatingButton ref={fabRef} label="Edit item" icon="pencil" hidden={editOpen} onClick={() => setEditOpen(true)} />
 
       <AddPanel
@@ -253,6 +260,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
         onClose={closeEdit}
         onCreateList={createList}
       />
+      </>)}
     </div>
   )
 }

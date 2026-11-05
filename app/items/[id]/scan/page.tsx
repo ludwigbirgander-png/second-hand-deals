@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { Item } from '@/lib/types'
+import type { ItemWithMeta } from '@/lib/types'
 import { ScrapeProgress, useScrapeStream } from '@/components/ScrapeProgress'
 import { ScreenTitle, TickProgress, fluid } from '@/components/ui/Display'
 import { Button, buttonClass } from '@/components/ui/Button'
@@ -15,13 +15,25 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
   const { id } = use(params)
   const router = useRouter()
   const desktop = useMediaQuery(DESKTOP)
-  const [item, setItem] = useState<Item | null>(null)
+  const [item, setItem] = useState<ItemWithMeta | null>(null)
+  const [checked, setChecked] = useState(false)
   const [attempt, setAttempt] = useState(0)
-  const state = useScrapeStream(id, attempt)
+  // Only the owner can search; wait for the item before starting
+  const notOwner = item?.is_owner === false
+  const state = useScrapeStream(id, attempt, checked && !notOwner)
 
   useEffect(() => {
-    fetch(`/api/items/${id}`).then((r) => (r.ok ? r.json() : null)).then(setItem).catch(() => {})
+    fetch(`/api/items/${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setItem)
+      .catch(() => {})
+      .finally(() => setChecked(true))
   }, [id])
+
+  // Someone else's item (e.g. in a list you follow): back to the item page
+  useEffect(() => {
+    if (notOwner) router.replace(`/items/${id}`)
+  }, [notOwner, id, router])
 
   // Hand over to the item page once the last site reports in — after ~2s of the
   // Happy eye when new listings arrived
