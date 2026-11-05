@@ -63,8 +63,11 @@ interface Props {
   onExcludeWordsChange: (words: string[]) => void
   /** The item's last visit; listings found after it get a "New" badge */
   newSince?: string | null
-  /** Whether the viewer can refresh (owners only); changes the empty-state hint */
-  canRefresh?: boolean
+  /**
+   * Whether the viewer owns the item. Others (followers, list members) favourite and
+   * remove for themselves only, and can't refresh or hide words (that changes the search).
+   */
+  isOwner?: boolean
 }
 
 const patchListing = (id: string, body: object) =>
@@ -81,7 +84,7 @@ const wordRequest = (itemId: string, method: 'POST' | 'DELETE', word: string) =>
  * The item's listings: real matches (favourites first), then "Possible matches",
  * then removed listings and hidden words. Ended auctions are hidden unless favourited.
  */
-export function ListingGrid({ itemId, query, category, listings, onListingsChange, excludeWords, onExcludeWordsChange, newSince, canRefresh = true }: Props) {
+export function ListingGrid({ itemId, query, category, listings, onListingsChange, excludeWords, onExcludeWordsChange, newSince, isOwner = true }: Props) {
   const desktop = useMediaQuery(DESKTOP)
   // Whole rows: 5 columns on desktop, 2 on mobile
   const pageSize = desktop ? 15 : 6
@@ -110,7 +113,8 @@ export function ListingGrid({ itemId, query, category, listings, onListingsChang
 
   async function remove(l: Listing) {
     setFields([l.id], { removed_at: new Date().toISOString(), removed_word: null, starred: false })
-    setToast({ kind: 'removed', listing: l, suggestions: suggestExcludeWords(l.title, query) })
+    // Only the owner is offered words to hide: that changes the search for everyone
+    setToast({ kind: 'removed', listing: l, suggestions: isOwner ? suggestExcludeWords(l.title, query) : [] })
     if (!(await patchListing(l.id, { removed: true }))) {
       setFields([l.id], { removed_at: null, starred: l.starred })
       setToast({ kind: 'error', text: 'Couldn’t remove the listing. Try again.' })
@@ -196,7 +200,7 @@ export function ListingGrid({ itemId, query, category, listings, onListingsChang
         <div className="text-center py-10 md:py-16 px-4">
           <p className="m-0 text-[15px] md:text-[18px]">Nothing yet — the flea market restocks daily.</p>
           <p className="mt-1.5 md:mt-2 mb-0 text-[14px] md:text-[15px] text-muted">
-            {canRefresh
+            {isOwner
               ? 'Try hitting Refresh, widening the price range, or a shorter item name.'
               : 'New finds show up here when the owner searches again.'}
           </p>
@@ -229,9 +233,9 @@ export function ListingGrid({ itemId, query, category, listings, onListingsChang
         </section>
       )}
 
-      {(removed.length > 0 || excludeWords.length > 0) && (
+      {(removed.length > 0 || (isOwner && excludeWords.length > 0)) && (
         <section className="mt-10 md:mt-14 pt-5 border-t border-line-hair">
-          {excludeWords.length > 0 && (
+          {isOwner && excludeWords.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mb-4 mx-1 md:mx-0">
               <span className="text-[14px] text-muted mr-1">Hidden words</span>
               {excludeWords.map((w) => (

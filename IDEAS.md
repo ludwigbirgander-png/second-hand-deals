@@ -2,6 +2,17 @@
 
 Ideas saved for later. Nothing here is planned or built.
 
+## To do: favourites when a listing sells
+Saved 2026-11-05. Change how favourites behave once the listing is sold or taken down. How it should work is still to be decided.
+
+- **How it works today:** searches delete listings that stop showing up (sold or taken down), but never favourites. A sold favourite stays on the item page and in the favourites view forever, with its last known price and a link that no longer works. Nothing marks it as gone. Auctions are the exception: an ended auction is hidden unless it's a favourite, and then it stays.
+- **This now applies to everyone:** the owner's favourites live on the listing (`listings.starred`); followers' and list members' favourites live in `listing_marks` and are kept the same way.
+- **Things to decide:**
+  - How to tell it's sold: not seen for N searches or days (`last_seen_at`), an ended auction, or a check of the listing page.
+  - What the user sees: a "Sold" or "Gone" badge, greyed out, moved to a "Sold" section, or removed after a while.
+  - What alerts should do: the target-price alert skips ended auctions, but can't tell a sold fixed-price favourite from a live one.
+  - Whether to keep the last price as a record of what it went for.
+
 ## Push notifications on mobile
 Saved 2026-10-17, not part of any plan yet. It would add phone notifications as a second channel for Kompi's alerts, with no App Store app needed ("web push"). It only makes sense once the email alerts in SEARCH-PLAN.md work.
 

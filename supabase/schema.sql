@@ -93,6 +93,19 @@ create trigger listings_track_price
   before update of price on listings
   for each row execute function listings_track_price();
 
+-- Personal favourites and removals for people who don't own the item (followers,
+-- shared-list members). The owner uses listings.starred / removed_at instead.
+create table if not exists listing_marks (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  listing_id uuid not null references listings(id) on delete cascade,
+  starred boolean not null default false,
+  removed_at timestamptz,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, listing_id)
+);
+
+create index if not exists listing_marks_listing_id_idx on listing_marks(listing_id);
+
 -- Alert emails sent, so the same alert isn't sent twice
 create table if not exists alert_log (
   id uuid primary key default gen_random_uuid(),
@@ -261,6 +274,16 @@ create policy listings_shared_read on listings
   for select using (
     -- delegates to the items SELECT policies (own + shared) via the subquery
     exists (select 1 from items i where i.id = listings.item_id)
+  );
+
+-- Listing marks: your own only, on listings you can see
+alter table listing_marks enable row level security;
+drop policy if exists listing_marks_own on listing_marks;
+create policy listing_marks_own on listing_marks
+  for all using (user_id = (select auth.uid()))
+  with check (
+    user_id = (select auth.uid())
+    and exists (select 1 from listings l where l.id = listing_marks.listing_id)
   );
 
 -- Notified and alert_log: service-role only (no user policies)
