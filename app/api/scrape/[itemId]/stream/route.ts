@@ -19,10 +19,13 @@ export async function POST(
 
   const { itemId } = await params
 
+  // Owner only: the writes below use the admin key, which skips every database
+  // rule, and the user's session can also read items in lists they follow.
   const { data: item, error: itemError } = await supabase
     .from('items')
     .select('*')
     .eq('id', itemId)
+    .eq('user_id', user.id)
     .single()
 
   if (itemError || !item) {

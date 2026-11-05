@@ -26,6 +26,8 @@ export async function GET(
   return Response.json({
     ...rest,
     lists: (item_lists ?? []).map((r: any) => r.lists).filter(Boolean),
+    // Only the owner can refresh listings (see the scrape route)
+    is_owner: rest.user_id === user.id,
   })
 }
 

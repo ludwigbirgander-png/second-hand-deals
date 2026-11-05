@@ -5,7 +5,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 
 ## Phase 1: High severity
 
-- [ ] **Task 1: Scrape only your own items**
+- [x] **Task 1: Scrape only your own items**
   - Description: `app/api/scrape/[itemId]/stream/route.ts` reads the item with the user's session, which also returns items in public lists the user follows, and then writes and deletes listings with the admin key. Limit it to items the caller owns.
   - Acceptance:
     - The item query adds `.eq('user_id', user.id)`; anyone else gets 404 before any database write.
@@ -14,8 +14,9 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Dependencies: none
   - Files: `app/api/scrape/[itemId]/stream/route.ts`
   - Scope: XS
+  - **Done 2026-11-05** (branch `security-phase-1`). Also: `GET /api/items/[id]` returns `is_owner`, and the item page hides Refresh on items you don't own (members of a shared list could see it, and it would now fail). Not done: Edit and Delete are still shown to non-owners and fail quietly; this was already the case before. Still to check by you: the second-account test above.
 
-- [ ] **Task 2: Upgrade Next.js and fix vulnerable dependencies**
+- [x] **Task 2: Upgrade Next.js and fix vulnerable dependencies**
   - Description: move `next` and `eslint-config-next` to `16.4.2` and apply the non-forced `npm audit fix` (axios, undici, follow-redirects, form-data, nanoid, source-map-js, baseline-browser-mapping). Never `--force`.
   - Acceptance:
     - `npm audit --omit=dev` reports no high or critical issues (or each one left is written here with a reason and a review date).
@@ -25,6 +26,16 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Dependencies: none
   - Files: `package.json`, `package-lock.json`
   - Scope: S
+  - **Done 2026-11-05** (branch `security-phase-1`), with these notes:
+    - **16.4.1, not 16.4.2.** `~/.npmrc` has `min-release-age=21`, and 16.4.2 was under 21 days old. 16.4.1 already fixes the critical advisory (affected range ends at 16.4.0) and ships the fixed `postcss` 8.5.23 and `sharp` 0.35.5. Move to the latest 16.4.x once it's 21 days old.
+    - **Docs:** 16.3–16.4 only add opt-in features; no code changes needed. `middleware.ts` still works but is deprecated (since 16.0) in favour of `proxy.ts`; renaming it is left for later. `next dev` may add a marked "agent rules" block to `AGENTS.md` (`agentRules` option, on by default).
+    - **Audit (`--omit=dev`): 0 critical, 0 moderate, 2 high left**, both with fixes that are still under 21 days old:
+      | Package | Why it can wait | Fix | Review on |
+      |---|---|---|---|
+      | `undici` 7.30.0 (via `cheerio`) | Kompi never calls undici: cheerio only uses it for `fromURL`, which we don't use | 7.30.1 | 2026-11-06 |
+      | `follow-redirects` 1.16.1 (via `axios`) | The advisories leak login headers on redirects; the scrapers send no cookies or auth headers | 1.16.2 | 2026-11-15 |
+    - **Lint:** 18 `no-explicit-any` errors, the same before and after the upgrade (mostly `app/api/items` and `app/api/lists`, which Tasks 9–10 touch). ESLint also reads the untracked old copy in `.claude/worktrees/security-hardening`, which doubles the count.
+    - **Checked:** `npm ci` from clean; 100 tests, type check and build pass; dev server on 16.4.1 sends signed-out visitors to /login and returns 401 from the API. **Still to check by you:** the signed-in click-through above.
 
 - [ ] **Checkpoint 1:** standing bar green; audit clean; deploy Phase 1 (recommended as its own PR).
 

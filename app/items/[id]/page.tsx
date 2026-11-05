@@ -162,6 +162,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     ? `${item.min_price != null ? fmt(item.min_price) : 'Any'} — ${item.max_price != null ? `${fmt(item.max_price)} kr` : 'no max'}`
     : null
   const refresh = () => router.push(`/items/${id}/scan`)
+  // Only the owner can rescan; older API responses without the flag keep the button
+  const canRefresh = item.is_owner !== false
   const filterChips = describeFilters(item.category, item.filters)
 
   return (
@@ -174,7 +176,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           <IconButton icon="arrow-left" variant="ghost" label="Back to watchlist" onClick={() => router.push('/watchlist')} />
           {members.length > 0 && <AvatarStack people={members} size={26} />}
           <div className="flex-1" />
-          <IconButton icon="refresh" label="Refresh listings" onClick={refresh} />
+          {canRefresh && <IconButton icon="refresh" label="Refresh listings" onClick={refresh} />}
         </div>
 
         <Link href="/watchlist" className={`max-md:hidden ${buttonClass({ variant: 'ghost', size: 'sm' })} !px-0 !text-muted no-underline`}>
@@ -195,7 +197,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               </button>
             )}
             <div className="max-md:hidden flex flex-wrap items-center gap-2.5 mt-4">
-              <Button size="sm" onClick={refresh} icon={<Icon name="refresh" size={15} strokeWidth={2} />}>Refresh</Button>
+              {canRefresh && <Button size="sm" onClick={refresh} icon={<Icon name="refresh" size={15} strokeWidth={2} />}>Refresh</Button>}
               {shared && (
                 <span className="flex items-center gap-2.5">
                   <Badge variant="outline">Shared list</Badge>
