@@ -21,11 +21,12 @@ create index if not exists listing_marks_listing_id_idx on listing_marks(listing
 alter table listing_marks enable row level security;
 
 -- Your own marks only, and only on listings you can see (the listings policies
--- decide that: your own items, or items in lists you follow or are a member of)
+-- decide that: your own items, or items in lists you follow or are a member of).
+-- (select auth.uid()) is evaluated once per query rather than once per row.
 drop policy if exists listing_marks_own on listing_marks;
 create policy listing_marks_own on listing_marks
-  for all using (user_id = auth.uid())
+  for all using (user_id = (select auth.uid()))
   with check (
-    user_id = auth.uid()
+    user_id = (select auth.uid())
     and exists (select 1 from listings l where l.id = listing_marks.listing_id)
   );

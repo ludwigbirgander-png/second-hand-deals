@@ -280,9 +280,9 @@ create policy listings_shared_read on listings
 alter table listing_marks enable row level security;
 drop policy if exists listing_marks_own on listing_marks;
 create policy listing_marks_own on listing_marks
-  for all using (user_id = auth.uid())
+  for all using (user_id = (select auth.uid()))
   with check (
-    user_id = auth.uid()
+    user_id = (select auth.uid())
     and exists (select 1 from listings l where l.id = listing_marks.listing_id)
   );
 
