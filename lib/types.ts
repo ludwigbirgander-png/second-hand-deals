@@ -34,6 +34,8 @@ export interface ItemWithMeta extends Item {
   new_listings_count?: number
   listing_count?: number
   last_viewed_at?: string | null
+  /** Set by GET /api/items/[id]: whether the signed-in user owns the item */
+  is_owner?: boolean
 }
 
 export interface Listing {

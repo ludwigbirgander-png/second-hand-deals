@@ -19,14 +19,15 @@ const INITIAL: ScrapeState = { sites: [], total: null, pruned: 0, finished: fals
 
 /**
  * Runs the NDJSON scrape stream for an item and exposes live per-site progress.
- * Change `attempt` to run it again.
+ * Change `attempt` to run it again. Nothing runs while `enabled` is false.
  */
-export function useScrapeStream(itemId: string, attempt = 0): ScrapeState {
+export function useScrapeStream(itemId: string, attempt = 0, enabled = true): ScrapeState {
   const runKey = `${itemId}:${attempt}`
   // State is tagged with the run it belongs to, so a new run starts from INITIAL
   const [tagged, setTagged] = useState<{ key: string; state: ScrapeState }>({ key: runKey, state: INITIAL })
 
   useEffect(() => {
+    if (!enabled) return
     let cancelled = false
     const setState = (update: (s: ScrapeState) => ScrapeState) =>
       setTagged((t) => ({ key: runKey, state: update(t.key === runKey ? t.state : INITIAL) }))
@@ -72,7 +73,7 @@ export function useScrapeStream(itemId: string, attempt = 0): ScrapeState {
 
     run()
     return () => { cancelled = true }
-  }, [itemId, runKey])
+  }, [itemId, runKey, enabled])
 
   return tagged.key === runKey ? tagged.state : INITIAL
 }
