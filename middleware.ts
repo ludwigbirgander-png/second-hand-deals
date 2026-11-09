@@ -30,7 +30,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/signup') ||
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/auth') ||
-    pathname.startsWith('/lists/join')  // join page is public (auth happens on the page)
+    pathname.startsWith('/lists/join') ||  // join page is public (auth happens on the page)
+    // Invite preview (list name and role) for people who aren't signed in yet.
+    // Joining (POST) still needs a session: the route checks it.
+    (pathname.startsWith('/api/lists/join/') && request.method === 'GET')
   ) {
     return supabaseResponse
   }
