@@ -91,7 +91,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 >
 > Order: Task 8 has no dependencies and can ship first or alongside. Tasks 6 and 7 need Task 5. Each task is its own PR; the Task 5 migration runs before Tasks 6–7 deploy (the limiter fails open without it, so the order can't break anything).
 
-- [ ] **Task 5: Shared rate limiter**
+- [x] **Task 5: Shared rate limiter**
+  - **Built 2026-11-09** (branch `security-phase-3`). The code lives in `lib/limits/` (not `lib/rateLimit.ts`), because tests must be in a `lib/` subfolder. Tested on the live database in a rolled-back transaction: 3 hits allowed and the 4th refused, a new key or window counts separately, old windows are cleaned up, bad input is refused, and signed-in and signed-out users can't call the function or read the table. **Still to do: run the migration.**
   - Description: a Postgres-backed fixed-window counter, so limits hold across Vercel's serverless instances (an in-memory counter would reset per instance).
   - Acceptance:
     - Migration adds `rate_limits(key text, window_start timestamptz, count int, primary key (key, window_start))` with RLS on and no user rules, and `hit_rate_limit(p_key text, p_window_seconds int, p_max int) returns boolean`: one statement that counts the hit in the current window and returns whether it's allowed. Execute for `service_role` only; signed-in and signed-out users can't call it. It also deletes windows older than a day, so the table stays small.
@@ -102,7 +103,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `supabase/migrations/20261110_rate_limits.sql`, `supabase/schema.sql`, `lib/rateLimit.ts`, `lib/rateLimit.test.ts`
   - Scope: S
 
-- [ ] **Task 6: Rate-limit invite emails**
+- [x] **Task 6: Rate-limit invite emails**
+  - **Built 2026-11-09.** The email check (`validInviteEmail`) is unit-tested; the route checks the email, then the permission, then the limit (20 a day) before creating an invite or sending anything. The invite form already shows the error text.
   - Description: stop the email-invite endpoint being used to send mail from Kompi's address to strangers in bulk.
   - Acceptance:
     - `POST /api/lists/[id]/members` checks the email first: valid format, at most 254 characters, else 400.
@@ -113,7 +115,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `app/api/lists/[id]/members/route.ts`, `lib/lists/invites.ts` (email check), `lib/lists/invites.test.ts`, `components/GroupSheets.tsx`
   - Scope: S
 
-- [ ] **Task 7: Rate-limit searches**
+- [x] **Task 7: Rate-limit searches**
+  - **Built 2026-11-09.** The search signature is unit-tested. The route checks "same search within a minute" and then "40 per hour" after the owner check and before any outbound request. The scan screen shows the server's message. Not tested in the browser: that needs a signed-in session and the migration.
   - Description: cap how often one user can start a search (the scrape route), to protect hosting cost and keep the marketplaces from blocking Kompi's server.
   - Acceptance:
     - Two limits, checked after the owner check and **before** any outbound request; either one → 429 with `{ error, retryAfter }`:
@@ -126,7 +129,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `app/api/scrape/[itemId]/stream/route.ts`, `components/ScrapeProgress.tsx`, `lib/rateLimit.ts` (signature), `lib/rateLimit.test.ts`
   - Scope: S
 
-- [ ] **Task 8: Security headers (CSP report-only)**
+- [x] **Task 8: Security headers (CSP report-only)**
+  - **Built 2026-11-09.** Checked in the local preview: every header is present (Strict-Transport-Security is production only), and the invite, login and password-reset pages produce no CSP reports. Signed-in pages are still to check on the preview deploy or the live site (Checkpoint 3).
   - Description: the standard headers through `headers()` in `next.config.ts`, following the Next.js CSP guide's "Without Nonces" option (`node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md`).
   - Acceptance:
     - Enforced on every route:
