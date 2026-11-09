@@ -79,6 +79,7 @@ create unique index if not exists listings_item_id_url_key on listings(item_id, 
 create or replace function listings_track_price()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   if new.price is distinct from old.price and old.price is not null then
@@ -205,6 +206,7 @@ create or replace function new_listings_count(p_user_id uuid)
 returns table (item_id uuid, new_count bigint)
 language sql
 stable
+set search_path = public
 as $$
   select i.id as item_id, count(l.id) as new_count
   from items i
