@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getSitesForUser } from '@/lib/sites'
+import { serverError } from '@/lib/api/errors'
 
 export async function GET() {
   const supabase = await createClient()
@@ -38,6 +39,6 @@ export async function PUT(request: Request) {
     .from('user_site_prefs')
     .upsert(rows, { onConflict: 'user_id,site_config_id' })
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('profile/sites', error)
   return Response.json({ ok: true })
 }

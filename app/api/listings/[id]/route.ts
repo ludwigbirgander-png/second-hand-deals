@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { ownsItem } from '@/lib/access'
 import { markUpdate } from '@/lib/marks'
+import { serverError } from '@/lib/api/errors'
 
 export async function PATCH(
   request: Request,
@@ -56,6 +57,6 @@ export async function PATCH(
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('listings/[id]', error)
   return Response.json(data)
 }

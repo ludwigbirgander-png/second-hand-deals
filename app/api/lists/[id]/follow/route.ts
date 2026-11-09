@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 export async function POST(
   _request: Request,
@@ -30,7 +31,7 @@ export async function POST(
     .insert({ list_id: id, user_id: user.id })
 
   if (error?.code === '23505') return Response.json({ ok: true }) // already following
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]/follow', error)
   return Response.json({ ok: true }, { status: 201 })
 }
 
@@ -50,6 +51,6 @@ export async function DELETE(
     .eq('list_id', id)
     .eq('user_id', user.id)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]/follow', error)
   return Response.json({ ok: true })
 }

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { ownsItem } from '@/lib/access'
 import { hasExcludedWord } from '@/lib/search/match'
+import { serverError } from '@/lib/api/errors'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -28,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
   const words: string[] = item?.exclude_words ?? []
   const next = words.includes(word) ? words : [...words, word]
   const { error } = await supabase.from('items').update({ exclude_words: next }).eq('id', id)
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items/[id]/exclude-words', error)
 
   const { data: listings } = await supabase
     .from('listings')
@@ -59,7 +60,7 @@ export async function DELETE(request: Request, { params }: Params) {
   const { data: item } = await supabase.from('items').select('exclude_words').eq('id', id).single()
   const next = (item?.exclude_words ?? []).filter((w: string) => w !== word)
   const { error } = await supabase.from('items').update({ exclude_words: next }).eq('id', id)
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items/[id]/exclude-words', error)
 
   const { data: restored } = await supabase
     .from('listings')

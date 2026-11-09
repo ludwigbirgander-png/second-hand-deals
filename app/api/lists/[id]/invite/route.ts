@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { canManageList } from '@/lib/access'
 import { inviteUsable, LINK_MAX_USES } from '@/lib/lists/invites'
+import { serverError } from '@/lib/api/errors'
 
 export async function GET(
   _request: Request,
@@ -83,6 +84,6 @@ export async function DELETE(
     .eq('list_id', id)
     .eq('token', token)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]/invite', error)
   return Response.json({ ok: true })
 }

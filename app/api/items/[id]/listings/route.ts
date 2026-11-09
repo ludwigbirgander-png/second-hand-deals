@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { followerView, isMissingMarksTable, type ListingMark } from '@/lib/marks'
 import type { Listing } from '@/lib/types'
+import { serverError } from '@/lib/api/errors'
 
 export async function GET(
   _request: Request,
@@ -17,7 +18,7 @@ export async function GET(
     supabase.from('listings').select('*').eq('item_id', id).order('found_at', { ascending: false }),
   ])
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items/[id]/listings', error)
 
   const minPrice = item?.min_price ?? null
   const maxPrice = item?.max_price ?? null

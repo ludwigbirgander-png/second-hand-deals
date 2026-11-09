@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 export interface NotificationSettings {
   weekly_email: boolean
@@ -19,7 +20,7 @@ export async function GET() {
     .eq('id', user.id)
     .maybeSingle()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('profile/notifications', error)
   return Response.json({ ...DEFAULTS, ...data })
 }
 
@@ -42,6 +43,6 @@ export async function PATCH(request: Request) {
     .select('weekly_email, alerts_enabled')
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('profile/notifications', error)
   return Response.json(data)
 }
