@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { serverError } from '@/lib/api/errors'
 import { parseListFields } from '@/lib/validate'
+import type { ItemList } from '@/lib/types'
 
 export async function GET() {
   const supabase = await createClient()
@@ -24,16 +25,17 @@ export async function GET() {
 
   if (memberError) return serverError('lists', memberError)
 
-  const memberListIds = (memberRows ?? []).map((r: any) => r.list_id)
-  let sharedLists: any[] = []
+  type MemberRow = { list_id: string; role: string }
+  const memberListIds = (memberRows ?? []).map((r: MemberRow) => r.list_id)
+  let sharedLists: (ItemList & { userRole: string })[] = []
   if (memberListIds.length > 0) {
     const { data: memberListData } = await supabase
       .from('lists')
       .select('*')
       .in('id', memberListIds)
       .neq('user_id', user.id)
-    const roleMap = Object.fromEntries((memberRows ?? []).map((r: any) => [r.list_id, r.role]))
-    sharedLists = (memberListData ?? []).map((list: any) => ({ ...list, userRole: roleMap[list.id] }))
+    const roleMap = Object.fromEntries((memberRows ?? []).map((r: MemberRow) => [r.list_id, r.role]))
+    sharedLists = (memberListData ?? []).map((list: ItemList) => ({ ...list, userRole: roleMap[list.id] }))
   }
 
   return Response.json({ own: ownLists ?? [], shared: sharedLists })

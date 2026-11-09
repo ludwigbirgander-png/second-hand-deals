@@ -22,6 +22,16 @@ const CONDITION_MAP: Record<string, string> = {
   acceptabelt_skick: 'Satisfactory',
 }
 
+/** The parts of a Sellpy (Algolia) search hit that Kompi reads */
+interface SellpyHit {
+  objectID: string
+  metadata?: Record<string, string | undefined>
+  titleOutputOrder?: string[]
+  price_SE?: { amount?: number | null }
+  images?: string[]
+  categories?: { lvl2?: string[] }
+}
+
 export async function scrapeSellpy(query: string, opts: SearchOptions = {}): Promise<ScrapedListing[]> {
   // Category, size, colour, condition… go straight into Sellpy's own search
   const filters = sellpyFilters(opts)
@@ -46,7 +56,7 @@ export async function scrapeSellpy(query: string, opts: SearchOptions = {}): Pro
     }
   )
 
-  const hits: any[] = data?.results?.[0]?.hits ?? []
+  const hits: SellpyHit[] = data?.results?.[0]?.hits ?? []
 
   return hits
     .map((hit): ScrapedListing => {
@@ -59,7 +69,7 @@ export async function scrapeSellpy(query: string, opts: SearchOptions = {}): Pro
       // Title from Sellpy's parts (brand, type, size), with the size code as its label
       const titleParts: string[] = (hit.titleOutputOrder ?? [])
         .map((key: string) => (key === 'size' ? size : hit.metadata?.[key]))
-        .filter((v: unknown) => typeof v === 'string' && v)
+        .filter((v): v is string => typeof v === 'string' && v !== '')
       const title = titleParts.join(' ')
       const price = hit.price_SE?.amount != null ? Math.round(hit.price_SE.amount / 100) : null
 
