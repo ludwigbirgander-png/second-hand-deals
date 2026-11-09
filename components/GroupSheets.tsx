@@ -7,6 +7,7 @@ import { Sheet } from './ui/Sheet'
 import { Button, IconButton } from './ui/Button'
 import { FieldLabel, Input, Segmented } from './ui/Form'
 import { Pill } from './ui/Pill'
+import { describeInvite, type InviteLimits } from '@/lib/lists/invites'
 
 // ─── Shared building blocks ───────────────────────────────────────────────────
 
@@ -294,14 +295,16 @@ function MembersTab({ listId }: { listId: string }) {
   )
 }
 
+type InviteRow = { token: string; role: string } & Partial<InviteLimits>
+
 function ShareTab({ listId }: { listId: string }) {
-  const [tokens, setTokens] = useState<{ token: string; role: string }[]>([])
+  const [tokens, setTokens] = useState<InviteRow[]>([])
   const [role, setRole] = useState<'editor' | 'viewer'>('editor')
   const [copied, setCopied] = useState<string | null>(null)
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
-  const load = () => getArray<{ token: string; role: string }>(`/api/lists/${listId}/invite`).then(setTokens)
-  useEffect(() => { getArray<{ token: string; role: string }>(`/api/lists/${listId}/invite`).then(setTokens) }, [listId])
+  const load = () => getArray<InviteRow>(`/api/lists/${listId}/invite`).then(setTokens)
+  useEffect(() => { getArray<InviteRow>(`/api/lists/${listId}/invite`).then(setTokens) }, [listId])
 
   async function create() {
     await fetch(`/api/lists/${listId}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
@@ -335,7 +338,9 @@ function ShareTab({ listId }: { listId: string }) {
             <div key={t.token} className="flex items-center gap-2 min-h-[60px] border-b border-line-hair">
               <span className="flex-1 min-w-0">
                 <span className="block text-[13px] text-muted truncate">{origin}/lists/join/{t.token}</span>
-                <span className="block text-[13px] text-ink">{t.role === 'viewer' ? 'Can view' : 'Can edit'}</span>
+                <span className="block text-[13px] text-ink">
+                  {[t.role === 'viewer' ? 'Can view' : t.role === 'admin' ? 'Admin' : 'Can edit', describeInvite(t)].filter(Boolean).join(' · ')}
+                </span>
               </span>
               <Button variant="secondary" size="sm" onClick={() => copy(t.token)}>{copied === t.token ? 'Copied' : 'Copy'}</Button>
               <IconButton icon="x" size="sm" variant="ghost" label="Revoke link" onClick={() => revoke(t.token)} />

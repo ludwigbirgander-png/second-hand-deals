@@ -159,8 +159,48 @@ create table if not exists list_invites (
   token text not null unique default encode(gen_random_bytes(16), 'hex'),
   role text not null default 'editor' check (role in ('admin', 'editor', 'viewer')),
   created_by uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- Expiry and use limit (20261109_invite_expiry.sql): 1 use for email invites, 25 for links
+  expires_at timestamptz not null default (now() + interval '14 days'),
+  max_uses integer not null default 1,
+  use_count integer not null default 0,
+  constraint list_invites_max_uses_check check (max_uses between 1 and 100),
+  constraint list_invites_use_count_check check (use_count >= 0 and use_count <= max_uses)
 );
+
+-- New invites are valid for at most 30 days (capped on creation)
+create or replace function list_invites_cap_expiry()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.expires_at := least(new.expires_at, now() + interval '30 days');
+  return new;
+end;
+$$;
+
+drop trigger if exists list_invites_cap_expiry on list_invites;
+create trigger list_invites_cap_expiry
+  before insert on list_invites
+  for each row execute function list_invites_cap_expiry();
+
+-- Uses an invite in one step (checks expiry and uses, counts the use). Admin key only.
+create or replace function redeem_list_invite(p_token text)
+returns table (list_id uuid, role text)
+language sql
+volatile
+set search_path = public
+as $$
+  update list_invites
+     set use_count = use_count + 1
+   where token = p_token
+     and expires_at > now()
+     and use_count < max_uses
+  returning list_invites.list_id, list_invites.role
+$$;
+revoke all on function redeem_list_invite(text) from public, anon, authenticated;
+grant execute on function redeem_list_invite(text) to service_role;
 
 create table if not exists list_follows (
   list_id uuid not null references lists(id) on delete cascade,
