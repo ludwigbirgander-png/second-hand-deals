@@ -4,6 +4,7 @@ import { getEnabledSiteNamesForUser } from '@/lib/sites'
 import { SCRAPERS, runSite, toListingRow, buildQuery } from '@/lib/scrapers'
 import { sitesForCategory } from '@/lib/categories'
 import { siteExcluded } from '@/lib/categories/native'
+import { followerMarkedIds, idList } from '@/lib/marks'
 
 export const maxDuration = 60
 
@@ -99,28 +100,29 @@ export async function POST(
       // this run are no longer available — delete them (starred ones are kept).
       // Sites that errored or are disabled are left untouched, and removed
       // listings are kept so they stay hidden if they show up again.
+      // Followers' favourites and removals are kept too. If they can't be read, skip pruning.
       let pruned = 0
-      if (succeededSites.length > 0) {
-        const { count } = await db()
+      const keep = await followerMarkedIds(db(), itemId)
+      const prunable = () => {
+        const q = db()
           .from('listings')
           .delete({ count: 'exact' })
           .eq('item_id', itemId)
           .eq('starred', false)
           .is('removed_at', null)
+        return keep && keep.length > 0 ? q.not('id', 'in', idList(keep)) : q
+      }
+
+      if (keep && succeededSites.length > 0) {
+        const { count } = await prunable()
           .in('site', succeededSites)
           .lt('last_seen_at', scrapeStart)
         pruned = count ?? 0
       }
 
       // Listings from sites the category or sale type now rules out (favourites and removed ones stay)
-      if (skippedSites.length > 0) {
-        const { count } = await db()
-          .from('listings')
-          .delete({ count: 'exact' })
-          .eq('item_id', itemId)
-          .eq('starred', false)
-          .is('removed_at', null)
-          .in('site', skippedSites)
+      if (keep && skippedSites.length > 0) {
+        const { count } = await prunable().in('site', skippedSites)
         pruned += count ?? 0
       }
 

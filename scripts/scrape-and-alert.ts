@@ -9,6 +9,7 @@ import { listingAlertEmail, rareFindEmail } from '../lib/alerts/email.js'
 import { db, appUrl, canSend, sendEmail, emailFor, loadSettings, fetchAll } from './jobs.js'
 import { sitesForCategory, type CategoryId, type ItemFilters } from '../lib/categories/index.js'
 import { siteExcluded } from '../lib/categories/native.js'
+import { followerMarkedIds, idList } from '../lib/marks/index.js'
 
 const ITEM_COLUMNS = 'id, user_id, name, brand, notify, min_price, target_price, created_at, exclude_words, category, filters'
 const LISTING_COLUMNS =
@@ -74,16 +75,26 @@ async function scrapeAll(items: JobItem[]) {
     }
 
     // Prune stale listings: not favourited and not seen for 14 days (sold listings stop
-    // being returned). Removed ones are kept so they stay hidden.
+    // being returned). Removed ones are kept so they stay hidden. Followers' favourites
+    // and removals are kept the same way; if they can't be read, skip pruning this item.
     const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
-    const { error: pruneError, count: pruned } = await db
-      .from('listings')
-      .delete({ count: 'exact' })
-      .eq('item_id', item.id)
-      .eq('starred', false)
-      .is('removed_at', null)
-      .lt('last_seen_at', cutoff)
-    if (pruneError) console.error('  Prune failed:', pruneError.message)
+    const keep = await followerMarkedIds(db, item.id)
+    let pruned: number | null = null
+    if (!keep) {
+      console.error('  Prune skipped: could not read listing marks')
+    } else {
+      let prune = db
+        .from('listings')
+        .delete({ count: 'exact' })
+        .eq('item_id', item.id)
+        .eq('starred', false)
+        .is('removed_at', null)
+        .lt('last_seen_at', cutoff)
+      if (keep.length > 0) prune = prune.not('id', 'in', idList(keep))
+      const { error: pruneError, count } = await prune
+      if (pruneError) console.error('  Prune failed:', pruneError.message)
+      pruned = count
+    }
     console.log(`  ${scraped.length} relevant${pruned ? `, pruned ${pruned} stale` : ''}`)
   }
 }

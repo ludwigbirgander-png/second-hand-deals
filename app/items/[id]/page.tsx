@@ -238,7 +238,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           excludeWords={item.exclude_words ?? []}
           onExcludeWordsChange={(words) => setItem((prev) => (prev ? { ...prev, exclude_words: words } : prev))}
           newSince={newSince}
-          canRefresh={isOwner}
+          isOwner={isOwner}
         />
       </section>
 
