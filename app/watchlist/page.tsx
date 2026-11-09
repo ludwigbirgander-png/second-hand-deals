@@ -211,23 +211,27 @@ export default function WatchlistPage() {
       })
       const created = await res.json()
       if (!res.ok) return created.error ?? 'Could not add the item'
-      if (v.listIds.length > 0) {
-        await fetch(`/api/items/${created.id}/associations`, {
+      // If the lists can't be saved (e.g. you're no longer an editor), the item is
+      // still added, just without them; the tile shows that
+      let listIds = v.listIds
+      if (listIds.length > 0) {
+        const linked = await fetch(`/api/items/${created.id}/associations`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ listIds: v.listIds }),
-        })
+          body: JSON.stringify({ listIds }),
+        }).catch(() => null)
+        if (!linked?.ok) listIds = []
       }
       const item: ItemWithMeta = {
         ...created,
-        lists: [...lists, ...sharedLists].filter((l) => v.listIds.includes(l.id)),
+        lists: [...lists, ...sharedLists].filter((l) => listIds.includes(l.id)),
         lowestListing: null,
         new_listings_count: 0,
         listing_count: 0,
       }
       setItems((prev) => [item, ...prev])
       // Make sure the new tile is visible under the current filter
-      if (activeListId !== 'all' && !v.listIds.includes(activeListId)) setActiveListId('all')
+      if (activeListId !== 'all' && !listIds.includes(activeListId)) setActiveListId('all')
       setDropId(item.id)
       setAddOpen(false)
       requestAnimationFrame(() => fabRef.current?.focus())
