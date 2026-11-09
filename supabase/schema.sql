@@ -424,3 +424,44 @@ create policy site_configs_read on site_configs
 drop policy if exists user_site_prefs_own on user_site_prefs;
 create policy user_site_prefs_own on user_site_prefs
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ── Rate limits (20261110_rate_limits.sql) ───────────────────────────────────
+-- Fixed-window counters for invite emails and searches. Admin key only.
+
+create table if not exists rate_limits (
+  key text not null,
+  window_start timestamptz not null,
+  count integer not null default 0,
+  primary key (key, window_start)
+);
+
+create index if not exists rate_limits_window_start_idx on rate_limits(window_start);
+alter table rate_limits enable row level security;
+
+create or replace function hit_rate_limit(p_key text, p_window_seconds integer, p_max integer)
+returns boolean
+language plpgsql
+volatile
+set search_path = public
+as $$
+declare
+  v_window timestamptz;
+  v_count integer;
+begin
+  if p_window_seconds < 1 or p_max < 1 then
+    raise exception 'hit_rate_limit: window and max must be at least 1';
+  end if;
+  v_window := to_timestamp(floor(extract(epoch from now()) / p_window_seconds) * p_window_seconds);
+  insert into rate_limits as r (key, window_start, count)
+  values (p_key, v_window, 1)
+  on conflict (key, window_start) do update set count = r.count + 1
+  returning r.count into v_count;
+  if random() < 0.01 then
+    delete from rate_limits where window_start < now() - interval '1 day';
+  end if;
+  return v_count <= p_max;
+end;
+$$;
+
+revoke all on function hit_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function hit_rate_limit(text, integer, integer) to service_role;
