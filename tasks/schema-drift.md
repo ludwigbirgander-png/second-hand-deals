@@ -19,7 +19,7 @@ Compared 2026-11-05 against the live project "Second hand platform" (`rszkzmykws
 - Its `items` rule looks up `item_lists`, but its `item_lists` rule only lets *members* read rows, so followers would still see nothing.
 - The `items` rule reads `item_lists`, whose rule reads `items` again. Postgres stops that with "infinite recursion detected in policy".
 
-**Draft fix:** `supabase/migrations/20261106_sharing_read_rules.sql` (not run). It adds two small helper functions that work out "lists I can view" and "items in those lists" without going through the table rules (so no recursion). It then adds one read rule each to `item_lists`, `items` and `listings`. It only adds read access; nothing gets write access it didn't have.
+**Fix:** `supabase/migrations/20261106_sharing_read_rules.sql`, **run in Supabase on 2026-11-09**. It adds two small helper functions that work out "lists I can view" and "items in those lists" without going through the table rules (so no recursion). It then adds one read rule each to `item_lists`, `items` and `listings`. It only adds read access; nothing gets write access it didn't have.
 
 **Tested 2026-11-05** on the live database inside a transaction that was rolled back (nothing was left behind). The tests used real accounts and the one public list (1 item, 675 listings):
 - **Another user, not following:** sees only their own 8 items, none of the list's. Can't save a favourite on its listings.
@@ -28,9 +28,14 @@ Compared 2026-11-05 against the live project "Second hand platform" (`rszkzmykws
 - **Signed out:** sees nothing, and can't call the helper functions.
 - No recursion error.
 
-**Run it only after these, in this order:**
-1. **PR 2 is deployed.** Once followers can read other people's items, the old scan route would let them rewrite those items' listings. PR 2 fixes that.
-2. **Security Task 3 ("Only add items to lists you may edit") is done.** Today anyone can attach their own item to *any* list (`own item_lists` only checks that you own the item). With sharing on, that item would then show up for that list's followers: someone could push items into your public list.
+**Run order, all done:**
+1. **PR 2 deployed** (2026-11-05). Once followers can read other people's items, the old scan route would have let them rewrite those items' listings.
+2. **Security Task 3 done** (PR 4, 2026-11-09; migration `20261109_item_lists_check.sql`). Before it, anyone could attach their own item to *any* list, and with sharing on it would have shown up for that list's followers.
+3. **Sharing rules run** (2026-11-09). Checked again on the live rules with real accounts (rolled back):
+   - A follower sees the list's item and its 657 listings, but can't edit or delete them, or add their own item to the list.
+   - Their own favourite saves, and the owner doesn't see it.
+   - Signed-out visitors see nothing.
+   - No new Supabase security warnings.
 
 PR 3 (personal favourites) needs this migration to do anything for followers.
 

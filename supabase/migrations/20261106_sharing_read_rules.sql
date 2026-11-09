@@ -1,4 +1,4 @@
--- DRAFT — NOT RUN YET. See tasks/schema-drift.md.
+-- RUN IN SUPABASE 2026-11-09 (after PR 2 and security Task 3). See tasks/schema-drift.md.
 --
 -- Migration: let followers and list members read the items in shared lists
 --
