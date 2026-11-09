@@ -28,7 +28,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Scope: S
   - **Done 2026-11-05** (branch `security-phase-1`), with these notes:
     - **16.4.1, not 16.4.2.** `~/.npmrc` has `min-release-age=21`, and 16.4.2 was under 21 days old. 16.4.1 already fixes the critical advisory (affected range ends at 16.4.0) and ships the fixed `postcss` 8.5.23 and `sharp` 0.35.5. Move to the latest 16.4.x once it's 21 days old.
-    - **Docs:** 16.3–16.4 only add opt-in features; no code changes needed. `middleware.ts` still works but is deprecated (since 16.0) in favour of `proxy.ts`; renaming it is left for later. `next dev` may add a marked "agent rules" block to `AGENTS.md` (`agentRules` option, on by default).
+    - **Docs:** 16.3–16.4 only add opt-in features; no code changes needed. `middleware.ts` still works but is deprecated (since 16.0) in favour of `proxy.ts`; renamed to `proxy.ts` on 2026-11-09 (cleanup PR). `next dev` may add a marked "agent rules" block to `AGENTS.md` (`agentRules` option, on by default).
     - **Audit (`--omit=dev`): 0 critical, 0 moderate, 2 high left**, both with fixes that are still under 21 days old:
       | Package | Why it can wait | Fix | Review on |
       |---|---|---|---|
@@ -83,7 +83,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `supabase/migrations/20261025_invite_expiry.sql`, `supabase/schema.sql`, `app/api/lists/join/[token]/route.ts`, `app/api/lists/[id]/members/route.ts`, `app/api/lists/[id]/invite/route.ts`
   - Scope: M
 
-- [ ] **Checkpoint 2:** you run both migrations in Supabase; repeat the second-account checks from Tasks 3–4 against the deployed app.
+- [x] **Checkpoint 2:** you run both migrations in Supabase; repeat the second-account checks from Tasks 3–4 against the deployed app.
+  - **Done 2026-11-09.** Both migrations run. Second account (earselect, owner of the collaborative "Bad boy list") favourited and removed listings on the main account's item: saved as its own marks, the main account's view unchanged. Invite join by link worked.
 
 ## Phase 3: Abuse limits and headers
 
@@ -148,7 +149,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `next.config.ts`
   - Scope: XS
 
-- [ ] **Checkpoint 3:** the rate-limit migration is run; limits fire in production (a quick double Refresh); headers present on the live site; CSP reports reviewed. If the console shows no reports after a week of normal use, switch the CSP from report-only to enforced (one-line change, can ride along with Phase 4).
+- [ ] **Checkpoint 3:** *(all done except the CSP review: migration run, double Refresh shows the limit message, headers live; CSP to review around 2026-11-16)* the rate-limit migration is run; limits fire in production (a quick double Refresh); headers present on the live site; CSP reports reviewed. If the console shows no reports after a week of normal use, switch the CSP from report-only to enforced (one-line change, can ride along with Phase 4).
 
 ## Phase 4: Clean-up
 
@@ -196,7 +197,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Scope: S
 
 - [x] **Task 13: Input caps for lists, plus database limits**
-  - **Built 2026-11-09.** List names up to 60 characters; colours from `lib/colors.ts`. Migration `20261110_input_limits.sql` (not `20261027_…`) adds the same limits for direct writes, and a test checks that its colours match `lib/colors.ts`. Tested on the live database (rolled back): it applies to all existing rows; 500-character names, blank names, negative prices and unknown colours are refused; normal items and lists still work. **Still to do: run the migration.**
+  - **Built 2026-11-09.** List names up to 60 characters; colours from `lib/colors.ts`. Migration `20261110_input_limits.sql` (not `20261027_…`) adds the same limits for direct writes, and a test checks that its colours match `lib/colors.ts`. Tested on the live database (rolled back): it applies to all existing rows; 500-character names, blank names, negative prices and unknown colours are refused; normal items and lists still work. **Migration run 2026-11-09.**
   - Acceptance:
     - List `name` ≤ 60 characters; `color` must be one of the colors in `lib/colors.ts`, else 400. Same rules on create and edit (rules added to `lib/validate.ts`).
     - A migration adds `check` constraints for item and list name lengths, so direct client writes are capped too. Existing rows are checked first; any too long are reported, not truncated.
@@ -206,7 +207,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Scope: M
 
 - [ ] **Checkpoint: Complete**
-  - [ ] Every acceptance criterion above met; standing bar green
+  - [x] Every acceptance criterion above met; standing bar green (lint passes with 0 errors since the cleanup PR)
   - [ ] `npm audit --omit=dev` clean
   - [ ] CSP reports clean for a week → switch to enforced `Content-Security-Policy`
   - [ ] Re-run the security check; open PR(s)
