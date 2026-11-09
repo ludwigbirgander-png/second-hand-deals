@@ -41,15 +41,20 @@ PR 3 (personal favourites) needs this migration to do anything for followers.
 
 ## 2. Security gaps in the live database
 
-| Problem | Live | Risk | Suggested fix |
+| Problem | Was | Risk | Status |
 |---|---|---|---|
-| `notified` has no RLS | RLS off | Anyone with the public key can read and change it. Supabase flags this as an **error**. | Turn RLS on. The table is empty and no code uses it (only the admin key would), so nothing breaks. |
-| `site_configs` writable by any user | `write site_configs`: any signed-in user can `UPDATE` | Anyone could switch a marketplace off, or change its URL, for everyone | Drop that rule (the app only reads it; per-user choices live in `user_site_prefs`). Also drop the duplicate read rule (`read site_configs` = `site_configs_read`). |
-| Every profile is public | `profiles select`: `true` | Anyone, even signed out, can list every user's display name | Own profile only, as in `schema.sql`. The members list already reads names with the admin key. |
-| Functions without a fixed search path | `listings_track_price`, `new_listings_count` | Supabase warning: a function's lookups could be redirected | Add `set search_path = public` to both. |
-| Leaked-password check off | Supabase Auth setting | Users can sign up with passwords known from breaches | Turn on in the dashboard: Authentication → Policies. |
+| `notified` had no RLS | RLS off | Anyone with the public key could read and change it (Supabase **error**) | **Fixed 2026-11-09:** RLS on, admin key only. No code uses the table. |
+| `site_configs` writable by any user | `write site_configs`: any signed-in user could `UPDATE` | Anyone could switch a marketplace off, or change its URL, for everyone | **Fixed 2026-11-09:** read-only for signed-in users; the duplicate read rule is gone. |
+| Every profile public | `profiles select`: `true` | Anyone, even signed out, could list every user's display name | **Fixed 2026-11-09:** own profile only. The members list reads names with the admin key. |
+| Functions without a fixed search path | `listings_track_price`, `new_listings_count` | Supabase warning: a function's lookups could be redirected | **Fixed 2026-11-09:** both pinned to `public`. |
+| Leaked-password check off | Supabase Auth setting | Users can sign up with passwords known from breaches | **Still open, yours:** Dashboard → Authentication → Passwords → leaked password protection. |
 
-These fit the security plan (`tasks/security-plan.md`, Phase 2). The plan was written from `schema.sql`, so its database tasks should start from the live rules above.
+The four fixes are in `supabase/migrations/20261109_database_gaps.sql`. They were tested on the live database in a rolled-back transaction first, with real accounts:
+- Signed-out visitors can no longer read profiles or marketplace settings, or write to `notified`.
+- Signed-in users can read the 7 marketplace settings but not change them, and see only their own profile.
+- Saving your own profile, the new-listing counts and the price-history trigger still work.
+
+Supabase's security checks now show only the leaked-password setting, plus two informational notes that `alert_log` and `notified` have no user rules (intended: admin key only).
 
 ## 3. Other differences (harmless, but `schema.sql` is wrong)
 
