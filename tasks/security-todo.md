@@ -53,7 +53,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
       - the owner can add their own item, but not someone else's
       - an editor of a collaborative list can add; a viewer, or an editor once the list is private again, can't
       - nobody can change a link in place, and outsiders can't read or remove the owner's links
-    - **Still to do:** run the migration in Supabase.
+    - **Migration run in Supabase 2026-11-09.** Checked afterwards on real data: saving an item the way the deployed code does (delete all links, re-add) still works, and an outsider adding to the public list is refused. No new Supabase security warnings.
   - Description: the `item_lists_item_owner` rule only checks that you own the item, so you can attach it to any list, and public list ids are readable by everyone. Require list access too, in the database and in the route.
   - Acceptance:
     - New migration replaces the rule's `with check` with: you own the item **and** (you own the list **or** you are its `editor`/`admin` member). Reads and deletes keep working as before. `schema.sql` updated.
