@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
 import { loginAction } from '@/app/actions'
 import { AuthShell } from '@/components/AuthShell'
 import { Input } from '@/components/ui/Form'
 import { Button } from '@/components/ui/Button'
+import { safeNextPath, signInHref } from '@/lib/auth/next'
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  // Where to go after signing in, e.g. back to an invite (same-site paths only)
+  const next = safeNextPath(use(searchParams).next)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +30,7 @@ export default function LoginPage() {
       setError(result.error)
       setLoading(false)
     } else {
-      window.location.replace('/watchlist')
+      window.location.replace(next)
     }
   }
 
@@ -43,7 +46,7 @@ export default function LoginPage() {
         <Button type="submit" block disabled={loading} className="mt-2">{loading ? 'Signing in…' : 'Sign in'}</Button>
       </form>
       <p className="mt-6 mb-0 text-center text-[14px] text-muted">
-        No account? <Link href="/signup" className="text-ink underline underline-offset-[3px] decoration-line-dashed hover:decoration-ink">Create one</Link>
+        No account? <Link href={signInHref('/signup', next)} className="text-ink underline underline-offset-[3px] decoration-line-dashed hover:decoration-ink">Create one</Link>
       </p>
     </AuthShell>
   )

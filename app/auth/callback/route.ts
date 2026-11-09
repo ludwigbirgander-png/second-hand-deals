@@ -1,14 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { safeNextPath } from '@/lib/auth/next'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
   // Only same-site paths, never protocol-relative URLs like //evil.example
-  const nextParam = searchParams.get('next')
-  const next = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/watchlist'
+  const next = safeNextPath(searchParams.get('next'))
   const isReset = next === '/reset-password'
 
   if (code) {

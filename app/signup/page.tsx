@@ -1,15 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
 import { signupAction } from '@/app/actions'
 import { AuthShell } from '@/components/AuthShell'
 import { Input } from '@/components/ui/Form'
 import { Button, buttonClass } from '@/components/ui/Button'
+import { safeNextPath, signInHref } from '@/lib/auth/next'
 
 const linkClass = 'text-ink underline underline-offset-[3px] decoration-line-dashed hover:decoration-ink'
 
-export default function SignupPage() {
+export default function SignupPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  // Where to go after signing up, e.g. back to an invite (same-site paths only)
+  const next = safeNextPath(use(searchParams).next)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -24,6 +27,7 @@ export default function SignupPage() {
     const formData = new FormData()
     formData.set('email', email)
     formData.set('password', password)
+    formData.set('next', next)
 
     const result = await signupAction(formData)
     if (result?.error) {
@@ -33,7 +37,7 @@ export default function SignupPage() {
     }
 
     if (result?.sessionCreated) {
-      window.location.replace('/watchlist')
+      window.location.replace(next)
       return
     }
 
@@ -47,7 +51,7 @@ export default function SignupPage() {
         <p className="m-0 text-[15px] text-ink-2">
           We sent a confirmation link to <strong className="font-medium text-ink">{email}</strong>. Click it to activate your account.
         </p>
-        <Link href="/login" className={`${buttonClass({ variant: 'secondary' })} mt-6 no-underline`}>Back to sign in</Link>
+        <Link href={signInHref('/login', next)} className={`${buttonClass({ variant: 'secondary' })} mt-6 no-underline`}>Back to sign in</Link>
       </AuthShell>
     )
   }
@@ -61,7 +65,7 @@ export default function SignupPage() {
         <Button type="submit" block disabled={loading} className="mt-2">{loading ? 'Creating account…' : 'Create account'}</Button>
       </form>
       <p className="mt-6 mb-0 text-center text-[14px] text-muted">
-        Already have an account? <Link href="/login" className={linkClass}>Sign in</Link>
+        Already have an account? <Link href={signInHref('/login', next)} className={linkClass}>Sign in</Link>
       </p>
     </AuthShell>
   )
