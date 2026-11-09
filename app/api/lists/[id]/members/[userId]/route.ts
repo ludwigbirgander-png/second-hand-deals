@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 export async function PATCH(
   request: Request,
@@ -29,7 +30,7 @@ export async function PATCH(
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]/members/[userId]', error)
   return Response.json(data)
 }
 
@@ -66,6 +67,6 @@ export async function DELETE(
     .eq('list_id', id)
     .eq('user_id', userId)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]/members/[userId]', error)
   return Response.json({ ok: true })
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 export async function POST(
   _request: Request,
@@ -16,7 +17,7 @@ export async function POST(
     .eq('id', id)
     .eq('user_id', user.id)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items/[id]/viewed', error)
 
   return Response.json({ ok: true })
 }

@@ -92,7 +92,7 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 > Order: Task 8 has no dependencies and can ship first or alongside. Tasks 6 and 7 need Task 5. Each task is its own PR; the Task 5 migration runs before Tasks 6–7 deploy (the limiter fails open without it, so the order can't break anything).
 
 - [x] **Task 5: Shared rate limiter**
-  - **Built 2026-11-09** (branch `security-phase-3`). The code lives in `lib/limits/` (not `lib/rateLimit.ts`), because tests must be in a `lib/` subfolder. Tested on the live database in a rolled-back transaction: 3 hits allowed and the 4th refused, a new key or window counts separately, old windows are cleaned up, bad input is refused, and signed-in and signed-out users can't call the function or read the table. **Still to do: run the migration.**
+  - **Built 2026-11-09** (branch `security-phase-3`). The code lives in `lib/limits/` (not `lib/rateLimit.ts`), because tests must be in a `lib/` subfolder. Tested on the live database in a rolled-back transaction: 3 hits allowed and the 4th refused, a new key or window counts separately, old windows are cleaned up, bad input is refused, and signed-in and signed-out users can't call the function or read the table. **Migration run 2026-11-09.**
   - Description: a Postgres-backed fixed-window counter, so limits hold across Vercel's serverless instances (an in-memory counter would reset per instance).
   - Acceptance:
     - Migration adds `rate_limits(key text, window_start timestamptz, count int, primary key (key, window_start))` with RLS on and no user rules, and `hit_rate_limit(p_key text, p_window_seconds int, p_max int) returns boolean`: one statement that counts the hit in the current window and returns whether it's allowed. Execute for `service_role` only; signed-in and signed-out users can't call it. It also deletes windows older than a day, so the table stays small.
@@ -152,7 +152,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 
 ## Phase 4: Clean-up
 
-- [ ] **Task 9: Generic errors in item and listing routes**
+- [x] **Task 9: Generic errors in item and listing routes**
+  - **Built 2026-11-09** (branch `security-phase-4`, together with Task 10). The helper is `lib/api/errors.ts` (`serverError(context, error)`, with tests): it logs the details and answers "Something went wrong. Try again." All 27 raw `error.message` responses under `app/api` now use it.
   - Description: stop sending raw database error text to the browser.
   - Acceptance:
     - New `lib/apiError.ts` with `serverError(context, error)` that logs the details with `console.error` and returns `{ error: 'Something went wrong' }` with status 500.
@@ -163,7 +164,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `lib/apiError.ts`, `lib/apiError.test.ts`, the 5–6 route files under `app/api/items`, `app/api/listings`
   - Scope: M
 
-- [ ] **Task 10: Generic errors in list and profile routes**
+- [x] **Task 10: Generic errors in list and profile routes**
+  - **Built 2026-11-09** with Task 9. The "already following" case is unchanged. `loginAction`/`signupAction` keep Supabase's sign-in messages, which are meant for users.
   - Acceptance:
     - The same for `app/api/lists/**` and `app/api/profile/**`, except the friendly "already following" case.
     - `loginAction`/`signupAction` keep Supabase's auth messages (they're meant for users) but never include anything else.
@@ -172,7 +174,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: route files under `app/api/lists`, `app/api/profile` (about 10 files, but each is a one-line mechanical swap)
   - Scope: M
 
-- [ ] **Task 11: Member emails for owners and admins only**
+- [x] **Task 11: Member emails for owners and admins only**
+  - **Built 2026-11-09.** Editors and viewers get names and roles; emails stay empty and aren't even looked up. Shared screens fall back to "Member" when someone has no display name. This also fixes the owner's display name, which was never looked up before.
   - Description: `GET /api/lists/[id]/members` returns every member's email to anyone on the list.
   - Acceptance:
     - Owners and admins get emails as today; editors and viewers get `email: ''` (name and role only).
@@ -182,7 +185,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `app/api/lists/[id]/members/route.ts`
   - Scope: XS
 
-- [ ] **Task 12: Input caps for items**
+- [x] **Task 12: Input caps for items**
+  - **Built 2026-11-09.** The checks are in `lib/validate/` (not `lib/validate.ts`) with tests: names up to 120 characters, prices whole kronor from 0 to 10 000 000. Both item routes use them, and the name fields stop at 120 characters.
   - Acceptance:
     - Item `name` ≤ 120 characters; prices are whole numbers ≥ 0 or empty; else 400. Same rules on create and edit.
     - The checks live in a small `lib/validate.ts` with unit tests; both item routes call it.
@@ -191,7 +195,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `lib/validate.ts`, `lib/validate.test.ts`, `app/api/items/route.ts`, `app/api/items/[id]/route.ts`
   - Scope: S
 
-- [ ] **Task 13: Input caps for lists, plus database limits**
+- [x] **Task 13: Input caps for lists, plus database limits**
+  - **Built 2026-11-09.** List names up to 60 characters; colours from `lib/colors.ts`. Migration `20261110_input_limits.sql` (not `20261027_…`) adds the same limits for direct writes, and a test checks that its colours match `lib/colors.ts`. Tested on the live database (rolled back): it applies to all existing rows; 500-character names, blank names, negative prices and unknown colours are refused; normal items and lists still work. **Still to do: run the migration.**
   - Acceptance:
     - List `name` ≤ 60 characters; `color` must be one of the colors in `lib/colors.ts`, else 400. Same rules on create and edit (rules added to `lib/validate.ts`).
     - A migration adds `check` constraints for item and list name lengths, so direct client writes are capped too. Existing rows are checked first; any too long are reported, not truncated.

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 export async function PATCH(
   request: Request,
@@ -23,7 +24,7 @@ export async function PATCH(
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]/visibility', error)
   if (!data) return Response.json({ error: 'Not found or not owner' }, { status: 404 })
 
   return Response.json(data)

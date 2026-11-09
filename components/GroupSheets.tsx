@@ -8,6 +8,7 @@ import { Button, IconButton } from './ui/Button'
 import { FieldLabel, Input, Segmented } from './ui/Form'
 import { Pill } from './ui/Pill'
 import { describeInvite, type InviteLimits } from '@/lib/lists/invites'
+import { LIST_NAME_MAX } from '@/lib/validate'
 
 // ─── Shared building blocks ───────────────────────────────────────────────────
 
@@ -56,7 +57,7 @@ function DetailsForm({ name, color, kind, onSave, onDelete }: {
 
   return (
     <div className="flex flex-col gap-5">
-      <Input label="Name" value={draftName} onChange={(e) => setDraftName(e.target.value)} />
+      <Input label="Name" maxLength={LIST_NAME_MAX} value={draftName} onChange={(e) => setDraftName(e.target.value)} />
       <div>
         <FieldLabel>Color</FieldLabel>
         <ColorSwatches value={draftColor} onChange={setDraftColor} />

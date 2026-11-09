@@ -41,7 +41,7 @@ async function loadMembers(lists: ItemList[]) {
       .filter((l) => l.visibility === 'collaborative')
       .map(async (l) => {
         const data: ListMember[] = await fetch(`/api/lists/${l.id}/members`).then((r) => r.json()).catch(() => [])
-        return [l.id, Array.isArray(data) ? data.map((m) => ({ name: m.display_name || m.email })) : []] as const
+        return [l.id, Array.isArray(data) ? data.map((m) => ({ name: m.display_name || m.email || 'Member' })) : []] as const
       }),
   )
   return Object.fromEntries(entries) as Record<string, { name: string }[]>

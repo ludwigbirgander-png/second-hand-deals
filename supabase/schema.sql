@@ -465,3 +465,19 @@ $$;
 
 revoke all on function hit_rate_limit(text, integer, integer) from public, anon, authenticated;
 grant execute on function hit_rate_limit(text, integer, integer) to service_role;
+
+-- ── Input limits (20261110_input_limits.sql) ─────────────────────────────────
+-- Same limits as lib/validate, for writes that go straight to the database.
+alter table items drop constraint if exists items_name_length;
+alter table items add constraint items_name_length check (char_length(btrim(name)) between 1 and 120);
+alter table items drop constraint if exists items_price_range;
+alter table items add constraint items_price_range check (
+  (min_price is null or min_price between 0 and 10000000)
+  and (max_price is null or max_price between 0 and 10000000)
+  and (target_price is null or target_price between 0 and 10000000)
+);
+alter table lists drop constraint if exists lists_name_length;
+alter table lists add constraint lists_name_length check (char_length(btrim(name)) between 1 and 60);
+alter table lists drop constraint if exists lists_color_known;
+alter table lists add constraint lists_color_known
+  check (color in ('zinc', 'blue', 'green', 'amber', 'red', 'purple', 'orange', 'teal', 'pink', 'indigo'));

@@ -71,7 +71,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       if (shared) {
         fetch(`/api/lists/${shared.id}/members`)
           .then((r) => r.json())
-          .then((data: ListMember[]) => { if (!cancelled && Array.isArray(data)) setMembers(data.map((m) => ({ name: m.display_name || m.email }))) })
+          .then((data: ListMember[]) => { if (!cancelled && Array.isArray(data)) setMembers(data.map((m) => ({ name: m.display_name || m.email || 'Member' }))) })
           .catch(() => {})
       }
     })

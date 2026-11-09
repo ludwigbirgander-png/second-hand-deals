@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 export async function GET() {
   const supabase = await createClient()
@@ -10,7 +11,7 @@ export async function GET() {
     .select('list_id')
     .eq('user_id', user.id)
 
-  if (followsError) return Response.json({ error: followsError.message }, { status: 500 })
+  if (followsError) return serverError('lists/following', followsError)
 
   const listIds = (follows ?? []).map((f: any) => f.list_id)
   if (listIds.length === 0) return Response.json([])
@@ -20,6 +21,6 @@ export async function GET() {
     .select('*')
     .in('id', listIds)
 
-  if (listsError) return Response.json({ error: listsError.message }, { status: 500 })
+  if (listsError) return serverError('lists/following', listsError)
   return Response.json(lists ?? [])
 }

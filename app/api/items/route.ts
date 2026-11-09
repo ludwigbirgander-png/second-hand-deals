@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { parseTargetPrice } from '@/lib/alerts/targetPrice'
 import { sanitizeFilters } from '@/lib/categories'
 import { isMissingMarksTable } from '@/lib/marks'
+import { parseItemFields } from '@/lib/validate'
+import { serverError } from '@/lib/api/errors'
 
 export async function GET() {
   const supabase = await createClient()
@@ -13,7 +15,7 @@ export async function GET() {
     .select('*, item_lists(lists(*))')
     .order('created_at', { ascending: false })
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items', error)
 
   const transformed = (data ?? []).map((item: any) => {
     const { item_lists, ...rest } = item
@@ -112,10 +114,10 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, brand, min_price, max_price, notify, target_price, category, filters } = await request.json()
-  if (!name?.trim()) {
-    return Response.json({ error: 'Name is required' }, { status: 400 })
-  }
+  const body = await request.json().catch(() => ({}))
+  const { notify, target_price, category, filters } = body
+  const fields = parseItemFields(body)
+  if (!fields.ok) return Response.json({ error: fields.error }, { status: 400 })
   const target = parseTargetPrice(target_price)
   if (target_price != null && target_price !== '' && target === undefined) {
     return Response.json({ error: 'Target price must be a whole number of kronor' }, { status: 400 })
@@ -124,10 +126,7 @@ export async function POST(request: Request) {
   const { data: item, error } = await supabase
     .from('items')
     .insert({
-      name: name.trim(),
-      brand: brand?.trim() || null,
-      min_price: min_price ?? null,
-      max_price: max_price ?? null,
+      ...fields.value,
       notify: notify !== false,
       target_price: target ?? null,
       ...sanitizeFilters(category, filters),
@@ -136,7 +135,7 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items', error)
 
   // Scraping is triggered explicitly by the client via /api/scrape/[itemId]/stream —
   // fire-and-forget work here doesn't survive serverless response completion.

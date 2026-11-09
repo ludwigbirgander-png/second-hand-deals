@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { parseTargetPrice } from '@/lib/alerts/targetPrice'
 import { sanitizeFilters } from '@/lib/categories'
+import { serverError } from '@/lib/api/errors'
+import { parseItemFields } from '@/lib/validate'
 
 export async function GET(
   _request: Request,
@@ -19,7 +21,7 @@ export async function GET(
     .eq('id', id)
     .maybeSingle()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items/[id]', error)
   if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
 
   const { item_lists, ...rest } = data as any
@@ -40,11 +42,10 @@ export async function PATCH(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { name, brand, min_price, max_price, notify, target_price, category, filters } = await request.json()
-
-  if (!name?.trim()) {
-    return Response.json({ error: 'Name is required' }, { status: 400 })
-  }
+  const body = await request.json().catch(() => ({}))
+  const { notify, target_price, category, filters } = body
+  const fields = parseItemFields(body)
+  if (!fields.ok) return Response.json({ error: fields.error }, { status: 400 })
   const target = parseTargetPrice(target_price)
   if (target_price != null && target_price !== '' && target === undefined) {
     return Response.json({ error: 'Target price must be a whole number of kronor' }, { status: 400 })
@@ -53,10 +54,7 @@ export async function PATCH(
   const { data, error } = await supabase
     .from('items')
     .update({
-      name: name.trim(),
-      brand: brand?.trim() || null,
-      min_price: min_price ?? null,
-      max_price: max_price ?? null,
+      ...fields.value,
       ...(notify !== undefined && { notify }),
       ...(target !== undefined && { target_price: target }),
       // Both or neither: filters only make sense for their category
@@ -67,7 +65,7 @@ export async function PATCH(
     .select()
     .maybeSingle()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items/[id]', error)
   if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(data)
 }
@@ -94,6 +92,6 @@ export async function DELETE(
   await supabase.from('listings').delete().eq('item_id', id)
   const { error } = await supabase.from('items').delete().eq('id', id).eq('user_id', user.id)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('items/[id]', error)
   return new Response(null, { status: 204 })
 }
