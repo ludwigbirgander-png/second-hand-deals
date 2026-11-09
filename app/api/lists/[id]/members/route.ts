@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db'
 import { escapeHtml } from '@/lib/escapeHtml'
 import { Resend } from 'resend'
-import { EMAIL_MAX_USES, INVITE_DAYS } from '@/lib/lists/invites'
+import { EMAIL_MAX_USES, INVITE_DAYS, validInviteEmail } from '@/lib/lists/invites'
+import { rateLimit, LIMITS } from '@/lib/limits'
 
 export async function GET(
   _request: Request,
@@ -91,9 +92,11 @@ export async function POST(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { email, role = 'editor' } = await request.json()
+  const body = await request.json().catch(() => ({}))
+  const role = body.role ?? 'editor'
 
-  if (!email?.trim()) return Response.json({ error: 'Email is required' }, { status: 400 })
+  const email = validInviteEmail(body.email)
+  if (!email) return Response.json({ error: 'Enter a valid email address' }, { status: 400 })
   if (!['admin', 'editor', 'viewer'].includes(role)) {
     return Response.json({ error: 'Invalid role' }, { status: 400 })
   }
@@ -113,6 +116,16 @@ export async function POST(
     if (!membership || !['owner', 'admin'].includes(membership.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
+  }
+
+  // Limit invite emails per person, before anything is created or sent, so Kompi's
+  // address can't be used to mail strangers in bulk
+  const limit = await rateLimit(db(), LIMITS.inviteEmails(user.id))
+  if (!limit.allowed) {
+    return Response.json(
+      { error: 'You’ve sent a lot of invites today. Try again tomorrow.', retryAfter: limit.retryAfter },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
+    )
   }
 
   // Create invite token: single use, for the one person it's sent to
@@ -136,7 +149,7 @@ export async function POST(
     const resend = new Resend(resendKey)
     await resend.emails.send({
       from: `Kompi <${fromEmail}>`,
-      to: email.trim(),
+      to: email,
       subject: `You've been invited to a list on Kompi`,
       html: `
         <p>You've been invited to join the list <strong>${escapeHtml(list.name)}</strong> on Kompi.</p>

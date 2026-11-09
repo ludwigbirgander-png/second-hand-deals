@@ -22,8 +22,9 @@ Fix the problems the security check found, the worst first. One high-severity bu
 ## Architecture decisions
 - **The database rules (RLS) are the real boundary.** The Supabase public key ships to the browser, so anyone signed in can query tables directly and skip our API routes. Permission fixes go into a migration first, and the route checks second (to give clear errors).
 - **Routes that use the admin key (`db()`) must prove ownership themselves**, because that key skips every database rule. Task 1 fixes the one route that doesn't.
-- **Rate limits are kept in Postgres, not in memory.** On Vercel each request can land on a different instance, so an in-memory counter never fires. A `rate_limits` table plus a `hit_rate_limit(key, window, max)` function (`security definer`, callable only with the admin key) gives one shared counter with no new service.
-- **CSP starts in report-only mode.** Listing images come from many hosts and Next.js adds inline scripts. A wrong policy would break the app silently, so we ship the other headers enforced and run the CSP as `Content-Security-Policy-Report-Only` until the browser console shows no violations, then switch it on.
+- **Rate limits are kept in Postgres, not in memory.** On Vercel each request can land on a different instance, so an in-memory counter never fires. A `rate_limits` table plus a `hit_rate_limit(key, window, max)` function gives one shared counter with no new service. *(Refined 2026-11-09:)* the function lives in `public` with execute for `service_role` only, like `redeem_list_invite` (the `private` schema isn't exposed to the API), and **fails open**: a missing function or a database error never blocks people.
+- **Search limits are keyed on the search itself** *(added 2026-11-09)*. The app searches right after an item is added and again after its search is edited. A plain per-item limit would block that second search, so the per-item key includes the item's name, category and filters; a changed search always gets a fresh search. A separate per-user hourly cap protects hosting cost.
+- **CSP starts in report-only mode, without nonces** *(nonces decided 2026-11-09)*. Listing images come from many hosts and Next.js adds inline scripts. A wrong policy would break the app silently, so we ship the other headers enforced and run the CSP as `Content-Security-Policy-Report-Only` until the browser console shows no violations, then switch it on. Per the Next.js CSP guide, nonces would force every page to render per request and need the middleware to build the header. The "without nonces" option in `next.config.ts` keeps `'unsafe-inline'` for scripts but still blocks framing, plugins, foreign form targets and unknown connections. Nonces can come later if needed.
 - **Pure checks move into `lib/` so they can be unit-tested** with the existing `npm test` (tsx --test). There are no route-level tests today, and this plan doesn't add a test framework.
 - **Migrations are new files** (`supabase/migrations/2026102x_*.sql`) with `schema.sql` updated to match, following the existing convention. You run them in Supabase by hand at the checkpoints.
 
@@ -31,27 +32,28 @@ Fix the problems the security check found, the worst first. One high-severity bu
 See `tasks/security-todo.md` for acceptance criteria and verification.
 
 ### Phase 1: High severity (fail fast)
-- [ ] Task 1: Scrape only your own items
-- [ ] Task 2: Upgrade Next.js and fix vulnerable dependencies
+- [x] Task 1: Scrape only your own items (PR #2)
+- [x] Task 2: Upgrade Next.js and fix vulnerable dependencies (PR #2; undici in #4; follow-redirects from 2026-11-15)
 
 ### Checkpoint 1
-- [ ] Tests, lint, type check and build green; `npm audit --omit=dev` has no high/critical left; deploy
+- [x] Tests, lint, type check and build green; `npm audit --omit=dev` has no critical left; deployed 2026-11-05
 
 ### Phase 2: Database rules
-- [ ] Task 3: Only add items to lists you may edit
-- [ ] Task 4: Invite links expire and have a use limit
+- [x] Task 3: Only add items to lists you may edit (PR #4, migration run)
+- [x] Task 4: Invite links expire and have a use limit (PR #6, migration run)
+- Also done, outside the original list: sharing read rules (PR #3), database security gaps (PR #5), invite page for signed-out visitors (PR #7). See `tasks/schema-drift.md`.
 
 ### Checkpoint 2
-- [ ] You run the two migrations in Supabase; second-account abuse checks pass
+- [ ] Migrations run (done); **second-account checks still to do by you**
 
-### Phase 3: Abuse limits and headers
+### Phase 3: Abuse limits and headers (refined 2026-11-09)
 - [ ] Task 5: Shared rate limiter
-- [ ] Task 6: Rate-limit invite emails
-- [ ] Task 7: Rate-limit scraping
-- [ ] Task 8: Security headers (CSP report-only)
+- [ ] Task 6: Rate-limit invite emails (needs 5)
+- [ ] Task 7: Rate-limit searches (needs 5)
+- [ ] Task 8: Security headers, CSP report-only (independent)
 
 ### Checkpoint 3
-- [ ] Rate-limit migration run; limits fire; headers present; no CSP reports on main pages
+- [ ] Rate-limit migration run; limits fire in production; headers present; CSP reports reviewed
 
 ### Phase 4: Clean-up
 - [ ] Task 9: Generic errors in item and listing routes
@@ -69,12 +71,19 @@ See `tasks/security-todo.md` for acceptance criteria and verification.
 | Next 16.2 → 16.4 changes behaviour (middleware, caching, Server Actions) | High | Read `node_modules/next/dist/docs/` upgrade notes first (AGENTS.md rule); full build and a click-through of login, watchlist, item page, scrape and join |
 | Tightening the `item_lists` rule breaks re-saving an item that a viewer had already put in a shared list | Medium | Route checks all list ids **before** deleting old rows and returns 403 without changing anything; existing rows stay (the rule only checks new writes) |
 | CSP blocks images or Next.js scripts | Medium | Report-only first; `img-src https: data:`; enforce only after a clean run |
-| Rate limits too tight for normal use (e.g. re-scanning after editing an item) | Low | Generous numbers to start (see open questions); limits live in one place |
+| Rate limits too tight for normal use (e.g. re-scanning after editing an item) | Low | Per-item key includes the search, so an edited search is never blocked; generous numbers to start (open question 2); limits live in one place |
+| Rate limiter breaks the app (migration missing, database slow or down) | Medium | Fails open: allows the request and logs |
+| CSP report-only gives a false sense of safety | Low | Other headers are enforced from day one; Checkpoint 3 sets a date to switch the CSP on |
 | Existing invite links stop working when expiry lands | Low | Migration gives existing invites `expires_at = now() + 14 days` instead of expiring them at once |
 | Migrations not run before the code that needs them is deployed | Medium | Code tolerates a missing column/function where possible; checkpoints say when to run each migration |
 
 ## Open questions
-1. **Invite lifetime and uses.** Proposal: links expire after 14 days; email invites are single-use; copyable links allow up to 25 uses. OK?
-2. **Rate-limit numbers.** Proposal: invite emails 20 per user per day; scraping one run per item per 2 minutes and 30 runs per user per hour. OK?
+1. ~~**Invite lifetime and uses.**~~ Built with the proposal (14 days; email single-use; links 25 uses) in PR #6. Change in `lib/lists/invites.ts` if needed.
+2. **Rate-limit numbers.** *Updated proposal (2026-11-09):*
+   - invite emails: 20 per user per day
+   - the same search again: once per 60 seconds per item and search (a changed search is always allowed)
+   - searches per user: 40 per hour
+
+   The October numbers (one run per item per 2 minutes, 30 per user per hour) would have blocked the second search right after adding and then editing an item, and come close to blocking someone adding many items in a row. OK?
 3. **Joining flips a list to "collaborative".** Keep this as is (the owner chose to invite), or only allow joining lists that are already collaborative?
 4. **Release order.** Ship Phase 1 on its own PR straight away (recommended, since it holds the high-severity fixes), or everything in one PR?

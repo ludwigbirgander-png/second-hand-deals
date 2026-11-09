@@ -87,49 +87,68 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
 
 ## Phase 3: Abuse limits and headers
 
-- [ ] **Task 5: Shared rate limiter**
-  - Description: a Postgres-backed fixed-window counter, so limits hold across serverless instances.
+> **Refined 2026-11-09** after Phases 1–2 shipped. Changes from the October draft: the limiter function lives in `public` with execute for `service_role` only (like `redeem_list_invite`; the `private` schema isn't reachable through the API), old rows are cleaned up, the per-item search limit is keyed on the search itself so editing a search can always rescan, and the CSP follows the Next.js "without nonces" option (see the plan). Numbers are open question 2.
+>
+> Order: Task 8 has no dependencies and can ship first or alongside. Tasks 6 and 7 need Task 5. Each task is its own PR; the Task 5 migration runs before Tasks 6–7 deploy (the limiter fails open without it, so the order can't break anything).
+
+- [x] **Task 5: Shared rate limiter**
+  - **Built 2026-11-09** (branch `security-phase-3`). The code lives in `lib/limits/` (not `lib/rateLimit.ts`), because tests must be in a `lib/` subfolder. Tested on the live database in a rolled-back transaction: 3 hits allowed and the 4th refused, a new key or window counts separately, old windows are cleaned up, bad input is refused, and signed-in and signed-out users can't call the function or read the table. **Still to do: run the migration.**
+  - Description: a Postgres-backed fixed-window counter, so limits hold across Vercel's serverless instances (an in-memory counter would reset per instance).
   - Acceptance:
-    - Migration adds a `rate_limits(key text, window_start timestamptz, count int)` table with RLS on and no user policies, plus a `hit_rate_limit(p_key text, p_window_seconds int, p_max int) returns boolean` function (`security definer`, execute granted to `service_role` only) that increments and returns whether the call is allowed.
-    - `lib/rateLimit.ts` exposes `rateLimit(key, windowSeconds, max)`; it calls the function with `db()` and **fails open** (allows and logs) if the function is missing, so deploying before the migration doesn't break the app.
-  - Verification: unit tests for key building and fail-open handling; in Supabase, calling the function `max + 1` times returns false on the last call.
+    - Migration adds `rate_limits(key text, window_start timestamptz, count int, primary key (key, window_start))` with RLS on and no user rules, and `hit_rate_limit(p_key text, p_window_seconds int, p_max int) returns boolean`: one statement that counts the hit in the current window and returns whether it's allowed. Execute for `service_role` only; signed-in and signed-out users can't call it. It also deletes windows older than a day, so the table stays small.
+    - `lib/rateLimit.ts` exposes `rateLimit(key, windowSeconds, max)`. It calls the function with `db()` and **fails open**: if the function is missing or errors, it allows the request and logs, so deploying before the migration (or a database hiccup) never blocks people.
+    - Pure helpers (key building, reading the result) are unit-tested; the database call is the only untested line.
+  - Verification: `npm test`; in a rolled-back transaction on the live database, `max + 1` calls in one window → the last returns false; a new window allows again; `anon` and `authenticated` get "permission denied".
   - Dependencies: none
-  - Files: `supabase/migrations/20261026_rate_limits.sql`, `supabase/schema.sql`, `lib/rateLimit.ts`, `lib/rateLimit.test.ts`
+  - Files: `supabase/migrations/20261110_rate_limits.sql`, `supabase/schema.sql`, `lib/rateLimit.ts`, `lib/rateLimit.test.ts`
   - Scope: S
 
-- [ ] **Task 6: Rate-limit invite emails**
-  - Description: stop the invite endpoint being used to email strangers in bulk.
+- [x] **Task 6: Rate-limit invite emails**
+  - **Built 2026-11-09.** The email check (`validInviteEmail`) is unit-tested; the route checks the email, then the permission, then the limit (20 a day) before creating an invite or sending anything. The invite form already shows the error text.
+  - Description: stop the email-invite endpoint being used to send mail from Kompi's address to strangers in bulk.
   - Acceptance:
-    - `POST /api/lists/[id]/members` allows the agreed number of emails per user per day (open question 2), then returns 429 with a plain message, before creating an invite or sending mail.
-    - The email address is checked for a sane format and length (≤ 254 characters).
-    - The invite form shows the 429 message.
-  - Verification: the limit + 1 invites in a row → last one 429 and no email sent (Resend dashboard).
+    - `POST /api/lists/[id]/members` checks the email first: valid format, at most 254 characters, else 400.
+    - Then the limit (open question 2; proposed 20 per user per day), else 429 "You've sent a lot of invites today. Try again tomorrow." **before** an invite is created or any mail is sent.
+    - The invite form in the list's sharing settings shows the 400/429 message (it already shows `error` text; check it does for these).
+  - Verification: unit test for the email check; with the limit temporarily set to 2 in a dev run, the 3rd invite → 429 and no invite row created.
   - Dependencies: Task 5
-  - Files: `app/api/lists/[id]/members/route.ts`, `components/GroupSheets.tsx`
+  - Files: `app/api/lists/[id]/members/route.ts`, `lib/lists/invites.ts` (email check), `lib/lists/invites.test.ts`, `components/GroupSheets.tsx`
   - Scope: S
 
-- [ ] **Task 7: Rate-limit scraping**
-  - Description: cap how often one user can start scrapes, to protect hosting cost and avoid our server being blocked by the sites.
+- [x] **Task 7: Rate-limit searches**
+  - **Built 2026-11-09.** The search signature is unit-tested. The route checks "same search within a minute" and then "40 per hour" after the owner check and before any outbound request. The scan screen shows the server's message. Not tested in the browser: that needs a signed-in session and the migration.
+  - Description: cap how often one user can start a search (the scrape route), to protect hosting cost and keep the marketplaces from blocking Kompi's server.
   - Acceptance:
-    - The scrape route allows the agreed rate per item and per user, else 429 before any outbound request.
-    - The scan screen shows "Searched a moment ago, try again shortly" instead of a generic error.
-    - The scheduled GitHub Actions job is unaffected (it doesn't use this route).
-  - Verification: two scans of the same item within the window → second returns 429; scanning a different item still works.
-  - Dependencies: Tasks 1, 5
-  - Files: `app/api/scrape/[itemId]/stream/route.ts`, `components/ScrapeProgress.tsx`
+    - Two limits, checked after the owner check and **before** any outbound request; either one → 429 with `{ error, retryAfter }`:
+      - **Same search again:** keyed on item + the search itself (name, category, filters), so saving a changed search always gets a fresh search. Proposed: once per 60 seconds.
+      - **Per user:** proposed 40 searches per hour (adding a dozen items in a row stays well under).
+    - The scan screen shows "You searched this a moment ago. Try again in a minute." instead of "The search could not finish". The watchlist's automatic search on a new item keeps its placeholder (it already handles a failed search).
+    - The 3-hourly GitHub job is unaffected (it doesn't use this route).
+  - Verification: unit test for the search signature (same search → same key; changed name, category or filters → new key); in a dev run, Refresh twice → second shows the message; editing the name and saving still searches.
+  - Dependencies: Task 5
+  - Files: `app/api/scrape/[itemId]/stream/route.ts`, `components/ScrapeProgress.tsx`, `lib/rateLimit.ts` (signature), `lib/rateLimit.test.ts`
   - Scope: S
 
-- [ ] **Task 8: Security headers (CSP report-only)**
-  - Description: add the standard headers through `headers()` in `next.config.ts` (check the Next.js docs in `node_modules/next/dist/docs/` for the current API and CSP guidance first).
+- [x] **Task 8: Security headers (CSP report-only)**
+  - **Built 2026-11-09.** Checked in the local preview: every header is present (Strict-Transport-Security is production only), and the invite, login and password-reset pages produce no CSP reports. Signed-in pages are still to check on the preview deploy or the live site (Checkpoint 3).
+  - Description: the standard headers through `headers()` in `next.config.ts`, following the Next.js CSP guide's "Without Nonces" option (`node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md`).
   - Acceptance:
-    - Enforced on every route: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` turning off camera, microphone and geolocation.
-    - `Content-Security-Policy-Report-Only` with `default-src 'self'`, `img-src 'self' https: data:`, `connect-src 'self'` + the Supabase URL, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, and whatever script/style sources Next.js needs per its docs.
-  - Verification: `curl -I` on `/login` and `/watchlist` shows the headers; browse login, watchlist, an item, a scan and the profile with DevTools open and note every CSP report.
-  - Dependencies: Task 2
+    - Enforced on every route:
+      - `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff`
+      - `Referrer-Policy: strict-origin-when-cross-origin`
+      - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+      - `Strict-Transport-Security: max-age=31536000` (production only)
+    - `Content-Security-Policy-Report-Only`:
+      - `default-src 'self'`; `script-src 'self' 'unsafe-inline'` (+ `'unsafe-eval'` in dev only); `style-src 'self' 'unsafe-inline'`
+      - `img-src 'self' https: data: blob:` (listing photos come from every marketplace); `font-src 'self'` (next/font self-hosts)
+      - `connect-src 'self'` + the Supabase URL (used by the browser on the invite, password and settings pages)
+      - `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`
+  - Verification: `curl -I` on `/login` and `/watchlist` in the preview deploy shows every header; browse login, watchlist, an item, a scan, settings and an invite page with the console open and list every CSP report in this file.
+  - Dependencies: none
   - Files: `next.config.ts`
   - Scope: XS
 
-- [ ] **Checkpoint 3:** you run the rate-limit migration; limits fire in production; headers present; CSP reports reviewed.
+- [ ] **Checkpoint 3:** the rate-limit migration is run; limits fire in production (a quick double Refresh); headers present on the live site; CSP reports reviewed. If the console shows no reports after a week of normal use, switch the CSP from report-only to enforced (one-line change, can ride along with Phase 4).
 
 ## Phase 4: Clean-up
 
