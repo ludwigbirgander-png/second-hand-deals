@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { canManageList } from '@/lib/access'
+import { inviteUsable, LINK_MAX_USES } from '@/lib/lists/invites'
 
 export async function GET(
   _request: Request,
@@ -16,12 +17,16 @@ export async function GET(
 
   const { data, error } = await supabase
     .from('list_invites')
-    .select('token, role, created_at')
+    .select('token, role, created_at, expires_at, max_uses, use_count')
     .eq('list_id', id)
     .order('created_at', { ascending: false })
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data ?? [])
+  if (error) {
+    console.error('list invites failed:', error.message)
+    return Response.json({ error: 'Couldn’t load the invites' }, { status: 500 })
+  }
+  // Only invites that still work: expired and used-up ones are hidden
+  return Response.json((data ?? []).filter((invite) => inviteUsable(invite)))
 }
 
 export async function POST(
@@ -43,13 +48,17 @@ export async function POST(
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // A copyable link: shared with a group, so several uses; expires after INVITE_DAYS
   const { data, error } = await supabase
     .from('list_invites')
-    .insert({ list_id: id, role, created_by: user.id })
-    .select()
+    .insert({ list_id: id, role, created_by: user.id, max_uses: LINK_MAX_USES })
+    .select('token, role, created_at, expires_at, max_uses, use_count')
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('create invite failed:', error.message)
+    return Response.json({ error: 'Couldn’t create the link' }, { status: 500 })
+  }
   return Response.json(data, { status: 201 })
 }
 

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db'
 import { escapeHtml } from '@/lib/escapeHtml'
 import { Resend } from 'resend'
+import { EMAIL_MAX_USES, INVITE_DAYS } from '@/lib/lists/invites'
 
 export async function GET(
   _request: Request,
@@ -114,14 +115,17 @@ export async function POST(
     }
   }
 
-  // Create invite token
+  // Create invite token: single use, for the one person it's sent to
   const { data: invite, error: inviteError } = await supabase
     .from('list_invites')
-    .insert({ list_id: id, role, created_by: user.id })
+    .insert({ list_id: id, role, created_by: user.id, max_uses: EMAIL_MAX_USES })
     .select()
     .single()
 
-  if (inviteError) return Response.json({ error: inviteError.message }, { status: 500 })
+  if (inviteError) {
+    console.error('create email invite failed:', inviteError.message)
+    return Response.json({ error: 'Couldn’t create the invite' }, { status: 500 })
+  }
 
   // Send email
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '') || 'https://second-hand-deals.vercel.app'
@@ -138,6 +142,7 @@ export async function POST(
         <p>You've been invited to join the list <strong>${escapeHtml(list.name)}</strong> on Kompi.</p>
         <p><a href="${joinUrl}" style="background:#18181b;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block">Join list</a></p>
         <p style="color:#999;font-size:12px">Or copy this link: ${joinUrl}</p>
+        <p style="color:#999;font-size:12px">The link works once and expires in ${INVITE_DAYS} days.</p>
       `,
     })
   }

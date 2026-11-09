@@ -64,7 +64,14 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `supabase/migrations/20261024_item_lists_check.sql`, `supabase/schema.sql`, `app/api/items/[id]/associations/route.ts`, `lib/access.ts`
   - Scope: M
 
-- [ ] **Task 4: Invite links expire and have a use limit**
+- [x] **Task 4: Invite links expire and have a use limit**
+  - **Built 2026-11-09** (branch `security-task-4`), using the proposed numbers from open question 1. Migration `supabase/migrations/20261109_invite_expiry.sql` (not `20261025_…`).
+    - **Limits:** invites expire after 14 days. Email invites work once; copyable links work 25 times. The one existing invite (from May) gets 25 uses and 14 days from when the migration runs. In the database, new invites are capped at 30 days (on creation) and 100 uses.
+    - **Joining:** the join route checks the invite first. It doesn't use up an invite when an existing member with the same role opens it again. It counts the use with `redeem_list_invite()`, one database step that also checks expiry and uses, so two people can't both use a single-use invite. Only the server may call it.
+    - **Messages:** unknown, expired and used-up invites all answer with the same 404: "This invite has expired or is no longer valid. Ask for a new link." Signed-out joiners get "Sign in to join this list" instead of "Unauthorized".
+    - **Sharing settings:** "Active links" only lists invites that still work, with "Expires in N days · 3 of 25 used" or "single use". The invite email says the link works once and expires in 14 days.
+    - **Tested** on the live database in a rolled-back transaction. The existing invite gets 25 uses / 14 days; a new email invite gets 1 use / 14 days; a year-long invite is capped to 30 days; 1000 uses are refused; owners can't edit an invite's expiry; a single-use invite works once, then not again; expired and unknown tokens don't work; signed-in and signed-out users can't count a use directly. The first test run caught a rule that would have rejected the existing invite, now fixed.
+    - **Order:** run the migration **before** deploying. The new code reads the new columns and calls `redeem_list_invite()`.
   - Description: invite tokens never expire and can be used without limit, including admin invites.
   - Acceptance:
     - Migration adds `expires_at` (default `now() + 14 days`), `max_uses` and `use_count` to `list_invites`; existing invites get a 14-day expiry. `schema.sql` updated.
