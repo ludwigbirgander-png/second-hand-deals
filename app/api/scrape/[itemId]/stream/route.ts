@@ -5,8 +5,12 @@ import { SCRAPERS, runSite, toListingRow, buildQuery } from '@/lib/scrapers'
 import { sitesForCategory } from '@/lib/categories'
 import { siteExcluded } from '@/lib/categories/native'
 import { followerMarkedIds, idList } from '@/lib/marks'
+import { rateLimit, LIMITS, searchSignature } from '@/lib/limits'
 
 export const maxDuration = 60
+
+const tooSoon = (error: string, retryAfter: number) =>
+  Response.json({ error, retryAfter }, { status: 429, headers: { 'Retry-After': String(retryAfter) } })
 
 // POST because this endpoint has side effects (writes listings to the DB) —
 // GETs can be prefetched or retried by browsers and proxies.
@@ -31,6 +35,17 @@ export async function POST(
 
   if (itemError || !item) {
     return Response.json({ error: 'Item not found' }, { status: 404 })
+  }
+
+  // Limits, before any request goes out to the marketplaces. The same search again
+  // within a minute is refused; a changed search (name, category, filters) is new.
+  const sameSearch = await rateLimit(db(), LIMITS.sameSearch(itemId, searchSignature(item)))
+  if (!sameSearch.allowed) {
+    return tooSoon('You searched this a moment ago. Try again in a minute.', sameSearch.retryAfter)
+  }
+  const perUser = await rateLimit(db(), LIMITS.searchesPerUser(user.id))
+  if (!perUser.allowed) {
+    return tooSoon('You’ve run a lot of searches in the last hour. Try again a bit later.', perUser.retryAfter)
   }
 
   // Only the sites the category is relevant on, and that can match the sale type

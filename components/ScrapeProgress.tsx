@@ -50,6 +50,12 @@ export function useScrapeStream(itemId: string, attempt = 0, enabled = true): Sc
     async function run() {
       try {
         const res = await fetch(`/api/scrape/${itemId}/stream`, { method: 'POST' })
+        // Rate limited: show the server's message ("You searched this a moment ago…")
+        if (res.status === 429) {
+          const data = await res.json().catch(() => null)
+          if (!cancelled) setState((s) => ({ ...s, error: data?.error ?? 'Too many searches. Try again in a minute.' }))
+          return
+        }
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
