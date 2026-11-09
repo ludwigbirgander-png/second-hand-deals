@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
+import { parseListFields } from '@/lib/validate'
 
 export async function PATCH(
   request: Request,
@@ -9,10 +11,10 @@ export async function PATCH(
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const body = await request.json()
-  const updates: Record<string, string> = {}
-  if (body.name?.trim()) updates.name = body.name.trim()
-  if (body.color) updates.color = body.color
+  const fields = parseListFields(await request.json().catch(() => ({})), { partial: true })
+  if (!fields.ok) return Response.json({ error: fields.error }, { status: 400 })
+  const updates = fields.value
+  if (Object.keys(updates).length === 0) return Response.json({ error: 'Nothing to change' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('lists')
@@ -22,7 +24,7 @@ export async function PATCH(
     .select()
     .maybeSingle()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]', error)
   if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json(data)
 }
@@ -41,6 +43,6 @@ export async function DELETE(
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]', error)
   return Response.json({ ok: true })
 }

@@ -10,6 +10,7 @@ import { Chip } from './ui/Chip'
 import { FieldLabel, Input, PriceRange, Toggle, parsePrice, priceRangeError } from './ui/Form'
 import { CategoryFields } from './CategoryFields'
 import { nameWithBrand } from '@/lib/itemName'
+import { ITEM_NAME_MAX, LIST_NAME_MAX } from '@/lib/validate'
 import { spellingHint } from '@/lib/categories/spelling'
 import { suggestCategory, type CategoryId, type ItemFilters } from '@/lib/categories'
 
@@ -173,6 +174,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
             <span className="inline-flex items-center gap-1.5">
               <Input
                 aria-label="New list name"
+                maxLength={LIST_NAME_MAX}
                 inputSize="sm"
                 autoFocus
                 placeholder="List name"
@@ -235,7 +237,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
           )}
         </div>
         <div className="flex-1 overflow-y-auto flex flex-col gap-4 p-4">
-          <Input aria-label="Item name" icon="search" placeholder="Add an item" autoFocus={!edit} value={name} onChange={(e) => setName(e.target.value)} />
+          <Input aria-label="Item name" maxLength={ITEM_NAME_MAX} icon="search" placeholder="Add an item" autoFocus={!edit} value={name} onChange={(e) => setName(e.target.value)} />
           <SpellingHintLine name={name} onFix={setName} className="-mt-2" />
           {fields}
           {error && <p role="alert" className="m-0 text-[13px] text-state-danger">{error}</p>}
@@ -275,6 +277,7 @@ function PanelBody({ mode = 'add', lists, initial, onSubmit, onDelete, onClose, 
             <Icon name="search" size={18} className="text-muted" />
             <input
               aria-label="Item name"
+            maxLength={ITEM_NAME_MAX}
               autoFocus={!edit}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -316,6 +319,7 @@ export function AddDock({ onSubmit }: { onSubmit: (name: string) => Promise<stri
           <Icon name="search" size={18} className="text-muted" />
           <input
             aria-label="Item name"
+            maxLength={ITEM_NAME_MAX}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Add an item to track, e.g. Sony WH-1000XM5"
