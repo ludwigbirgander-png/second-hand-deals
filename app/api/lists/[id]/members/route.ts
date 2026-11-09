@@ -4,6 +4,7 @@ import { escapeHtml } from '@/lib/escapeHtml'
 import { Resend } from 'resend'
 import { EMAIL_MAX_USES, INVITE_DAYS, validInviteEmail } from '@/lib/lists/invites'
 import { rateLimit, LIMITS } from '@/lib/limits'
+import { serverError } from '@/lib/api/errors'
 
 export async function GET(
   _request: Request,
@@ -20,11 +21,16 @@ export async function GET(
   if (!list) return Response.json({ error: 'Not found' }, { status: 404 })
 
   const isOwner = list.user_id === user.id
+  let myRole: string | null = isOwner ? 'owner' : null
   if (!isOwner) {
     const { data: membership } = await supabase
       .from('list_members').select('role').eq('list_id', id).eq('user_id', user.id).single()
     if (!membership) return Response.json({ error: 'Forbidden' }, { status: 403 })
+    myRole = membership.role
   }
+  // Only the owner and admins (who manage members) see email addresses;
+  // editors and viewers see names and roles
+  const canSeeEmails = myRole === 'owner' || myRole === 'admin'
 
   // Use service role so RLS doesn't filter to only the caller's own row
   const { data, error } = await db()
@@ -33,24 +39,22 @@ export async function GET(
     .eq('list_id', id)
     .order('joined_at', { ascending: true })
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('lists/[id]/members', error)
 
-  // Enrich with emails from auth.users via service role
-  const userIds = (data ?? []).map((m: any) => m.user_id)
-  const emails: Record<string, string> = {}
+  type Row = { user_id: string; role: string; joined_at: string }
+  const rows: Row[] = [...((data ?? []) as Row[])]
+  if (!rows.some((m) => m.user_id === list.user_id)) {
+    rows.unshift({ user_id: list.user_id, role: 'owner', joined_at: '' })
+  }
+  const userIds = rows.map((m) => m.user_id)
+
+  // Display names for everyone (the owner included); emails only for owners and admins
   const displayNames: Record<string, string | null> = {}
+  const { data: profiles } = await db().from('profiles').select('id, display_name').in('id', userIds)
+  for (const p of profiles ?? []) displayNames[p.id] = p.display_name
 
-  if (userIds.length > 0) {
-    const { data: profiles } = await db()
-      .from('profiles')
-      .select('id, display_name')
-      .in('id', userIds)
-
-    for (const p of profiles ?? []) {
-      displayNames[p.id] = p.display_name
-    }
-
-    // Get emails via admin API
+  const emails: Record<string, string> = {}
+  if (canSeeEmails) {
     for (const uid of userIds) {
       try {
         const { data: u } = await db().auth.admin.getUserById(uid)
@@ -59,28 +63,13 @@ export async function GET(
     }
   }
 
-  const members = (data ?? []).map((m: any) => ({
+  return Response.json(rows.map((m) => ({
     user_id: m.user_id,
     email: emails[m.user_id] ?? '',
     display_name: displayNames[m.user_id] ?? null,
     role: m.role,
     joined_at: m.joined_at,
-  }))
-
-  if (list && !members.find((m: any) => m.user_id === list.user_id)) {
-    try {
-      const { data: ownerUser } = await db().auth.admin.getUserById(list.user_id)
-      members.unshift({
-        user_id: list.user_id,
-        email: ownerUser?.user?.email ?? '',
-        display_name: displayNames[list.user_id] ?? null,
-        role: 'owner',
-        joined_at: '',
-      })
-    } catch { /* skip */ }
-  }
-
-  return Response.json(members)
+  })))
 }
 
 export async function POST(
