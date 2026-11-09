@@ -1,6 +1,18 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { inviteUsable, describeInvite } from './invites'
+import { inviteUsable, describeInvite, validInviteEmail } from './invites'
+
+test('validInviteEmail accepts ordinary addresses', () => {
+  assert.equal(validInviteEmail('frida@example.com'), 'frida@example.com')
+  assert.equal(validInviteEmail('  anna.svensson+kompi@mail.example.se '), 'anna.svensson+kompi@mail.example.se')
+})
+
+test('validInviteEmail refuses anything else', () => {
+  for (const bad of ['', 'frida', 'frida@', '@example.com', 'frida@example', 'a b@example.com', 'a@b@example.com',
+    'Frida <frida@example.com>', 'a@example.com, b@example.com', 42, null, `${'a'.repeat(250)}@example.com`]) {
+    assert.equal(validInviteEmail(bad), null, String(bad))
+  }
+})
 
 const now = Date.parse('2026-11-09T12:00:00Z')
 const DAY = 86_400_000

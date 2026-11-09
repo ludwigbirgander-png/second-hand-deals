@@ -16,6 +16,14 @@ export interface InviteLimits {
   use_count: number
 }
 
+/** A plausible email address for an invite: one @, a dot in the domain, no spaces, at most 254 characters. */
+export function validInviteEmail(input: unknown): string | null {
+  if (typeof input !== 'string') return null
+  const email = input.trim()
+  if (email.length === 0 || email.length > 254) return null
+  return /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/.test(email) ? email : null
+}
+
 /** Whether an invite can still be used. Invites without limits (before the migration) count as usable. */
 export function inviteUsable(invite: Partial<InviteLimits>, now = Date.now()): boolean {
   if (invite.expires_at && Date.parse(invite.expires_at) <= now) return false
