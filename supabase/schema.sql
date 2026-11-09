@@ -277,13 +277,35 @@ create policy lists_member_read on lists
     or exists (select 1 from list_members m where m.list_id = lists.id and m.user_id = auth.uid())
   );
 
--- item_lists: item owner manages; list members read
-drop policy if exists item_lists_item_owner on item_lists;
-create policy item_lists_item_owner on item_lists
-  for all using (
-    exists (select 1 from items i where i.id = item_lists.item_id and i.user_id = auth.uid())
-  ) with check (
-    exists (select 1 from items i where i.id = item_lists.item_id and i.user_id = auth.uid())
+-- item_lists: the item owner reads and removes links, and adds links only to lists
+-- they may edit: their own, or a collaborative list where they're an owner, admin
+-- or editor member (20261109_item_lists_check.sql)
+drop policy if exists "item_lists own read" on item_lists;
+create policy "item_lists own read" on item_lists
+  for select to authenticated
+  using (exists (select 1 from items i where i.id = item_lists.item_id and i.user_id = (select auth.uid())));
+
+drop policy if exists "item_lists own remove" on item_lists;
+create policy "item_lists own remove" on item_lists
+  for delete to authenticated
+  using (exists (select 1 from items i where i.id = item_lists.item_id and i.user_id = (select auth.uid())));
+
+drop policy if exists "item_lists add to editable list" on item_lists;
+create policy "item_lists add to editable list" on item_lists
+  for insert to authenticated
+  with check (
+    exists (select 1 from items i where i.id = item_lists.item_id and i.user_id = (select auth.uid()))
+    and (
+      exists (select 1 from lists l where l.id = item_lists.list_id and l.user_id = (select auth.uid()))
+      or exists (
+        select 1 from list_members m
+        join lists l on l.id = m.list_id
+        where m.list_id = item_lists.list_id
+          and m.user_id = (select auth.uid())
+          and m.role in ('owner', 'admin', 'editor')
+          and l.visibility = 'collaborative'
+      )
+    )
   );
 
 drop policy if exists item_lists_member_read on item_lists;

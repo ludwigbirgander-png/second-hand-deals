@@ -32,16 +32,28 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
     - **Audit (`--omit=dev`): 0 critical, 0 moderate, 2 high left**, both with fixes that are still under 21 days old:
       | Package | Why it can wait | Fix | Review on |
       |---|---|---|---|
-      | `undici` 7.30.0 (via `cheerio`) | Kompi never calls undici: cheerio only uses it for `fromURL`, which we don't use | 7.30.1 | 2026-11-06 |
+      | ~~`undici` 7.30.0 (via `cheerio`)~~ | **Fixed 2026-11-09:** 7.30.1 (branch `security-phase-2`) | 7.30.1 | done |
       | `follow-redirects` 1.16.1 (via `axios`) | The advisories leak login headers on redirects; the scrapers send no cookies or auth headers | 1.16.2 | 2026-11-15 |
     - **Lint:** 18 `no-explicit-any` errors, the same before and after the upgrade (mostly `app/api/items` and `app/api/lists`, which Tasks 9–10 touch). ESLint also reads the untracked old copy in `.claude/worktrees/security-hardening`, which doubles the count.
     - **Checked:** `npm ci` from clean; 100 tests, type check and build pass; dev server on 16.4.1 sends signed-out visitors to /login and returns 401 from the API. **Still to check by you:** the signed-in click-through above.
 
-- [ ] **Checkpoint 1:** standing bar green; audit clean; deploy Phase 1 (recommended as its own PR).
+- [x] **Checkpoint 1:** standing bar green; audit clean; deploy Phase 1 (recommended as its own PR).
+  - **Done 2026-11-05:** PR #2 merged and deployed to production (second-hand-deals.vercel.app); no runtime errors. You did the signed-in click-through. The second-account check can't show anything in production yet: the live database has no rules that let followers read other people's items (see `tasks/schema-drift.md`).
 
 ## Phase 2: Database rules
 
-- [ ] **Task 3: Only add items to lists you may edit**
+> **Read first:** this phase was planned from `supabase/schema.sql`, which doesn't match the live database. `tasks/schema-drift.md` lists the live rules. Each migration below starts from those.
+
+- [x] **Task 3: Only add items to lists you may edit**
+  - **Built 2026-11-09** (branch `security-phase-2`). The migration is `supabase/migrations/20261109_item_lists_check.sql` (not `20261024_…`). It replaces the live `own item_lists` rule with three: read and remove your own item's links; add only to a list you own, or a *collaborative* list where you're an owner, admin or editor member.
+    - **Route:** it now only adds and removes what changed, instead of deleting every link and re-adding. So re-saving an item that sits in a list you can no longer edit still works, and taking your own item out of a list is always allowed. A refused list returns 403 with nothing changed. The helpers (`parseListIds`, `diffLinks`, `editableListIds`) are in `lib/lists/links.ts`.
+    - **UI:** the item page shows the error if the lists can't be saved. Adding an item from the watchlist still adds it, just without the refused list.
+    - **Tested** on the live database in a rolled-back transaction. Under the old rule an outsider could add their item to the public list. Under the new rules:
+      - the outsider is refused
+      - the owner can add their own item, but not someone else's
+      - an editor of a collaborative list can add; a viewer, or an editor once the list is private again, can't
+      - nobody can change a link in place, and outsiders can't read or remove the owner's links
+    - **Still to do:** run the migration in Supabase.
   - Description: the `item_lists_item_owner` rule only checks that you own the item, so you can attach it to any list, and public list ids are readable by everyone. Require list access too, in the database and in the route.
   - Acceptance:
     - New migration replaces the rule's `with check` with: you own the item **and** (you own the list **or** you are its `editor`/`admin` member). Reads and deletes keep working as before. `schema.sql` updated.

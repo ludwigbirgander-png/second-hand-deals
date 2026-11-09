@@ -98,11 +98,16 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       })
       const json = await res.json()
       if (!res.ok) return json.error ?? 'Could not save'
-      await fetch(`/api/items/${id}/associations`, {
+      const linked = await fetch(`/api/items/${id}/associations`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ listIds: v.listIds }),
       })
+      if (!linked.ok) {
+        // The other changes are saved; saving again only retries the lists
+        apply(await loadItem(id))
+        return (await linked.json().catch(() => null))?.error ?? 'Couldn’t save the lists. Try again.'
+      }
       apply(await loadItem(id))
       closeEdit()
       if (searchChanged) router.push(`/items/${id}/scan`)
