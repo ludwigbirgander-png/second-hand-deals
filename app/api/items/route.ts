@@ -3,6 +3,7 @@ import { parseTargetPrice } from '@/lib/alerts/targetPrice'
 import { sanitizeFilters } from '@/lib/categories'
 import { isMissingMarksTable } from '@/lib/marks'
 import { parseItemFields } from '@/lib/validate'
+import { listsOf, type ItemRow, type ItemWithLists, type LowestListing } from '@/lib/itemRows'
 import { serverError } from '@/lib/api/errors'
 
 export async function GET() {
@@ -17,13 +18,10 @@ export async function GET() {
 
   if (error) return serverError('items', error)
 
-  const transformed = (data ?? []).map((item: any) => {
-    const { item_lists, ...rest } = item
-    return {
-      ...rest,
-      lists: (item_lists ?? []).map((r: any) => r.lists).filter(Boolean),
-    }
-  })
+  const transformed: ItemWithLists[] = ((data ?? []) as ItemRow[]).map(({ item_lists, ...rest }) => ({
+    ...rest,
+    lists: listsOf(item_lists),
+  }))
 
   const { data: counts } = await supabase.rpc('new_listings_count', { p_user_id: user.id })
   const countMap: Record<string, number> = {}
@@ -33,11 +31,11 @@ export async function GET() {
 
   // Lowest-priced listing per item in a single query (ordered by price, so the
   // first row seen per item is the cheapest). Respects each item's price range.
-  const itemById: Record<string, any> = {}
+  const itemById: Record<string, ItemWithLists> = {}
   for (const item of transformed) itemById[item.id] = item
 
-  const lowestMap: Record<string, any> = {}
-  const itemIds = transformed.map((i: any) => i.id)
+  const lowestMap: Record<string, LowestListing> = {}
+  const itemIds = transformed.map((i) => i.id)
   const isOwn = (itemId: string) => itemById[itemId]?.user_id === user.id
   const otherIds: string[] = itemIds.filter((id: string) => !isOwn(id))
 
@@ -99,7 +97,7 @@ export async function GET() {
   )
   const totalMap: Record<string, number> = Object.fromEntries(totals)
 
-  const enriched = transformed.map((item: any) => ({
+  const enriched = transformed.map((item) => ({
     ...item,
     new_listings_count: countMap[item.id] ?? 0,
     listing_count: totalMap[item.id] ?? 0,

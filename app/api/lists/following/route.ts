@@ -13,7 +13,7 @@ export async function GET() {
 
   if (followsError) return serverError('lists/following', followsError)
 
-  const listIds = (follows ?? []).map((f: any) => f.list_id)
+  const listIds = (follows ?? []).map((f: { list_id: string }) => f.list_id)
   if (listIds.length === 0) return Response.json([])
 
   const { data: lists, error: listsError } = await supabase

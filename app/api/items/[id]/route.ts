@@ -3,6 +3,7 @@ import { parseTargetPrice } from '@/lib/alerts/targetPrice'
 import { sanitizeFilters } from '@/lib/categories'
 import { serverError } from '@/lib/api/errors'
 import { parseItemFields } from '@/lib/validate'
+import { listsOf, type ItemRow } from '@/lib/itemRows'
 
 export async function GET(
   _request: Request,
@@ -24,10 +25,10 @@ export async function GET(
   if (error) return serverError('items/[id]', error)
   if (!data) return Response.json({ error: 'Not found' }, { status: 404 })
 
-  const { item_lists, ...rest } = data as any
+  const { item_lists, ...rest } = data as ItemRow
   return Response.json({
     ...rest,
-    lists: (item_lists ?? []).map((r: any) => r.lists).filter(Boolean),
+    lists: listsOf(item_lists),
     // Only the owner can refresh listings (see the scrape route)
     is_owner: rest.user_id === user.id,
   })

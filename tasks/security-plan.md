@@ -44,26 +44,29 @@ See `tasks/security-todo.md` for acceptance criteria and verification.
 - Also done, outside the original list: sharing read rules (PR #3), database security gaps (PR #5), invite page for signed-out visitors (PR #7). See `tasks/schema-drift.md`.
 
 ### Checkpoint 2
-- [ ] Migrations run (done); **second-account checks still to do by you**
+- [x] Migrations run; second-account checks done 2026-11-09 (the earselect account's favourites and removals stay its own)
 
 ### Phase 3: Abuse limits and headers (refined 2026-11-09)
-- [ ] Task 5: Shared rate limiter
-- [ ] Task 6: Rate-limit invite emails (needs 5)
-- [ ] Task 7: Rate-limit searches (needs 5)
-- [ ] Task 8: Security headers, CSP report-only (independent)
+- [x] Task 5: Shared rate limiter (PR #8, migration run)
+- [x] Task 6: Rate-limit invite emails (PR #8)
+- [x] Task 7: Rate-limit searches (PR #8)
+- [x] Task 8: Security headers, CSP report-only (PR #8)
 
 ### Checkpoint 3
-- [ ] Rate-limit migration run; limits fire in production; headers present; CSP reports reviewed
+- [x] Rate-limit migration run; limits fire in production (double Refresh checked 2026-11-09); headers present on the live site
+- [ ] CSP reports reviewed after a week of use (around 2026-11-16)
 
 ### Phase 4: Clean-up
-- [ ] Task 9: Generic errors in item and listing routes
-- [ ] Task 10: Generic errors in list and profile routes
-- [ ] Task 11: Member emails for owners and admins only
-- [ ] Task 12: Input caps for items
-- [ ] Task 13: Input caps for lists, plus database limits
+- [x] Task 9: Generic errors in item and listing routes (PR #9)
+- [x] Task 10: Generic errors in list and profile routes (PR #9)
+- [x] Task 11: Member emails for owners and admins only (PR #9)
+- [x] Task 12: Input caps for items (PR #9)
+- [x] Task 13: Input caps for lists, plus database limits (PR #9, migration run)
 
 ### Checkpoint: Complete
-- [ ] All acceptance criteria met; audit clean; switch CSP to enforced if reports are clean; open PR
+- [x] All tasks built, deployed and their migrations run (2026-11-09)
+- [ ] `npm audit --omit=dev` clean: follow-redirects fix allowed from 2026-11-15
+- [ ] Switch the CSP to enforced if reports are clean (around 2026-11-16)
 
 ## Risks and mitigations
 | Risk | Impact | Mitigation |

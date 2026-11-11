@@ -23,7 +23,8 @@ Every task also clears the standing bar: `npm test`, `npm run lint`, `npx tsc --
   - Files: `components/ui/ItemTile.tsx`, `app/items/[id]/page.tsx`, `app/items/[id]/scan/page.tsx`, `components/ListingGrid.tsx`
   - Size: S · Depends on: Task 1
 
-- [ ] **Checkpoint A:** tests, lint and build green; you run the migration in Supabase; review, then merge Part A. (Part A ships with the whole branch instead. Still open: run `supabase/migrations/20261022_merge_brand.sql` when merging.)
+- [x] **Checkpoint A:** tests, lint and build green; you run the migration in Supabase; review, then merge Part A. (Part A ships with the whole branch instead.)
+  - **Done:** checked 2026-11-09, no item has a separate brand left (`20261022_merge_brand.sql` has been run).
 
 ## Part B1: Framework
 

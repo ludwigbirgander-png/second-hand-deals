@@ -71,7 +71,9 @@ Supabase's security checks now show only the leaked-password setting, plus two i
 
 ## 4. Keeping them in sync
 
-`schema.sql` should be replaced by a dump of the live database, so the next plan starts from the truth:
+**Done 2026-11-09:** `supabase/schema.sql` was regenerated from the live database's catalog (the cleanup PR), so sections 1 and 3 above describe the old file. From now on: every change goes in a new migration, and `schema.sql` is updated to match.
+
+To regenerate it with the official tool instead:
 
 ```bash
 supabase db dump --schema public > supabase/schema.sql
